@@ -133,7 +133,7 @@ export const ChatWindow = () => {
       <CardFooter className="p-4 bg-[var(--surface)]/50 backdrop-blur-sm border-t border-[var(--border)]">
         <ChatInput onSend={sendMessage} disabled={isLoading || mode !== 'chat'} />
         <div className="mt-3 text-[10px] text-center text-[var(--text-secondary)]/60 uppercase tracking-widest font-medium">
-          {mode === 'chat' ? 'Powered by Gemini 3.1 Pro Preview' : 'Initializing Agent Environment...'}
+          {mode === 'chat' ? 'Powered by Aiinhome Technologies Pvt. Ltd' : 'Initializing Agent Environment...'}
         </div>
       </CardFooter>
     </Card>

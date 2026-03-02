@@ -1,0 +1,164 @@
+import React from 'react';
+import { motion } from 'motion/react';
+import { 
+  ArrowLeft, 
+  Mail, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  Github, 
+  Chrome, 
+  Apple, 
+  LayoutGrid
+} from 'lucide-react';
+import { Button, Card, CardContent, CardHeader, CardFooter } from '@/src/ui-kit';
+
+interface LoginPageProps {
+  onBack: () => void;
+  onLoginSuccess: () => void;
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) => {
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleSocialLogin = (provider: string) => {
+    setIsLoading(true);
+    // Simulate login
+    setTimeout(() => {
+      setIsLoading(false);
+      onLoginSuccess();
+    }, 1500);
+  };
+
+  return (
+    <div className="theme-landing min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 selection:bg-accent/10 selection:text-accent">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        <button 
+          onClick={onBack}
+          className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-accent transition-colors mb-8 group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back to home
+        </button>
+
+        <Card className="border-slate-200 shadow-2xl shadow-slate-200/50 rounded-3xl overflow-hidden bg-white">
+          <CardHeader className="pt-10 pb-6 text-center space-y-2">
+            <div className="w-12 h-12 rounded-2xl bg-accent flex items-center justify-center text-white font-bold text-xl mx-auto mb-4 shadow-lg shadow-accent/20">
+              D
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Welcome back</h1>
+            <p className="text-slate-500 text-sm">Enter your details to access your account</p>
+          </CardHeader>
+
+          <CardContent className="px-8 space-y-6">
+            <div className="space-y-4">
+              <Button 
+                variant="outline" 
+                className="w-full h-12 rounded-xl border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-3 font-medium transition-all text-slate-900"
+                onClick={() => handleSocialLogin('google')}
+                disabled={isLoading}
+              >
+                <Chrome className="w-5 h-5 text-red-500" />
+                Continue with Google
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full h-12 rounded-xl border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-3 font-medium transition-all text-slate-900"
+                onClick={() => handleSocialLogin('apple')}
+                disabled={isLoading}
+              >
+                <Apple className="w-5 h-5 text-slate-900" />
+                Continue with Apple
+              </Button>
+
+              <Button 
+                variant="outline" 
+                className="w-full h-12 rounded-xl border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-3 font-medium transition-all text-slate-900"
+                onClick={() => handleSocialLogin('microsoft')}
+                disabled={isLoading}
+              >
+                <LayoutGrid className="w-5 h-5 text-blue-500" />
+                Continue with Microsoft
+              </Button>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-slate-100"></span>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-4 text-slate-400 font-bold tracking-widest">Or continue with</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Email address</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input 
+                    type="email" 
+                    placeholder="name@company.com"
+                    className="w-full h-12 pl-11 pr-4 rounded-xl border border-slate-200 focus:border-accent focus:ring-4 focus:ring-accent/5 outline-none transition-all text-sm text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center ml-1">
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Password</label>
+                  <button className="text-xs font-bold text-accent hover:text-accent-hover">Forgot password?</button>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="••••••••"
+                    className="w-full h-12 pl-11 pr-12 rounded-xl border border-slate-200 focus:border-accent focus:ring-4 focus:ring-accent/5 outline-none transition-all text-sm text-slate-900"
+                  />
+                  <button 
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button 
+                className="w-full h-12 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold shadow-lg shadow-accent/20 mt-2"
+                onClick={() => handleSocialLogin('email')}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Signing in...
+                  </div>
+                ) : (
+                  'Sign in to Dataor'
+                )}
+              </Button>
+            </div>
+          </CardContent>
+
+          <CardFooter className="pb-10 pt-6 text-center">
+            <p className="text-sm text-slate-500 mx-auto">
+              Don't have an account? <button className="font-bold text-accent hover:text-accent-hover">Create an account</button>
+            </p>
+          </CardFooter>
+        </Card>
+
+        <p className="mt-8 text-center text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+          By continuing, you agree to Dataor's <span className="underline cursor-pointer">Terms of Service</span> and <span className="underline cursor-pointer">Privacy Policy</span>.
+        </p>
+      </motion.div>
+    </div>
+  );
+};

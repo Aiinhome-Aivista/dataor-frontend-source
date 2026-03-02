@@ -2,17 +2,27 @@ import { ThemeProvider, useTheme, Button } from './ui-kit';
 import { ConnectorList, ConnectorForm, Connector } from './features/connectors';
 import { ChatWindow } from './features/chat';
 import { AgentWorkflow } from './features/workflow';
+import { LandingPage } from './features/marketing/LandingPage';
+import { LoginPage } from './features/auth/LoginPage';
 import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 
 type Tab = 'connectors' | 'chat' | 'new-connector' | 'workflow';
+type ViewMode = 'landing' | 'login' | 'app';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
+  const [viewMode, setViewMode] = useState<ViewMode>('landing');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [selectedConnector, setSelectedConnector] = useState<Connector | null>(null);
+
+  const handleLogin = () => setViewMode('login');
+  const handleGetStarted = () => setViewMode('login');
+  const handleLoginSuccess = () => setViewMode('app');
+  const handleBackToLanding = () => setViewMode('landing');
+  const handleLogout = () => setViewMode('landing');
 
   const handleNewConnector = () => {
     setSelectedConnector(null);
@@ -39,6 +49,14 @@ function AppContent() {
       setActiveTab('chat');
     }, 1500);
   };
+
+  if (viewMode === 'landing') {
+    return <LandingPage onGetStarted={handleGetStarted} onLogin={handleLogin} />;
+  }
+
+  if (viewMode === 'login') {
+    return <LoginPage onBack={handleBackToLanding} onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="min-h-screen flex text-[var(--text-primary)] transition-colors duration-300">
@@ -100,18 +118,10 @@ function AppContent() {
         </nav>
 
         <div className="p-4 border-t border-[var(--border)] space-y-2">
-          <button
-            onClick={toggleTheme}
-            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-200"
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-rose-500/10 text-[var(--text-secondary)] hover:text-rose-500 transition-all duration-200"
           >
-            {theme === 'default' ? <Sun className="w-5 h-5 shrink-0" /> : <Moon className="w-5 h-5 shrink-0" />}
-            {isSidebarOpen && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                {theme === 'default' ? 'Light Mode' : 'Dark Mode'}
-              </motion.span>
-            )}
-          </button>
-          <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-rose-500/10 text-[var(--text-secondary)] hover:text-rose-500 transition-all duration-200">
             <LogOut className="w-5 h-5 shrink-0" />
             {isSidebarOpen && (
               <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

@@ -23,6 +23,16 @@
   --color-text-secondary-warm: #57534e;
   --color-accent-warm: #5a5a40;
   --color-accent-hover-warm: #4a4a35;
+
+  /* Dynamic Variables */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
 }
 
 @layer base {
@@ -46,6 +56,17 @@
     --text-secondary: var(--color-text-secondary-warm);
     --accent: var(--color-accent-warm);
     --accent-hover: var(--color-accent-hover-warm);
+  }
+
+  .theme-landing {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-hover: #f8fafc;
+    --border: #f1f5f9;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
   }
 
   body {

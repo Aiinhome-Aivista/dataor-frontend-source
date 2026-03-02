@@ -17,13 +17,12 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove('theme-warm', 'theme-default');
-    root.classList.add(`theme-${theme}`);
-    localStorage.setItem('app-ui-theme', theme);
-  }, [theme]);
+    root.classList.add('theme-default');
+    localStorage.setItem('app-ui-theme', 'default');
+  }, []);
 
   const toggleTheme = () => {
-    setThemeState((prev) => (prev === 'default' ? 'warm' : 'default'));
+    // No-op as we only have one theme
   };
 
   const setTheme = (newTheme: ThemeType) => setThemeState(newTheme);
