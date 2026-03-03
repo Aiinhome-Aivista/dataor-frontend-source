@@ -1,280 +1,390 @@
-import { useState, useEffect, useCallback } from 'react';
-import { WorkflowStep, StepStatus } from '../types';
-import { Card, CardContent, CardHeader, Badge, Button, Stepper } from '@/src/ui-kit';
+import { useState, useEffect } from 'react';
+import { AgentData, AgentHistoryItem } from '../types';
+import { Card, CardContent, CardHeader, Badge, Button } from '@/src/ui-kit';
 import { motion, AnimatePresence } from 'motion/react';
-import { Database, Server, BarChart3, MessageSquare, Sparkles, CheckCircle2, Loader2, Info } from 'lucide-react';
-import { ThreeAvatar } from '../../chat/components/ThreeAvatar';
-
-const INITIAL_STEPS: WorkflowStep[] = [
-  {
-    id: 'connect',
-    title: 'Connection',
-    description: 'Establishing secure link to database',
-    agentName: 'Connection Agent',
-    status: 'pending',
-    activities: [
-      'Verifying credentials...',
-      'Establishing SSL tunnel...',
-      'Handshaking with Postgres...',
-      'Mapping schema structures...'
-    ],
-    question: 'Which schema should I prioritize for indexing?',
-    options: ['Public', 'Sales', 'Inventory', 'All']
-  },
-  {
-    id: 'ingest',
-    title: 'Ingestion',
-    description: 'Fetching and storing remote data',
-    agentName: 'Ingestion Agent',
-    status: 'pending',
-    activities: [
-      'Streaming rows...',
-      'Normalizing data types...',
-      'Indexing primary keys...',
-      'Storing on local cache...'
-    ],
-    question: 'How often should I sync this data?',
-    options: ['Real-time', 'Hourly', 'Daily', 'Manual']
-  },
-  {
-    id: 'analyze',
-    title: 'Analysis',
-    description: 'Generating insights and visuals',
-    agentName: 'Analysis Agent',
-    status: 'pending',
-    activities: [
-      'Detecting patterns...',
-      'Generating statistical summaries...',
-      'Identifying anomalies...',
-      'Building visualization maps...'
-    ],
-    question: 'What is your primary focus for this dataset?',
-    options: ['Revenue Growth', 'User Retention', 'Operational Efficiency', 'Data Quality']
-  },
-  {
-    id: 'query',
-    title: 'Query Ready',
-    description: 'Ready to answer your questions',
-    agentName: 'Query Agent',
-    status: 'pending',
-    activities: [
-      'Training local embeddings...',
-      'Optimizing query paths...',
-      'Dataor is ready to chat!'
-    ],
-    question: 'Ready to start chatting?',
-    options: ["Yes, let's go!"]
-  }
-];
+import { Database, Server, BarChart3, MessageSquare, Sparkles, CheckCircle2, Loader2, Clock, Play, RotateCcw, ArrowRight } from 'lucide-react';
+import { agentService } from '@/src/services/agent.service';
 
 interface AgentWorkflowProps {
   onComplete: () => void;
   compact?: boolean;
 }
 
-export const AgentWorkflow = ({ onComplete, compact = false }: AgentWorkflowProps) => {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [steps, setSteps] = useState<WorkflowStep[]>(INITIAL_STEPS);
-  const [activityIndex, setActivityIndex] = useState(0);
+const HistoryItemCard = ({ 
+  item, 
+  agent, 
+  onAction, 
+  onForward 
+}: { 
+  item: AgentHistoryItem, 
+  agent: AgentData, 
+  onAction: (item: AgentHistoryItem, option?: string) => void, 
+  onForward: (agentId: string, context: string) => void 
+}) => {
+  const [activityIndex, setActivityIndex] = useState(() => {
+    return (item.status === 'pending_input' || item.status === 'completed') 
+      ? (item.activities?.length || 1) - 1 
+      : 0;
+  });
 
-  const currentStep = steps[currentStepIndex];
-
-  // Simulate activity progress
   useEffect(() => {
-    if (currentStep.status === 'processing') {
+    if (item.status === 'processing' && item.activities && activityIndex < item.activities.length - 1) {
       const timer = setInterval(() => {
-        setActivityIndex((prev) => {
-          if (prev < currentStep.activities.length - 1) {
-            return prev + 1;
-          } else {
-            // Activity finished, wait for user input
-            setSteps(prevSteps => {
-              const newSteps = [...prevSteps];
-              newSteps[currentStepIndex].status = 'awaiting_input';
-              return newSteps;
-            });
-            clearInterval(timer);
-            return prev;
-          }
-        });
+        setActivityIndex(prev => prev + 1);
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [currentStep.status, currentStepIndex, currentStep.activities.length]);
+  }, [item.status, item.activities, activityIndex]);
 
-  // Start first step
+  // Ensure activityIndex catches up if it was pending_input
   useEffect(() => {
-    if (steps[0].status === 'pending') {
-      setSteps(prev => {
-        const newSteps = [...prev];
-        newSteps[0].status = 'processing';
-        return newSteps;
-      });
+    if (item.status === 'pending_input' || item.status === 'completed') {
+      setActivityIndex((item.activities?.length || 1) - 1);
     }
-  }, [steps]);
+  }, [item.status, item.activities]);
 
-  const handleOptionSelect = (option: string) => {
-    setSteps(prevSteps => {
-      const newSteps = [...prevSteps];
-      newSteps[currentStepIndex].status = 'completed';
-      
-      // If there's a next step, start it
-      if (currentStepIndex < steps.length - 1) {
-        newSteps[currentStepIndex + 1].status = 'processing';
-        setCurrentStepIndex(currentStepIndex + 1);
-        setActivityIndex(0);
-      } else {
-        // All steps completed
-        onComplete();
-      }
-      return newSteps;
-    });
-  };
+  const displayIndex = (item.status === 'pending_input' || item.status === 'completed') 
+    ? (item.activities?.length || 1) - 1 
+    : activityIndex;
 
-  const getIcon = (id: string) => {
-    switch (id) {
-      case 'connect': return <Database className="w-5 h-5" />;
-      case 'ingest': return <Server className="w-5 h-5" />;
-      case 'analyze': return <BarChart3 className="w-5 h-5" />;
-      case 'query': return <MessageSquare className="w-5 h-5" />;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`
+        p-5 rounded-2xl border transition-all
+        ${item.status === 'processing' ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-lg shadow-[var(--accent)]/10' : 
+          item.status === 'pending_input' ? 'border-amber-500/50 bg-amber-500/5' : 
+          'border-[var(--border)] bg-[var(--bg)]/50'}
+      `}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            {item.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+            {item.status === 'processing' && <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />}
+            {item.status === 'pending_input' && <RotateCcw className="w-4 h-4 text-amber-500" />}
+            <h4 className="font-bold text-[var(--text-primary)]">{item.action}</h4>
+          </div>
+          <p className="text-sm text-[var(--text-secondary)]">{item.details}</p>
+        </div>
+        <span className="text-[10px] font-mono text-[var(--text-secondary)] bg-[var(--surface)] px-2 py-1 rounded-md border border-[var(--border)] h-fit">
+          {new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+        </span>
+      </div>
+
+      {item.activities && item.activities.length > 0 && (item.status === 'processing' || item.status === 'pending_input') && (
+        <div className="mt-4 mb-4 space-y-3 font-mono text-sm bg-[var(--bg)]/50 p-6 rounded-2xl border border-[var(--border)]">
+          <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
+            {agent.name} Activity
+          </h4>
+          {item.activities.slice(0, displayIndex + 1).map((activity, i) => (
+            <motion.div
+              key={activity}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-3"
+            >
+              {i === displayIndex && item.status === 'processing' ? (
+                <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              )}
+              <span className={i === displayIndex && item.status === 'processing' ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}>
+                {activity}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {item.status === 'completed' && (
+        <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-end">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onForward(agent.id, item.action)}
+            className="hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            {agent.id === 'query' ? 'Open Chat' : 'Continue Flow'} <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      )}
+
+      {item.status === 'pending_input' && (
+        <div className="mt-4 pt-4 border-t border-[var(--border)]">
+          {item.prompt && (
+            <p className="text-sm font-medium mb-3 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-[var(--accent)]" />
+              {item.prompt}
+            </p>
+          )}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            {item.options && (
+              <div className="flex flex-wrap gap-2">
+                {item.options.map(opt => (
+                  <Button 
+                    key={opt} 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => onAction(item, opt)}
+                    className="hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                  >
+                    {opt}
+                  </Button>
+                ))}
+              </div>
+            )}
+            <Button 
+              variant="default" 
+              size="sm"
+              onClick={() => onAction(item, 'Continue')}
+              className="ml-auto"
+            >
+              {agent.id === 'query' ? 'Open Chat' : 'Continue Flow'} <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+export const AgentWorkflow = ({ onComplete, compact = false }: AgentWorkflowProps) => {
+  const [agents, setAgents] = useState<AgentData[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('connect');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      setIsLoading(true);
+      const data = await agentService.getAgents();
+      setAgents(data);
+      setIsLoading(false);
+    };
+    fetchAgents();
+  }, []);
+
+  const selectedAgent = agents.find(a => a.id === selectedAgentId);
+
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'database': return <Database className="w-5 h-5" />;
+      case 'server': return <Server className="w-5 h-5" />;
+      case 'bar-chart': return <BarChart3 className="w-5 h-5" />;
+      case 'message-square': return <MessageSquare className="w-5 h-5" />;
       default: return <Sparkles className="w-5 h-5" />;
     }
   };
 
+  const AGENT_SEQUENCE = ['connect', 'ingest', 'analyze', 'query'];
+
+  const forwardToNextAgent = async (currentAgentId: string, contextData: string) => {
+    const currentIndex = AGENT_SEQUENCE.indexOf(currentAgentId);
+    
+    if (currentIndex !== -1 && currentIndex < AGENT_SEQUENCE.length - 1) {
+      const nextAgentId = AGENT_SEQUENCE[currentIndex + 1];
+      
+      let nextAction = 'Incoming Task';
+      let nextDetails = `Received updated data from ${agents.find(a => a.id === currentAgentId)?.name || 'previous agent'}.`;
+      let nextPrompt = 'How would you like to proceed?';
+      let nextOptions = ['Continue', 'Skip'];
+      let nextActivities = ['Analyzing incoming payload...', 'Preparing environment...'];
+
+      if (currentAgentId === 'connect') {
+        nextAction = 'Data Ingestion Required';
+        nextDetails = `New schema/tables mapped from Connection Agent (${contextData}).`;
+        nextPrompt = `Data is ready to be ingested. Select sync frequency:`;
+        nextOptions = ['Real-time', 'Hourly', 'Daily', 'Manual'];
+        nextActivities = ['Receiving schema definition...', 'Allocating storage...', 'Preparing ingestion pipeline...'];
+      } else if (currentAgentId === 'ingest') {
+        nextAction = 'Analysis Pending';
+        nextDetails = `Data successfully ingested and cached (${contextData}).`;
+        nextPrompt = `What is your primary focus for analyzing this new dataset?`;
+        nextOptions = ['Revenue Growth', 'User Retention', 'Anomalies', 'General Summary'];
+        nextActivities = ['Loading cached data...', 'Initializing statistical models...', 'Scanning for patterns...'];
+      } else if (currentAgentId === 'analyze') {
+        nextAction = 'Query Engine Ready';
+        nextDetails = `Analysis complete. Embeddings generated (${contextData}).`;
+        nextPrompt = `Dataor is ready to answer your questions!`;
+        nextOptions = ["Yes, let's go!"];
+        nextActivities = ['Loading embeddings into memory...', 'Warming up query engine...', 'Ready for chat.'];
+      }
+
+      await agentService.addHistoryItem(nextAgentId, {
+        action: nextAction,
+        details: nextDetails,
+        status: 'pending_input',
+        prompt: nextPrompt,
+        options: nextOptions,
+        activities: nextActivities
+      });
+
+      setSelectedAgentId(nextAgentId);
+      setAgents(await agentService.getAgents());
+    } else if (currentAgentId === 'query') {
+      onComplete();
+    }
+  };
+
+  const handleAction = async (historyItem: AgentHistoryItem, option?: string) => {
+    if (!selectedAgent) return;
+    
+    const newActivities = historyItem.activities 
+      ? [...historyItem.activities, `Executing: ${option || 'Continue'}`] 
+      : [`Executing: ${option || 'Continue'}`];
+
+    // Simulate processing an action
+    await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+      status: 'processing',
+      details: option ? `Processing option: ${option}...` : 'Processing...',
+      activities: newActivities
+    });
+    
+    // Refresh data
+    setAgents(await agentService.getAgents());
+
+    // Simulate completion
+    setTimeout(async () => {
+      await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+        status: 'completed',
+        details: option ? `Completed action: ${option}` : 'Action completed successfully.'
+      });
+      setAgents(await agentService.getAgents());
+      
+      // Automatically forward to next agent
+      await forwardToNextAgent(selectedAgent.id, option || historyItem.action);
+    }, 2000);
+  };
+
+  const handleNewAction = async () => {
+    if (!selectedAgent) return;
+    
+    let actionName = 'New Task';
+    let details = 'Starting new task...';
+    let status: 'completed' | 'pending_input' | 'processing' = 'processing';
+    let prompt = undefined;
+    let options = undefined;
+    let activities = undefined;
+
+    if (selectedAgent.id === 'connect') {
+      actionName = 'New Connection';
+      status = 'pending_input';
+      prompt = 'Select connection type:';
+      options = ['PostgreSQL', 'MySQL', 'MongoDB'];
+      activities = ['Initializing connection protocol...', 'Scanning available drivers...'];
+    } else if (selectedAgent.id === 'ingest') {
+      actionName = 'Data Ingestion';
+      status = 'pending_input';
+      prompt = 'Select sync frequency:';
+      options = ['Real-time', 'Hourly', 'Daily'];
+      activities = ['Preparing ingestion pipeline...', 'Checking cache status...'];
+    }
+
+    await agentService.addHistoryItem(selectedAgent.id, {
+      action: actionName,
+      details,
+      status,
+      prompt,
+      options,
+      activities
+    });
+    
+    const data = await agentService.getAgents();
+    setAgents(data);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
+      </div>
+    );
+  }
+
   return (
-    <div className={`${compact ? 'max-w-full' : 'max-w-5xl mx-auto'} py-4`}>
-      <div className={compact ? 'sticky top-[-24px] z-20 bg-[var(--bg)]/95 backdrop-blur-sm py-4 mb-6 border-b border-[var(--border)] -mx-6 px-6' : ''}>
-        <Stepper 
-          steps={steps.map(s => ({ title: s.title }))} 
-          currentStep={currentStepIndex} 
-        />
+    <div className={`${compact ? 'max-w-full flex-col' : 'max-w-6xl mx-auto flex-col md:flex-row h-full'} py-4 flex gap-6`}>
+      {/* Sidebar - Agent List */}
+      <div className={`flex ${compact ? 'flex-row overflow-x-auto pb-2 border-b border-[var(--border)]' : 'flex-col md:w-64'} gap-2 shrink-0`}>
+        {agents.map(agent => (
+          <button
+            key={agent.id}
+            onClick={() => setSelectedAgentId(agent.id)}
+            className={`
+              flex items-center gap-3 p-3 rounded-xl transition-all text-left whitespace-nowrap
+              ${selectedAgentId === agent.id 
+                ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20' 
+                : 'bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]'}
+              ${compact ? 'flex-1 justify-center min-w-[140px]' : ''}
+            `}
+          >
+            <div className={`
+              w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+              ${selectedAgentId === agent.id ? 'bg-white/20' : 'bg-[var(--accent)]/10 text-[var(--accent)]'}
+            `}>
+              {getIcon(agent.icon)}
+            </div>
+            <div className={`flex-1 min-w-0 ${compact ? 'block' : 'hidden md:block'}`}>
+              <div className="font-bold text-sm truncate">{agent.name}</div>
+              <div className={`text-[10px] truncate ${selectedAgentId === agent.id ? 'text-white/80' : 'text-[var(--text-secondary)]'}`}>
+                {agent.history.length} activities
+              </div>
+            </div>
+          </button>
+        ))}
       </div>
 
-      <div className={`grid grid-cols-1 ${compact ? '' : 'lg:grid-cols-3'} gap-8 ${compact ? 'mt-4' : 'mt-12'}`}>
-        <div className={`${compact ? 'col-span-1' : 'lg:col-span-2'} space-y-6`}>
-          <Card className={`border-[var(--border)] shadow-xl overflow-hidden ${compact ? 'bg-transparent border-none shadow-none' : ''}`}>
-            {!compact && (
-              <CardHeader className="bg-[var(--surface)]/50 p-6 border-b border-[var(--border)]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20">
-                      {getIcon(currentStep.id)}
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold">{currentStep.agentName}</h2>
-                      <p className="text-sm text-[var(--text-secondary)]">{currentStep.description}</p>
-                    </div>
+      {/* Main Content - Agent History & Actions */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {selectedAgent && (
+          <Card className={`flex-1 flex flex-col border-[var(--border)] shadow-xl overflow-hidden bg-[var(--surface)]/50 ${compact ? 'border-none shadow-none bg-transparent' : ''}`}>
+            <CardHeader className={`${compact ? 'px-0 pt-2 pb-4' : 'bg-[var(--surface)] p-6 border-b border-[var(--border)]'} shrink-0`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20">
+                    {getIcon(selectedAgent.icon)}
                   </div>
-                  <Badge 
-                    variant={currentStep.status === 'completed' ? 'primary' : 'outline'}
-                    className={currentStep.status === 'processing' ? 'animate-pulse' : ''}
-                  >
-                    {currentStep.status.replace('_', ' ')}
-                  </Badge>
+                  <div>
+                    <h2 className="text-xl font-bold">{selectedAgent.name}</h2>
+                    <p className="text-sm text-[var(--text-secondary)]">{selectedAgent.description}</p>
+                  </div>
                 </div>
-              </CardHeader>
-            )}
-            <CardContent className={compact ? 'p-0' : 'p-8'}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">
-                    {currentStep.agentName} Activity
-                  </h4>
-                  {compact && (
-                    <Badge variant="outline" className="text-[10px] animate-pulse">
-                      {currentStep.status.replace('_', ' ')}
-                    </Badge>
-                  )}
-                </div>
-                <div className={`space-y-3 font-mono text-sm bg-[var(--bg)]/50 p-6 rounded-2xl border border-[var(--border)] ${compact ? 'min-h-[150px]' : 'min-h-[200px]'}`}>
-                  {currentStep.activities.slice(0, activityIndex + 1).map((activity, i) => (
-                    <motion.div
-                      key={activity}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-3"
-                    >
-                      {i === activityIndex && currentStep.status === 'processing' ? (
-                        <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      )}
-                      <span className={i === activityIndex ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}>
-                        {activity}
-                      </span>
-                    </motion.div>
-                  ))}
-                </div>
+                <Button onClick={handleNewAction} className="shrink-0">
+                  <Play className="w-4 h-4 mr-2" />
+                  New Task
+                </Button>
               </div>
-
-              <AnimatePresence>
-                {currentStep.status === 'awaiting_input' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`mt-8 p-6 rounded-3xl bg-[var(--accent)]/5 border-2 border-dashed border-[var(--accent)]/20`}
+            </CardHeader>
+            
+            <CardContent className={`flex-1 ${compact ? 'px-0 overflow-visible' : 'overflow-y-auto p-6'} space-y-6`}>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
+                Activity History
+              </h3>
+              
+              <AnimatePresence mode="popLayout">
+                {selectedAgent.history.length === 0 ? (
+                  <motion.div 
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-2xl"
                   >
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 rounded-lg bg-[var(--accent)] text-white">
-                        <MessageSquare className="w-4 h-4" />
-                      </div>
-                      <h3 className="font-bold text-md">{currentStep.question}</h3>
-                    </div>
-                    <div className={`grid ${compact ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
-                      {currentStep.options?.map((option) => (
-                        <Button
-                          key={option}
-                          variant="outline"
-                          onClick={() => handleOptionSelect(option)}
-                          className="justify-start h-auto py-3 px-4 text-left hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 group"
-                        >
-                          <span className="font-bold group-hover:text-[var(--accent)] transition-colors text-sm">{option}</span>
-                        </Button>
-                      ))}
-                    </div>
+                    <Clock className="w-8 h-8 text-[var(--text-secondary)] mx-auto mb-3 opacity-50" />
+                    <p className="text-[var(--text-secondary)]">No history found for this agent.</p>
                   </motion.div>
+                ) : (
+                  selectedAgent.history.map((item) => (
+                    <HistoryItemCard 
+                      key={item.id} 
+                      item={item} 
+                      agent={selectedAgent} 
+                      onAction={handleAction} 
+                      onForward={forwardToNextAgent} 
+                    />
+                  ))
                 )}
               </AnimatePresence>
             </CardContent>
           </Card>
-        </div>
-
-        {!compact && (
-          <div className="lg:sticky lg:top-28">
-           <div className="relative">
-            <div className="bg-[var(--surface)] border border-[var(--border)] p-6 rounded-3xl shadow-2xl relative mb-8">
-              <div className="absolute -left-2 top-10 w-4 h-4 bg-[var(--surface)] border-l border-b border-[var(--border)] rotate-45 hidden lg:block" />
-              
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-4 h-4 text-[var(--accent)]" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">Dataor Assistant</span>
-              </div>
-              
-              <h4 className="font-bold text-lg mb-2">
-                {currentStep.status === 'processing' ? 'Processing...' : 'Action Required'}
-              </h4>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                {currentStep.status === 'processing' 
-                  ? `I'm currently working with the ${currentStep.agentName} to set up your environment. This usually takes a few seconds.`
-                  : `The ${currentStep.agentName} has finished its task, but it needs your input to proceed optimally.`}
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                <ThreeAvatar />
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-[var(--bg)] flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-white animate-ping" />
-                </div>
-              </div>
-              <div className="mt-4 text-center">
-                <h5 className="font-bold">Dataor AI</h5>
-                <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest">Workflow Orchestrator</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );

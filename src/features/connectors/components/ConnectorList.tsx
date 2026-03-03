@@ -1,59 +1,9 @@
 import { Connector } from '../types';
 import { ConnectorCard } from './ConnectorCard';
 import { Input } from '@/src/ui-kit';
-import { Search, Filter } from 'lucide-react';
-import { useState } from 'react';
-
-const MOCK_CONNECTORS: Connector[] = [
-  {
-    id: '1',
-    name: 'Postgres',
-    description: 'Connect your Postgres data for instant AI analysis',
-    type: 'Database',
-    icon: 'database',
-    status: 'disconnected',
-  },
-  {
-    id: '2',
-    name: 'BigQuery',
-    description: 'Connect your BigQuery data for instant AI analysis',
-    type: 'Data Warehouse',
-    icon: 'server',
-    status: 'connected',
-  },
-  {
-    id: '3',
-    name: 'Snowflake',
-    description: 'Connect your Snowflake data for instant AI analysis',
-    type: 'Data Warehouse',
-    icon: 'server',
-    status: 'disconnected',
-  },
-  {
-    id: '4',
-    name: 'Slack',
-    description: 'Connect your Slack workspace to receive reports and insights',
-    type: 'Integration',
-    icon: 'share-2',
-    status: 'connected',
-  },
-  {
-    id: '5',
-    name: 'MySQL',
-    description: 'Connect your MySQL data for instant AI analysis',
-    type: 'Database',
-    icon: 'database',
-    status: 'disconnected',
-  },
-  {
-    id: '6',
-    name: 'Google Drive',
-    description: 'Analyze your Google Drive files and folders',
-    type: 'Integration',
-    icon: 'share-2',
-    status: 'disconnected',
-  },
-];
+import { Search, Filter, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { connectorService } from '@/src/services/connector.service';
 
 interface ConnectorListProps {
   onSelect?: (connector: Connector) => void;
@@ -61,8 +11,29 @@ interface ConnectorListProps {
 
 export const ConnectorList = ({ onSelect }: ConnectorListProps) => {
   const [search, setSearch] = useState('');
+  const [connectors, setConnectors] = useState<Connector[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = MOCK_CONNECTORS.filter(c => 
+  useEffect(() => {
+    const fetchConnectors = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await connectorService.getConnectors();
+        setConnectors(data);
+      } catch (err) {
+        setError('Failed to load connectors. Please try again.');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConnectors();
+  }, []);
+
+  const filtered = connectors.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.type.toLowerCase().includes(search.toLowerCase())
   );
@@ -91,20 +62,32 @@ export const ConnectorList = ({ onSelect }: ConnectorListProps) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((connector) => (
-          <ConnectorCard 
-            key={connector.id} 
-            connector={connector} 
-            onClick={onSelect}
-          />
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-20 border-2 border-dashed border-[var(--border)] rounded-2xl">
-          <p className="text-[var(--text-secondary)]">No connectors found matching your search.</p>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
         </div>
+      ) : error ? (
+        <div className="text-center py-20 border-2 border-dashed border-red-200 rounded-2xl bg-red-50">
+          <p className="text-red-500">{error}</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((connector) => (
+              <ConnectorCard 
+                key={connector.id} 
+                connector={connector} 
+                onClick={onSelect}
+              />
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <div className="text-center py-20 border-2 border-dashed border-[var(--border)] rounded-2xl">
+              <p className="text-[var(--text-secondary)]">No connectors found matching your search.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

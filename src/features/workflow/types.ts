@@ -15,3 +15,22 @@ export interface WorkflowState {
   currentStepIndex: number;
   steps: WorkflowStep[];
 }
+
+export interface AgentHistoryItem {
+  id: string;
+  date: string;
+  action: string;
+  details: string;
+  status: 'completed' | 'pending_input' | 'processing';
+  prompt?: string;
+  options?: string[];
+  activities?: string[];
+}
+
+export interface AgentData {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  history: AgentHistoryItem[];
+}

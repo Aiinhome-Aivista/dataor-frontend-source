@@ -5,12 +5,12 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   /* Theme 1: Modern Dark (Default) */
-  --color-bg-default: #0a0a0a;
-  --color-surface-default: #171717;
-  --color-surface-hover-default: #262626;
-  --color-border-default: #262626;
-  --color-text-primary-default: #ffffff;
-  --color-text-secondary-default: #a3a3a3;
+  --color-bg-default: #ffffff;
+  --color-surface-default: #ffffff;
+  --color-surface-hover-default: #f8fafc;
+  --color-border-default: #f1f5f9;
+  --color-text-primary-default: #0f172a;
+  --color-text-secondary-default: #475569;
   --color-accent-default: #3b82f6;
   --color-accent-hover-default: #2563eb;
 

@@ -2,12 +2,58 @@ import { useChat } from '../hooks/useChat';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { Card, CardContent, CardHeader, CardFooter, Badge, Button } from '@/src/ui-kit';
-import { MessageSquare, Sparkles, MoreVertical, Database, Plus, ArrowRight } from 'lucide-react';
+import { MessageSquare, Sparkles, MoreVertical, Database, Plus, ArrowRight, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AgentWorkflow } from '../../workflow/components/AgentWorkflow';
+import { useState, useEffect } from 'react';
+import { connectorService } from '@/src/services/connector.service';
+import { Connector } from '../../connectors/types';
 
 export const ChatWindow = () => {
   const { messages, sendMessage, isLoading, scrollRef, mode, completeWorkflow, startChat, startWorkflow } = useChat();
+  const [connectors, setConnectors] = useState<Connector[]>([]);
+  const [collections, setCollections] = useState<Record<string, string[]>>({});
+  const [expandedConnector, setExpandedConnector] = useState<string | null>(null);
+  const [isLoadingConnectors, setIsLoadingConnectors] = useState(true);
+
+  useEffect(() => {
+    if (mode === 'landing') {
+      const fetchConnectors = async () => {
+        try {
+          setIsLoadingConnectors(true);
+          const data = await connectorService.getConnectors();
+          const connected = data.filter(c => c.status === 'connected');
+          setConnectors(connected);
+          
+          // Fetch collections for all connected connectors
+          const collectionsData: Record<string, string[]> = {};
+          for (const conn of connected) {
+            try {
+              const colls = await connectorService.getCollections(conn.id);
+              collectionsData[conn.id] = colls;
+            } catch (e) {
+              console.error(`Failed to fetch collections for ${conn.id}`, e);
+            }
+          }
+          setCollections(collectionsData);
+          
+          // Expand the first one by default
+          if (connected.length > 0) {
+            setExpandedConnector(connected[0].id);
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setIsLoadingConnectors(false);
+        }
+      };
+      fetchConnectors();
+    }
+  }, [mode]);
+
+  const toggleConnector = (id: string) => {
+    setExpandedConnector(prev => prev === id ? null : id);
+  };
 
   return (
     <Card className="flex flex-col h-[700px] shadow-2xl shadow-black/20 border-[var(--border)] overflow-hidden">
@@ -53,34 +99,75 @@ export const ChatWindow = () => {
                 <p className="text-[var(--text-secondary)]">To get started, select an existing data connector or set up a new one.</p>
               </div>
               
-              <div className="w-full space-y-3">
+              <div className="w-full space-y-3 text-left">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">Available Connectors</h4>
-                  <Badge variant="outline" className="text-[10px]">2 Active</Badge>
+                  <Badge variant="outline" className="text-[10px]">{connectors.length} Active</Badge>
                 </div>
-                {[
-                  { name: 'Production DB', type: 'PostgreSQL', status: 'Online' },
-                  { name: 'Sales Analytics', type: 'MySQL', status: 'Online' },
-                ].map((conn) => (
-                  <Button
-                    key={conn.name}
-                    variant="outline"
-                    className="w-full justify-between h-auto py-4 px-6 group hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 transition-all"
-                    onClick={startWorkflow}
-                  >
-                    <div className="flex flex-col items-start">
-                      <span className="font-bold group-hover:text-[var(--accent)] transition-colors">{conn.name}</span>
-                      <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-tighter">{conn.type}</span>
+                
+                {isLoadingConnectors ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
+                  </div>
+                ) : (
+                  connectors.map((conn) => (
+                    <div key={conn.id} className="border border-[var(--border)] rounded-xl overflow-hidden bg-[var(--surface)]">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between h-auto py-4 px-6 rounded-none hover:bg-[var(--surface-hover)] transition-all"
+                        onClick={() => toggleConnector(conn.id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          {expandedConnector === conn.id ? (
+                            <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-[var(--text-secondary)]" />
+                          )}
+                          <div className="flex flex-col items-start">
+                            <span className="font-bold text-[var(--text-primary)]">{conn.name}</span>
+                            <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-tighter">{conn.type}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span className="text-[10px] font-bold text-emerald-500 uppercase">Online</span>
+                          </div>
+                        </div>
+                      </Button>
+                      
+                      <AnimatePresence>
+                        {expandedConnector === conn.id && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="border-t border-[var(--border)] bg-[var(--bg)]/50"
+                          >
+                            <div className="p-4 space-y-2">
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-3 px-2">Collections / Tables</div>
+                              {collections[conn.id] ? (
+                                collections[conn.id].map(collection => (
+                                  <Button
+                                    key={collection}
+                                    variant="ghost"
+                                    className="w-full justify-between h-10 px-4 text-sm hover:bg-[var(--accent)]/5 hover:text-[var(--accent)] group"
+                                    onClick={startWorkflow}
+                                  >
+                                    <span className="font-medium text-[var(--text-secondary)] group-hover:text-[var(--accent)]">{collection}</span>
+                                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--accent)]" />
+                                  </Button>
+                                ))
+                              ) : (
+                                <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">Loading collections...</div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span className="text-[10px] font-bold text-emerald-500 uppercase">{conn.status}</span>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors" />
-                    </div>
-                  </Button>
-                ))}
+                  ))
+                )}
                 
                 <Button 
                   className="w-full h-auto py-4 rounded-xl mt-6 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white font-bold shadow-lg shadow-[var(--accent)]/20"
@@ -108,6 +195,12 @@ export const ChatWindow = () => {
               animate={{ opacity: 1 }}
               className="space-y-4"
             >
+              <div className="flex justify-end mb-4">
+                <Button variant="outline" size="sm" onClick={() => startWorkflow()}>
+                  <Database className="w-4 h-4 mr-2" />
+                  Agent Dashboard
+                </Button>
+              </div>
               {messages.map((msg) => (
                 <ChatMessage key={msg.id} message={msg} />
               ))}

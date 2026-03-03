@@ -4,7 +4,7 @@ import { ChatWindow } from './features/chat';
 import { AgentWorkflow } from './features/workflow';
 import { LandingPage } from './features/marketing/LandingPage';
 import { LoginPage } from './features/auth/LoginPage';
-import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus } from 'lucide-react';
+import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 
@@ -91,6 +91,7 @@ function AppContent() {
           {[
             { icon: MessageSquare, label: 'Chat Assistant', id: 'chat' as Tab },
             { icon: Database, label: 'Data Connectors', id: 'connectors' as Tab },
+            { icon: Sparkles, label: 'Agent Orchestration', id: 'workflow' as Tab },
             { icon: Settings, label: 'Settings', id: 'settings' },
           ].map((item) => (
             <button
@@ -199,6 +200,7 @@ function AppContent() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
+                className="h-[calc(100vh-12rem)]"
               >
                 <AgentWorkflow onComplete={handleWorkflowComplete} />
               </motion.div>
