@@ -5,6 +5,7 @@ class AgentService {
     {
       id: 'connect',
       name: 'Connection Agent',
+      historyName: 'Connection',
       icon: 'database',
       description: 'Establishing secure link to database',
       history: [
@@ -33,6 +34,7 @@ class AgentService {
     {
       id: 'ingest',
       name: 'Collection Agent',
+      historyName: 'Collection',
       icon: 'server',
       description: 'Fetching and storing remote data',
       history: [
@@ -61,6 +63,7 @@ class AgentService {
     {
       id: 'analyze',
       name: 'Analysis Agent',
+       historyName:'Analysis',
       icon: 'bar-chart',
       description: 'Generating insights and visuals',
       history: [
@@ -76,6 +79,7 @@ class AgentService {
     {
       id: 'query',
       name: 'Query Agent',
+      historyName: 'Query',
       icon: 'message-square',
       description: 'Ready to answer your questions',
       history: [

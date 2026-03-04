@@ -519,10 +519,10 @@ export const AgentWorkflow = ({ onComplete, compact = false, defaultAgentId = 'c
                     <p className="text-sm text-[var(--text-secondary)]">{selectedAgent.description}</p>
                   </div>
                 </div>
-                <Button onClick={handleNewAction} className="shrink-0">
+                {/* <Button onClick={handleNewAction} className="shrink-0">
                   <Play className="w-4 h-4 mr-2" />
                   New Task
-                </Button>
+                </Button> */}
               </div>
             </CardHeader>
             
@@ -571,8 +571,28 @@ export const AgentWorkflow = ({ onComplete, compact = false, defaultAgentId = 'c
                 </div>
               )}
 
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
-                {selectedAgent.name} History
+        
+
+              {selectedAgent.id === 'connect' && (
+                <div className="pt-0 ">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold">Available Connectors</h3>
+                      <p className="text-sm text-[var(--text-secondary)]">Choose from our list of supported data sources</p>
+                    </div>
+                    {onNewConnector && (
+                      <Button variant="outline" size="sm" onClick={onNewConnector}>
+                        <Play className="w-4 h-4 mr-2" />
+                        Custom Connection
+                      </Button>
+                    )}
+                  </div>
+                  <ConnectorList onSelect={onSelectConnector} />
+                </div>
+              )}
+
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
+                {selectedAgent.historyName} History
               </h3>
               
               <AnimatePresence mode="popLayout">
@@ -596,24 +616,6 @@ export const AgentWorkflow = ({ onComplete, compact = false, defaultAgentId = 'c
                   ))
                 )}
               </AnimatePresence>
-
-              {selectedAgent.id === 'connect' && (
-                <div className="mt-12 pt-8 border-t border-[var(--border)]">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h3 className="text-lg font-bold">Available Connectors</h3>
-                      <p className="text-sm text-[var(--text-secondary)]">Choose from our list of supported data sources</p>
-                    </div>
-                    {onNewConnector && (
-                      <Button variant="outline" size="sm" onClick={onNewConnector}>
-                        <Play className="w-4 h-4 mr-2" />
-                        Custom Connection
-                      </Button>
-                    )}
-                  </div>
-                  <ConnectorList onSelect={onSelectConnector} />
-                </div>
-              )}
             </CardContent>
           </Card>
         )}

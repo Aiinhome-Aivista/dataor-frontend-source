@@ -40,7 +40,7 @@ export const ConnectorList = ({ onSelect }: ConnectorListProps) => {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row gap-4 items-end justify-between">
+      {/* <div className="flex flex-col md:flex-row gap-4 items-end justify-between">
         <div className="w-full md:max-w-md">
           <Input 
             label="Search Connectors"
@@ -60,7 +60,7 @@ export const ConnectorList = ({ onSelect }: ConnectorListProps) => {
             Filter
           </button>
         </div>
-      </div>
+      </div> */}
 
       {isLoading ? (
         <div className="flex justify-center items-center py-20">

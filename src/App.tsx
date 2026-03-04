@@ -114,10 +114,11 @@ function AppContent() {
 
         <nav className="flex-1 px-4 space-y-2 mt-4">
           {[
-            { icon: MessageSquare, label: 'Chat Agent', id: 'chat' as Tab },
+         
             { icon: Database, label: 'Connection Agent', id: 'connectors' as Tab },
             { icon: Sparkles, label: 'Collection Agent', id: 'collection' as Tab },
             { icon: BarChart3, label: 'Analysis Agent', id: 'analysis' as Tab },
+               { icon: MessageSquare, label: 'Chat Agent', id: 'chat' as Tab },
             { icon: Settings, label: 'Settings', id: 'settings' },
           ].map((item) => (
             <button

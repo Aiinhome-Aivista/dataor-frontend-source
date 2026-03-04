@@ -32,6 +32,7 @@ export interface AgentHistoryItem {
 export interface AgentData {
   id: string;
   name: string;
+  historyName: string;
   icon: string;
   description: string;
   history: AgentHistoryItem[];
