@@ -7,6 +7,7 @@ import { LoginPage } from './features/auth/LoginPage';
 import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
+import { agentService } from './services/agent.service';
 
 type Tab = 'connectors' | 'chat' | 'new-connector' | 'workflow';
 type ViewMode = 'landing' | 'login' | 'app';
@@ -39,7 +40,21 @@ function AppContent() {
     setActiveTab('connectors');
   };
 
-  const handleStartWorkflow = () => {
+  const handleStartWorkflow = async (connectionName?: string) => {
+    const name = connectionName || 'New Connection';
+    // Add the new connection to the agent history
+    await agentService.addHistoryItem('connect', {
+      action: `Connected to ${name}`,
+      details: 'Connection established successfully.',
+      status: 'completed',
+      activities: [
+        'Verifying credentials...',
+        'Establishing SSL tunnel...',
+        'Handshaking with database...',
+        'Mapping schema structures...'
+      ]
+    });
+    
     setActiveTab('workflow');
   };
 

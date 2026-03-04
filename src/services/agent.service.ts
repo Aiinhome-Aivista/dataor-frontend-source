@@ -13,15 +13,13 @@ class AgentService {
           date: '2026-03-03T08:30:00Z',
           action: 'Reconnected to Sales Analytics',
           details: 'MySQL connection established successfully.',
-          status: 'pending_input',
+          status: 'completed',
           activities: [
             'Verifying credentials...',
             'Establishing SSL tunnel...',
             'Handshaking with MySQL...',
             'Mapping schema structures...'
-          ],
-          prompt: 'New table "user_activity_logs" found on the database. Do you want to fetch the new table?',
-          options: ['Fetch New Table', 'Ignore', 'Select Specific Tables']
+          ]
         },
         {
           id: 'h1',
@@ -43,15 +41,13 @@ class AgentService {
           date: '2026-03-03T08:35:00Z',
           action: 'Ingesting Sales Analytics',
           details: 'Checking for new data...',
-          status: 'pending_input',
+          status: 'completed',
           activities: [
             'Streaming rows...',
             'Normalizing data types...',
             'Indexing primary keys...',
             'Storing on local cache...'
-          ],
-          prompt: 'New 2k data rows found. Do you want to replace the whole data or only get new data?',
-          options: ['Replace Whole Data', 'Get New Data Only', 'Skip']
+          ]
         },
         {
           id: 'h3',
@@ -95,7 +91,9 @@ class AgentService {
   ];
 
   async getAgents(): Promise<AgentData[]> {
-    return new Promise(resolve => setTimeout(() => resolve(this.agents), 500));
+    return new Promise(resolve => setTimeout(() => resolve(
+      this.agents.map(agent => ({ ...agent, history: [...agent.history] }))
+    ), 500));
   }
 
   async getAgentHistory(agentId: string): Promise<AgentHistoryItem[]> {

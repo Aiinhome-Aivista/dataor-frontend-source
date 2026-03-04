@@ -211,17 +211,25 @@ export const AgentWorkflow = ({ onComplete, compact = false }: AgentWorkflowProp
         nextActivities = ['Loading embeddings into memory...', 'Warming up query engine...', 'Ready for chat.'];
       }
 
-      await agentService.addHistoryItem(nextAgentId, {
+      const newItem = await agentService.addHistoryItem(nextAgentId, {
         action: nextAction,
         details: nextDetails,
-        status: 'pending_input',
-        prompt: nextPrompt,
-        options: nextOptions,
+        status: 'processing',
         activities: nextActivities
       });
 
       setSelectedAgentId(nextAgentId);
       setAgents(await agentService.getAgents());
+
+      const processingTime = (nextActivities?.length || 2) * 1000 + 500;
+      setTimeout(async () => {
+        await agentService.updateHistoryItem(nextAgentId, newItem.id, {
+          status: 'pending_input',
+          prompt: nextPrompt,
+          options: nextOptions
+        });
+        setAgents(await agentService.getAgents());
+      }, processingTime);
     } else if (currentAgentId === 'query') {
       onComplete();
     }
@@ -262,36 +270,74 @@ export const AgentWorkflow = ({ onComplete, compact = false }: AgentWorkflowProp
     
     let actionName = 'New Task';
     let details = 'Starting new task...';
-    let status: 'completed' | 'pending_input' | 'processing' = 'processing';
-    let prompt = undefined;
-    let options = undefined;
-    let activities = undefined;
+    let prompt: string | undefined = undefined;
+    let options: string[] | undefined = undefined;
+    let activities: string[] | undefined = undefined;
 
     if (selectedAgent.id === 'connect') {
-      actionName = 'New Connection';
-      status = 'pending_input';
-      prompt = 'Select connection type:';
-      options = ['PostgreSQL', 'MySQL', 'MongoDB'];
-      activities = ['Initializing connection protocol...', 'Scanning available drivers...'];
+      actionName = 'Reconnecting to Sales Analytics';
+      details = 'Establishing secure link...';
+      prompt = 'New table "user_activity_logs" found on the database. Do you want to fetch the new table?';
+      options = ['Fetch New Table', 'Ignore', 'Select Specific Tables'];
+      activities = [
+        'Verifying credentials...',
+        'Establishing SSL tunnel...',
+        'Handshaking with MySQL...',
+        'Mapping schema structures...'
+      ];
     } else if (selectedAgent.id === 'ingest') {
-      actionName = 'Data Ingestion';
-      status = 'pending_input';
-      prompt = 'Select sync frequency:';
-      options = ['Real-time', 'Hourly', 'Daily'];
-      activities = ['Preparing ingestion pipeline...', 'Checking cache status...'];
+      actionName = 'Ingesting Sales Analytics';
+      details = 'Checking for new data...';
+      prompt = 'New 2k data rows found. Do you want to replace the whole data or only get new data?';
+      options = ['Replace Whole Data', 'Get New Data Only', 'Skip'];
+      activities = [
+        'Streaming rows...',
+        'Normalizing data types...',
+        'Indexing primary keys...',
+        'Storing on local cache...'
+      ];
+    } else if (selectedAgent.id === 'analyze') {
+      actionName = 'Analyzing Dataset';
+      details = 'Running statistical models...';
+      prompt = 'Analysis complete. Do you want to generate a summary report?';
+      options = ['Generate Report', 'Skip'];
+      activities = [
+        'Loading data into memory...',
+        'Running anomaly detection...',
+        'Calculating key metrics...',
+        'Generating embeddings...'
+      ];
+    } else if (selectedAgent.id === 'query') {
+      actionName = 'Preparing Query Engine';
+      details = 'Warming up models...';
+      prompt = 'Query engine is ready. What would you like to know?';
+      options = ['Show me revenue trends', 'Any anomalies?', 'Summarize data'];
+      activities = [
+        'Loading embeddings...',
+        'Initializing LLM context...',
+        'Ready for queries.'
+      ];
     }
 
-    await agentService.addHistoryItem(selectedAgent.id, {
+    const newItem = await agentService.addHistoryItem(selectedAgent.id, {
       action: actionName,
       details,
-      status,
-      prompt,
-      options,
+      status: 'processing',
       activities
     });
     
-    const data = await agentService.getAgents();
-    setAgents(data);
+    setAgents(await agentService.getAgents());
+
+    // Simulate processing time before asking for input
+    const processingTime = (activities?.length || 2) * 1000 + 500;
+    setTimeout(async () => {
+      await agentService.updateHistoryItem(selectedAgent.id, newItem.id, {
+        status: 'pending_input',
+        prompt,
+        options
+      });
+      setAgents(await agentService.getAgents());
+    }, processingTime);
   };
 
   if (isLoading) {

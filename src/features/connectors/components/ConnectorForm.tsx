@@ -47,7 +47,7 @@ const GUIDES: Record<string, FieldGuide> = {
 interface ConnectorFormProps {
   onBack: () => void;
   connector?: Connector | null;
-  onTestSuccess?: () => void;
+  onTestSuccess?: (connectionName: string) => void;
 }
 
 export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFormProps) => {
@@ -70,7 +70,7 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
     // Simulate successful test
     setTimeout(() => {
       setIsTesting(false);
-      onTestSuccess?.();
+      onTestSuccess?.(formData.name);
     }, 1500);
   };
 
