@@ -18,6 +18,8 @@ import {
   Linkedin
 } from 'lucide-react';
 import { Button, Badge } from '@/src/ui-kit';
+import image1 from '@/src/asset/images/landing1.jpg';
+import image2 from '@/src/asset/images/landing2.jpg';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -138,7 +140,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
             className="relative mt-16 rounded-2xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-50 p-2"
           >
             <img 
-              src="https://picsum.photos/seed/dataor-dashboard/1600/900" 
+              src={image1}
               alt="Dataor Dashboard" 
               className="rounded-xl w-full h-auto shadow-inner"
               referrerPolicy="no-referrer"
@@ -236,7 +238,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
           </div>
           <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-200">
             <img 
-              src="https://picsum.photos/seed/chat-data/800/600" 
+              src={image2}
               alt="Chat with data" 
               className="w-full h-auto"
               referrerPolicy="no-referrer"
@@ -251,9 +253,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm italic text-slate-700">
             "I'm big on data analysis (spreadsheets DAU!), but often find myself frustrated by errors and slowness in trying to even analyze a basic spreadsheet in ChatGPT. Dataor is good at this, and has only gotten better over time. It's both very reliable, and can generate helpful ideas for extra analysis as well as visualizations."
             <div className="mt-6 flex items-center gap-3 not-italic">
-              <div className="w-10 h-10 rounded-full bg-slate-200" />
+              <div className="w-10 h-10 rounded-full bg-slate-200" >
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSaMD1wXeLS4UbiMsMuHrlOL4pPIAlhYZZlYg&s" alt="Person" />
+              </div>
               <div>
-                <p className="font-bold text-sm">Olivia Moore</p>
+                <p className="font-bold text-sm">Alex Moore</p>
                 <p className="text-xs text-slate-500">AI Partner, Andreessen Horowitz</p>
               </div>
             </div>
@@ -261,7 +265,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm italic text-slate-700">
             "Dataor.ai completely changed how I approach growth. I can analyze multiple datasets at once and turn them into insights for customer acquisition, retention, and marketing campaigns, all without waiting on engineering or hiring data analysts. I've used it at two companies now, and it's saved us hours while helping us make smarter decisions every day."
             <div className="mt-6 flex items-center gap-3 not-italic">
-              <div className="w-10 h-10 rounded-full bg-slate-200" />
+              <div className="w-10 h-10 rounded-full bg-slate-200" >
+                <img src="https://cdn.prod.website-files.com/6411878c9450fd34ae2ad846/66f41ff7bad31e6491271fec_2.png" alt="Person" />
+              </div>
               <div>
                 <p className="font-bold text-sm">Amit Goalia</p>
                 <p className="text-xs text-slate-500">Head of Growth, HomeFromCollege</p>
