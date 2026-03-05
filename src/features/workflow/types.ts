@@ -27,6 +27,7 @@ export interface AgentHistoryItem {
   activities?: string[];
   customInputType?: 'table_selection';
   customInputData?: any;
+  connectionName?: string;
 }
 
 export interface AgentData {

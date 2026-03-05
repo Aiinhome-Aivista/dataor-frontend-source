@@ -39,8 +39,8 @@ export const ConnectorList = ({ onSelect }: ConnectorListProps) => {
   );
 
   return (
-    <div className="space-y-8">
-      {/* <div className="flex flex-col md:flex-row gap-4 items-end justify-between">
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row gap-3 items-end justify-between">
         <div className="w-full md:max-w-md">
           <Input 
             label="Search Connectors"
@@ -55,24 +55,24 @@ export const ConnectorList = ({ onSelect }: ConnectorListProps) => {
         </div>
         
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-sm font-medium hover:bg-[var(--surface-hover)] transition-colors">
-            <Filter className="w-4 h-4" />
+          <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium hover:bg-[var(--surface-hover)] transition-colors">
+            <Filter className="w-3 h-3" />
             Filter
           </button>
         </div>
-      </div> */}
+      </div> */
 
       {isLoading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
         </div>
       ) : error ? (
-        <div className="text-center py-20 border-2 border-dashed border-red-200 rounded-2xl bg-red-50">
-          <p className="text-red-500">{error}</p>
+        <div className="text-center py-10 border-2 border-dashed border-red-200 rounded-xl bg-red-50">
+          <p className="text-red-500 text-sm">{error}</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((connector) => (
               <ConnectorCard 
                 key={connector.id} 

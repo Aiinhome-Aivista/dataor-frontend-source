@@ -70,12 +70,6 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
     setIsTesting(true);
     // Simulate successful test
     setTimeout(async () => {
-      await connectorService.addConnector({
-        name: formData.name || 'New Connection',
-        description: `Connected to ${formData.host || 'database'}`,
-        type: 'Database',
-        icon: 'database'
-      });
       setIsTesting(false);
       onTestSuccess?.(formData.name);
     }, 1500);

@@ -4,7 +4,6 @@ import { ChatInput } from './ChatInput';
 import { Card, CardContent, CardHeader, CardFooter, Badge, Button } from '@/src/ui-kit';
 import { MessageSquare, Sparkles, MoreVertical, Database, Plus, ArrowRight, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { AgentWorkflow } from '../../workflow/components/AgentWorkflow';
 import { useState, useEffect } from 'react';
 import { connectorService } from '@/src/services/connector.service';
 import { Connector } from '../../connectors/types';
@@ -12,10 +11,17 @@ import { Connector } from '../../connectors/types';
 interface ChatWindowProps {
   initialMode?: ChatMode;
   onNewConnector?: () => void;
+  initialMessage?: string;
+  suggestedQuestions?: string[];
 }
 
-export const ChatWindow = ({ initialMode = 'landing', onNewConnector }: ChatWindowProps) => {
-  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat } = useChat(initialMode);
+export const ChatWindow = ({ 
+  initialMode = 'landing', 
+  onNewConnector, 
+  initialMessage,
+  suggestedQuestions = []
+}: ChatWindowProps) => {
+  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat } = useChat(initialMode, initialMessage);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [isLoadingConnectors, setIsLoadingConnectors] = useState(true);
 
@@ -38,31 +44,34 @@ export const ChatWindow = ({ initialMode = 'landing', onNewConnector }: ChatWind
   }, [mode]);
 
   return (
-    <Card className="flex flex-col h-[700px] shadow-2xl shadow-black/20 border-[var(--border)] overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between py-4 px-6 bg-[var(--surface)]/50 backdrop-blur-sm border-b border-[var(--border)] relative z-30">
+    <Card className="flex flex-col h-full shadow-2xl shadow-black/20 border-[var(--border)] overflow-hidden bg-[var(--surface)]/30 backdrop-blur-xl">
+      <CardHeader className="flex flex-row items-center justify-between py-3 px-6 bg-[var(--surface)]/80 backdrop-blur-md border-b border-[var(--border)] relative z-30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20">
+          <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20 shadow-inner">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-sm">Dataor AI Assistant</h3>
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Online</span>
+            <h3 className="font-black text-base tracking-tight">Dataor AI Assistant</h3>
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-[0.2em] font-black">Active Session</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">v1.0 Lite</Badge>
-          <button className="p-2 rounded-lg hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] transition-colors">
-            <MoreVertical className="w-4 h-4" />
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="px-3 py-1 font-mono text-[10px] border-[var(--accent)]/30 text-[var(--accent)]">AGENT_V2.4</Badge>
+          <button className="p-2.5 rounded-xl hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] transition-all hover:text-[var(--text-primary)]">
+            <MoreVertical className="w-5 h-5" />
           </button>
         </div>
       </CardHeader>
 
       <CardContent 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-6 scroll-smooth space-y-2 bg-[var(--bg)]/30 relative"
+        className="flex-1 overflow-y-auto p-4 scroll-smooth space-y-4 bg-[var(--bg)]/10 relative"
       >
         <AnimatePresence mode="wait">
           {mode === 'landing' ? (
@@ -179,10 +188,31 @@ export const ChatWindow = ({ initialMode = 'landing', onNewConnector }: ChatWind
         </AnimatePresence>
       </CardContent>
 
-      <CardFooter className="p-4 bg-[var(--surface)]/50 backdrop-blur-sm border-t border-[var(--border)]">
-        <ChatInput onSend={sendMessage} disabled={isLoading || mode !== 'chat'} />
-        <div className="mt-3 text-[10px] text-center text-[var(--text-secondary)]/60 uppercase tracking-widest font-medium">
-          {mode === 'chat' ? 'Powered by Aiinhome Technologies Pvt. Ltd' : 'Initializing Agent Environment...'}
+      <CardFooter className="p-4 bg-[var(--surface)]/80 backdrop-blur-md border-t border-[var(--border)] relative z-30">
+        <div className="w-full max-w-3xl mx-auto">
+          {mode === 'chat' && messages.length <= 1 && suggestedQuestions.length > 0 && !isLoading && (
+            <div className="flex flex-wrap gap-2 mb-4 justify-center">
+              {suggestedQuestions.map((q, i) => (
+                <motion.button
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  onClick={() => sendMessage(q)}
+                  className="px-4 py-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/40 transition-all shadow-sm flex items-center gap-2 group"
+                >
+                  <Sparkles className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                  {q}
+                </motion.button>
+              ))}
+            </div>
+          )}
+          <ChatInput onSend={sendMessage} disabled={isLoading || mode !== 'chat'} />
+          <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-[var(--text-secondary)]/60 uppercase tracking-[0.2em] font-black">
+            <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3" /> Powered by Aiinhome Technologies</span>
+            <span className="w-1 h-1 rounded-full bg-[var(--border)]" />
+            <span>Secure Data Environment</span>
+          </div>
         </div>
       </CardFooter>
     </Card>

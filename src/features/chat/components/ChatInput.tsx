@@ -19,22 +19,22 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+    <form onSubmit={handleSubmit} className="flex gap-2 items-center bg-[var(--surface)] p-1.5 rounded-xl border border-[var(--border)] shadow-inner focus-within:ring-2 focus-within:ring-[var(--accent)]/20 transition-all">
       <div className="flex-1">
         <Input
-          placeholder="Ask anything..."
+          placeholder="Ask anything about your data..."
           value={value}
           onChange={(e) => setValue(e.target.value)}
           disabled={disabled}
-          className="pr-12"
+          className="border-none bg-transparent shadow-none focus-visible:ring-0 text-sm py-4 px-3"
         />
       </div>
       <Button 
         type="submit" 
         disabled={!value.trim() || disabled}
-        className="h-[42px] w-[42px] p-0 shrink-0"
+        className="h-10 w-10 rounded-lg p-0 shrink-0 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white shadow-lg shadow-[var(--accent)]/20 transition-transform active:scale-95"
       >
-        <SendHorizontal className="w-5 h-5" />
+        <SendHorizontal className="w-4 h-4" />
       </Button>
     </form>
   );

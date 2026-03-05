@@ -32,11 +32,11 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      className={`flex ${isAssistant ? 'justify-start' : 'justify-end'} mb-4`}
+      className={`flex ${isAssistant ? 'justify-start' : 'justify-end'} mb-3`}
     >
       <div
         className={`
-          max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed
+          max-w-[85%] px-3 py-2 rounded-xl text-sm leading-relaxed
           ${isAssistant 
             ? 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-tl-none' 
             : 'bg-[var(--accent)] text-white rounded-tr-none shadow-lg shadow-[var(--accent)]/10'}

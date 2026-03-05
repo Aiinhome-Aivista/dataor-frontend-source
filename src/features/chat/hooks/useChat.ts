@@ -3,16 +3,31 @@ import { Message } from '../types';
 
 export type ChatMode = 'landing' | 'workflow' | 'chat';
 
-export const useChat = (initialMode: ChatMode = 'landing') => {
+export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: string) => {
   const [mode, setMode] = useState<ChatMode>(initialMode);
-  const [messages, setMessages] = useState<Message[]>(initialMode === 'chat' ? [
-    {
-      id: 'init-1',
-      role: 'assistant',
-      content: `Great! I've successfully connected to your data and synchronized the environment. How can I help you analyze this information today?`,
-      timestamp: new Date(),
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (initialMode !== 'chat') return [];
+    
+    const initMessages: Message[] = [
+      {
+        id: 'init-1',
+        role: 'assistant',
+        content: `Great! I've successfully connected to your data and synchronized the environment. How can I help you analyze this information today?`,
+        timestamp: new Date(),
+      }
+    ];
+
+    if (initialMessage) {
+      initMessages.push({
+        id: 'init-context',
+        role: 'user',
+        content: initialMessage,
+        timestamp: new Date(),
+      });
     }
-  ] : []);
+
+    return initMessages;
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [processingSteps, setProcessingSteps] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
