@@ -209,9 +209,9 @@ export const ChatWindow = ({
           )}
           <ChatInput onSend={sendMessage} disabled={isLoading || mode !== 'chat'} />
           <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-[var(--text-secondary)]/60 uppercase tracking-[0.2em] font-black">
-            <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3" /> Powered by Aiinhome Technologies</span>
+
             <span className="w-1 h-1 rounded-full bg-[var(--border)]" />
-            <span>Secure Data Environment</span>
+         
           </div>
         </div>
       </CardFooter>

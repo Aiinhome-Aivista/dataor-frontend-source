@@ -9,14 +9,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { agentService } from './services/agent.service';
 
-type Tab = 'connectors' | 'chat' | 'new-connector' | 'collection' | 'analysis';
+type Tab = 'chat' | 'new-connector' | 'collection' | 'analysis';
 type ViewMode = 'landing' | 'login' | 'app';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
   const [viewMode, setViewMode] = useState<ViewMode>('app');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('connectors');
+  const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [selectedConnector, setSelectedConnector] = useState<Connector | null>(null);
   const [justFinishedWorkflow, setJustFinishedWorkflow] = useState(false);
   const [initialChatMessage, setInitialChatMessage] = useState<string | undefined>(undefined);
@@ -45,7 +45,7 @@ function AppContent() {
 
   const handleStartWorkflow = async (connectionName?: string) => {
     const name = connectionName || 'New Connection';
-    
+
     // Set as active connector for the session
     setSelectedConnector({
       id: 'temp-' + Date.now(),
@@ -69,7 +69,7 @@ function AppContent() {
         'Mapping schema structures...'
       ]
     });
-    
+
     // Stay on connectors tab to show the success message and "Continue" button
     changeTab('connectors');
   };
@@ -126,7 +126,7 @@ function AppContent() {
               <span>Dataor</span>
             </motion.div>
           )}
-          <button 
+          <button
             onClick={() => setSidebarOpen(!isSidebarOpen)}
             className="p-1.5 rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
           >
@@ -136,9 +136,9 @@ function AppContent() {
 
         <nav className="flex-1 px-3 space-y-1 mt-2">
           {[
-            { icon: Database, label: 'Connection', id: 'connectors' as Tab },
-            { icon: Sparkles, label: 'Collection', id: 'collection' as Tab },
-            { icon: BarChart3, label: 'Analysis', id: 'analysis' as Tab },
+            // { icon: Database, label: 'Connection', id: 'connectors' as Tab },
+            // { icon: Sparkles, label: 'Collection', id: 'collection' as Tab },
+            // { icon: BarChart3, label: 'Analysis', id: 'analysis' as Tab },
             { icon: MessageSquare, label: 'Query', id: 'chat' as Tab },
             { icon: Settings, label: 'Settings', id: 'settings' },
           ].map((item) => (
@@ -152,7 +152,7 @@ function AppContent() {
               className={`
                 w-full flex items-center gap-2.5 p-2.5 rounded-xl transition-all duration-200
                 ${(activeTab === item.id || (activeTab === 'new-connector' && item.id === 'connectors'))
-                  ? 'bg-[var(--accent)]/10 text-[var(--accent)]' 
+                  ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
                   : 'hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
               `}
             >
@@ -167,7 +167,7 @@ function AppContent() {
         </nav>
 
         <div className="p-3 border-t border-[var(--border)] space-y-1">
-          <button 
+          <button
             onClick={handleLogout}
             className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-rose-500/10 text-[var(--text-secondary)] hover:text-rose-500 transition-all duration-200"
           >
@@ -182,28 +182,28 @@ function AppContent() {
       </motion.aside>
 
       {/* Main Content */}
-      <main 
+      <main
         className="flex-1 transition-all duration-300"
         style={{ marginLeft: isSidebarOpen ? 280 : 80 }}
       >
         <header className="h-14 border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-md sticky top-0 z-40 px-6 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold tracking-tight">
-              {activeTab === 'chat' ? 'Query' : 
-               activeTab === 'new-connector' ? 'Add Connector' : 
-               activeTab === 'collection' ? 'Collection' :
-               activeTab === 'analysis' ? 'Analysis' : 'Connection'}
+              {activeTab === 'chat' ? 'Query' :
+                activeTab === 'new-connector' ? 'Add Connector' :
+                  activeTab === 'collection' ? 'Collection' :
+                    activeTab === 'analysis' ? 'Analysis' : 'Connection'}
             </h1>
             <p className="text-sm text-[var(--text-secondary)]">
-              {activeTab === 'chat' 
-                ? 'Ask anything to analyze your data and get insights' 
+              {activeTab === 'chat'
+                ? 'Ask anything to analyze your data and get insights'
                 : activeTab === 'new-connector'
-                ? `Set up connection for ${selectedConnector?.name || 'new server'} with Dataor Guide`
-                : activeTab === 'collection'
-                ? 'Manage data ingestion and synchronization'
-                : activeTab === 'analysis'
-                ? 'Review statistical models and generated insights'
-                : 'Connect your data directly to run instant analysis'}
+                  ? `Set up connection for ${selectedConnector?.name || 'new server'} with Dataor Guide`
+                  : activeTab === 'collection'
+                    ? 'Manage data ingestion and synchronization'
+                    : activeTab === 'analysis'
+                      ? 'Review statistical models and generated insights'
+                      : 'Connect your data directly to run instant analysis'}
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -222,11 +222,11 @@ function AppContent() {
                 transition={{ duration: 0.3 }}
                 className="h-[calc(100vh-8rem)]"
               >
-                <AgentWorkflow 
+                <AgentWorkflow
                   key={`chat-${chatKey}`}
-                  onComplete={handleWorkflowComplete} 
-                  defaultAgentId="query" 
-                  onChangeTab={changeTab} 
+                  onComplete={handleWorkflowComplete}
+                  defaultAgentId="query"
+                  onChangeTab={changeTab}
                   activeConnector={selectedConnector}
                   initialChatMessage={initialChatMessage}
                 />
@@ -239,9 +239,9 @@ function AppContent() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <ConnectorForm 
-                  onBack={handleBackToConnectors} 
-                  connector={selectedConnector} 
+                <ConnectorForm
+                  onBack={handleBackToConnectors}
+                  connector={selectedConnector}
                   onTestSuccess={handleStartWorkflow}
                 />
               </motion.div>
@@ -254,9 +254,9 @@ function AppContent() {
                 transition={{ duration: 0.3 }}
                 className="h-[calc(100vh-8rem)]"
               >
-                <AgentWorkflow 
-                  onComplete={handleWorkflowComplete} 
-                  defaultAgentId="ingest" 
+                <AgentWorkflow
+                  onComplete={handleWorkflowComplete}
+                  defaultAgentId="ingest"
                   onChangeTab={changeTab}
                   activeConnector={selectedConnector}
                 />
@@ -270,9 +270,9 @@ function AppContent() {
                 transition={{ duration: 0.3 }}
                 className="h-[calc(100vh-8rem)]"
               >
-                <AgentWorkflow 
-                  onComplete={handleWorkflowComplete} 
-                  defaultAgentId="analyze" 
+                <AgentWorkflow
+                  onComplete={handleWorkflowComplete}
+                  defaultAgentId="analyze"
                   onChangeTab={changeTab}
                   onForwardWithContext={handleForwardWithContext}
                   activeConnector={selectedConnector}
@@ -287,12 +287,12 @@ function AppContent() {
                 transition={{ duration: 0.3 }}
                 className="h-[calc(100vh-8rem)]"
               >
-                <AgentWorkflow 
-                  onComplete={handleWorkflowComplete} 
-                  defaultAgentId="connect" 
-                  onChangeTab={changeTab} 
-                  onNewConnector={handleNewConnector} 
-                  onSelectConnector={handleSelectConnector} 
+                <AgentWorkflow
+                  onComplete={handleWorkflowComplete}
+                  defaultAgentId="connect"
+                  onChangeTab={changeTab}
+                  onNewConnector={handleNewConnector}
+                  onSelectConnector={handleSelectConnector}
                   activeConnector={selectedConnector}
                 />
               </motion.div>
