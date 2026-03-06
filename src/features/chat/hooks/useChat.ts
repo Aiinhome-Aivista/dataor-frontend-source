@@ -7,26 +7,26 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
   const [mode, setMode] = useState<ChatMode>(initialMode);
   const [messages, setMessages] = useState<Message[]>(() => {
     if (initialMode !== 'chat') return [];
-    
-    const initMessages: Message[] = [
-      {
-        id: 'init-1',
-        role: 'assistant',
-        content: `Great! I've successfully connected to your data and synchronized the environment. How can I help you analyze this information today?`,
-        timestamp: new Date(),
-      }
-    ];
 
-    if (initialMessage) {
-      initMessages.push({
-        id: 'init-context',
-        role: 'user',
-        content: initialMessage,
-        timestamp: new Date(),
-      });
-    }
+    // const initMessages: Message[] = [
+    //   {
+    //     id: 'init-1',
+    //     role: 'assistant',
+    //     content: `Great! I've successfully connected to your data and synchronized the environment. How can I help you analyze this information today?`,
+    //     timestamp: new Date(),
+    //   }
+    // ];
 
-    return initMessages;
+    // if (initialMessage) {
+    //   initMessages.push({
+    //     id: 'init-context',
+    //     role: 'user',
+    //     content: initialMessage,
+    //     timestamp: new Date(),
+    //   });
+    // }
+
+    return [];
   });
   const [isLoading, setIsLoading] = useState(false);
   const [processingSteps, setProcessingSteps] = useState<string[]>([]);
@@ -131,7 +131,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
         ]
       }
     };
-    
+
     setMessages((prev) => [...prev, assistantMessage]);
     setIsLoading(false);
     setProcessingSteps([]);

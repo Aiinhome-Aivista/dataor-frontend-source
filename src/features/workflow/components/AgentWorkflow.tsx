@@ -21,22 +21,22 @@ interface AgentWorkflowProps {
   initialChatMessage?: string;
 }
 
-const HistoryItemCard = ({ 
-  item, 
-  agent, 
-  onAction, 
+const HistoryItemCard = ({
+  item,
+  agent,
+  onAction,
   onForward,
   onScenarioConfirm
-}: { 
-  item: AgentHistoryItem, 
-  agent: AgentData, 
-  onAction: (item: AgentHistoryItem, option?: string) => void, 
+}: {
+  item: AgentHistoryItem,
+  agent: AgentData,
+  onAction: (item: AgentHistoryItem, option?: string) => void,
   onForward: (agentId: string, context: string, connectionName?: string) => void,
   onScenarioConfirm?: (scenario: string) => void
 }) => {
   const [activityIndex, setActivityIndex] = useState(() => {
-    return (item.status === 'pending_input' || item.status === 'completed') 
-      ? (item.activities?.length || 1) - 1 
+    return (item.status === 'pending_input' || item.status === 'completed')
+      ? (item.activities?.length || 1) - 1
       : 0;
   });
 
@@ -56,8 +56,8 @@ const HistoryItemCard = ({
     }
   }, [item.status, item.activities]);
 
-  const displayIndex = (item.status === 'pending_input' || item.status === 'completed') 
-    ? (item.activities?.length || 1) - 1 
+  const displayIndex = (item.status === 'pending_input' || item.status === 'completed')
+    ? (item.activities?.length || 1) - 1
     : activityIndex;
 
   const [tableAction, setTableAction] = useState('update');
@@ -75,9 +75,9 @@ const HistoryItemCard = ({
   };
 
   const getContinueText = (currentId: string) => {
-    if (currentId === 'connect') return 'Continue to Collection';
-    if (currentId === 'ingest') return 'Continue to Analysis';
-    if (currentId === 'analyze') return 'Continue to Query';
+    if (currentId === 'connect') return 'Continue to Import';
+    if (currentId === 'ingest') return 'Continue to Process';
+    if (currentId === 'analyze') return 'Want to know more?';
     return 'Open Query';
   };
 
@@ -96,9 +96,9 @@ const HistoryItemCard = ({
       animate={{ opacity: 1, y: 0 }}
       className={`
         p-3 rounded-xl border transition-all
-        ${item.status === 'processing' ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-lg shadow-[var(--accent)]/10' : 
-          item.status === 'pending_input' ? 'border-amber-500/50 bg-amber-500/5' : 
-          'border-[var(--border)] bg-[var(--bg)]/50'}
+        ${item.status === 'processing' ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-lg shadow-[var(--accent)]/10' :
+          item.status === 'pending_input' ? 'border-amber-500/50 bg-amber-500/5' :
+            'border-[var(--border)] bg-[var(--bg)]/50'}
       `}
     >
       <div className="flex items-start justify-between mb-3">
@@ -119,7 +119,7 @@ const HistoryItemCard = ({
           <p className="text-sm text-[var(--text-secondary)]">{item.details}</p>
         </div>
         <span className="text-[10px] font-mono text-[var(--text-secondary)] bg-[var(--surface)] px-2 py-1 rounded-md border border-[var(--border)] h-fit">
-          {new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+          {new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
 
@@ -148,10 +148,33 @@ const HistoryItemCard = ({
         </div>
       )}
 
+      {item.contextualInsights && item.contextualInsights.length > 0 && item.status === 'completed' && (
+        <div className="mt-4 bg-[var(--accent)]/5 rounded-xl border border-[var(--accent)]/20 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-[var(--accent)]" />
+            <h5 className="text-[11px] font-bold uppercase tracking-widest text-[var(--accent)]">Contextual Insights</h5>
+          </div>
+          <ul className="space-y-2">
+            {item.contextualInsights.map((insight, idx) => (
+              <motion.li
+                key={idx}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="text-sm text-[var(--text-primary)] flex items-start gap-2"
+              >
+                <div className="w-1 h-1 rounded-full bg-[var(--accent)]/50 mt-2 shrink-0" />
+                <span className="leading-relaxed">{insight}</span>
+              </motion.li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {item.status === 'completed' && (
         <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-end">
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             size="sm"
             onClick={() => onForward(agent.id, item.action, item.connectionName)}
             className="shadow-lg shadow-[var(--accent)]/20"
@@ -176,16 +199,16 @@ const HistoryItemCard = ({
                     <div key={idx} className="p-4 rounded-xl border border-[var(--border)] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                       <p className="text-sm font-medium leading-relaxed flex-1">{scenario}</p>
                       <div className="flex gap-2 shrink-0">
-                        <Button 
-                          variant="primary" 
+                        <Button
+                          variant="primary"
                           size="sm"
                           onClick={() => onScenarioConfirm?.(scenario)}
                           className="h-9 px-6"
                         >
                           {isFailed ? 'Retry' : 'Yes'}
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           className="h-9 px-6"
                         >
@@ -206,22 +229,22 @@ const HistoryItemCard = ({
                       <h5 className="text-sm font-semibold mb-3">Existing Tables Action</h5>
                       <div className="flex gap-4">
                         <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input 
-                            type="radio" 
-                            name={`tableAction-${item.id}`} 
-                            value="update" 
-                            checked={tableAction === 'update'} 
+                          <input
+                            type="radio"
+                            name={`tableAction-${item.id}`}
+                            value="update"
+                            checked={tableAction === 'update'}
                             onChange={(e) => setTableAction(e.target.value)}
                             className="text-[var(--accent)] focus:ring-[var(--accent)]"
                           />
                           Update Existing
                         </label>
                         <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input 
-                            type="radio" 
-                            name={`tableAction-${item.id}`} 
-                            value="replace" 
-                            checked={tableAction === 'replace'} 
+                          <input
+                            type="radio"
+                            name={`tableAction-${item.id}`}
+                            value="replace"
+                            checked={tableAction === 'replace'}
                             onChange={(e) => setTableAction(e.target.value)}
                             className="text-[var(--accent)] focus:ring-[var(--accent)]"
                           />
@@ -229,15 +252,15 @@ const HistoryItemCard = ({
                         </label>
                       </div>
                     </div>
-                    
+
                     {item.customInputData?.newTables && item.customInputData.newTables.length > 0 && (
                       <div>
                         <h5 className="text-sm font-semibold mb-3">New Tables Detected</h5>
                         <div className="space-y-2">
                           {item.customInputData.newTables.map((table: string) => (
                             <label key={table} className="flex items-center gap-2 text-sm cursor-pointer">
-                              <input 
-                                type="checkbox" 
+                              <input
+                                type="checkbox"
                                 checked={selectedNewTables.includes(table)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
@@ -254,10 +277,10 @@ const HistoryItemCard = ({
                         </div>
                       </div>
                     )}
-                    
+
                     <div className="flex justify-end pt-2">
-                      <Button 
-                        variant="primary" 
+                      <Button
+                        variant="primary"
                         size="sm"
                         onClick={handleTableSelectionSubmit}
                       >
@@ -276,29 +299,29 @@ const HistoryItemCard = ({
                   {item.prompt}
                 </p>
               )}
-              
+
               {item.customInputType === 'table_selection' ? (
                 <div className="space-y-6 mb-6 bg-white p-4 rounded-xl border border-[var(--border)]">
                   <div>
                     <h5 className="text-sm font-semibold mb-3">Existing Tables Action</h5>
                     <div className="flex gap-4">
                       <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input 
-                          type="radio" 
-                          name={`tableAction-${item.id}`} 
-                          value="update" 
-                          checked={tableAction === 'update'} 
+                        <input
+                          type="radio"
+                          name={`tableAction-${item.id}`}
+                          value="update"
+                          checked={tableAction === 'update'}
                           onChange={(e) => setTableAction(e.target.value)}
                           className="text-[var(--accent)] focus:ring-[var(--accent)]"
                         />
                         Update Existing
                       </label>
                       <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input 
-                          type="radio" 
-                          name={`tableAction-${item.id}`} 
-                          value="replace" 
-                          checked={tableAction === 'replace'} 
+                        <input
+                          type="radio"
+                          name={`tableAction-${item.id}`}
+                          value="replace"
+                          checked={tableAction === 'replace'}
                           onChange={(e) => setTableAction(e.target.value)}
                           className="text-[var(--accent)] focus:ring-[var(--accent)]"
                         />
@@ -306,15 +329,15 @@ const HistoryItemCard = ({
                       </label>
                     </div>
                   </div>
-                  
+
                   {item.customInputData?.newTables && item.customInputData.newTables.length > 0 && (
                     <div>
                       <h5 className="text-sm font-semibold mb-3">New Tables Detected</h5>
                       <div className="space-y-2">
                         {item.customInputData.newTables.map((table: string) => (
                           <label key={table} className="flex items-center gap-2 text-sm cursor-pointer">
-                            <input 
-                              type="checkbox" 
+                            <input
+                              type="checkbox"
                               checked={selectedNewTables.includes(table)}
                               onChange={(e) => {
                                 if (e.target.checked) {
@@ -331,10 +354,10 @@ const HistoryItemCard = ({
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="flex justify-end pt-2">
-                    <Button 
-                      variant="primary" 
+                    <Button
+                      variant="primary"
                       size="sm"
                       onClick={handleTableSelectionSubmit}
                     >
@@ -347,9 +370,9 @@ const HistoryItemCard = ({
                   {item.options && (
                     <div className="flex flex-wrap gap-2">
                       {item.options.map(opt => (
-                        <Button 
-                          key={opt} 
-                          variant="outline" 
+                        <Button
+                          key={opt}
+                          variant="outline"
                           size="sm"
                           onClick={() => onAction(item, opt)}
                           className="hover:border-[var(--accent)] hover:text-[var(--accent)]"
@@ -359,8 +382,8 @@ const HistoryItemCard = ({
                       ))}
                     </div>
                   )}
-                  <Button 
-                    variant="primary" 
+                  <Button
+                    variant="primary"
                     size="sm"
                     onClick={() => onAction(item, 'Continue')}
                     className="ml-auto"
@@ -377,12 +400,12 @@ const HistoryItemCard = ({
   );
 };
 
-export const AgentWorkflow = ({ 
-  onComplete, 
-  compact = false, 
-  defaultAgentId = 'connect', 
-  onChangeTab, 
-  onNewConnector, 
+export const AgentWorkflow = ({
+  onComplete,
+  compact = false,
+  defaultAgentId = 'connect',
+  onChangeTab,
+  onNewConnector,
   onSelectConnector,
   onForwardWithContext,
   activeConnector,
@@ -409,7 +432,7 @@ export const AgentWorkflow = ({
   // Poll for updates if there are any processing items to handle tab-switching state sync
   useEffect(() => {
     const hasProcessing = agents.some(a => a.history.some(h => h.status === 'processing'));
-    
+
     if (hasProcessing) {
       const interval = setInterval(async () => {
         const updatedAgents = await agentService.getAgents();
@@ -435,10 +458,10 @@ export const AgentWorkflow = ({
 
   const forwardToNextAgent = async (currentAgentId: string, contextData: string, connectionName?: string) => {
     const currentIndex = AGENT_SEQUENCE.indexOf(currentAgentId);
-    
+
     if (currentIndex !== -1 && currentIndex < AGENT_SEQUENCE.length - 1) {
       const nextAgentId = AGENT_SEQUENCE[currentIndex + 1];
-      
+
       let nextAction = 'Incoming Task';
       let nextDetails = `Received updated data from ${agents.find(a => a.id === currentAgentId)?.name || 'previous agent'}.`;
       let nextPrompt = 'How would you like to proceed?';
@@ -456,7 +479,7 @@ export const AgentWorkflow = ({
         nextCustomInputData = { newTables: ['user_activity_logs', 'payment_transactions'] };
         nextActivities = ['Receiving schema definition...', 'Allocating storage...', 'Preparing ingestion pipeline...'];
       } else if (currentAgentId === 'ingest') {
-        nextAction = 'Analysis Pending';
+        nextAction = 'Process Pending';
         nextDetails = `Data successfully ingested and cached (${contextData}).`;
         nextPrompt = `What is your primary focus for analyzing this new dataset?`;
         nextOptions = ['Revenue Growth', 'User Retention', 'Anomalies', 'General Summary'];
@@ -511,9 +534,9 @@ export const AgentWorkflow = ({
 
   const handleAction = async (historyItem: AgentHistoryItem, option?: string) => {
     if (!selectedAgent) return;
-    
-    const newActivities = historyItem.activities 
-      ? [...historyItem.activities, `Executing: ${option || 'Continue'}`] 
+
+    const newActivities = historyItem.activities
+      ? [...historyItem.activities, `Executing: ${option || 'Continue'}`]
       : [`Executing: ${option || 'Continue'}`];
 
     // Simulate processing an action
@@ -522,7 +545,7 @@ export const AgentWorkflow = ({
       details: option ? `Processing option: ${option}...` : 'Processing...',
       activities: newActivities
     });
-    
+
     // Refresh data
     setAgents(await agentService.getAgents());
 
@@ -533,7 +556,7 @@ export const AgentWorkflow = ({
         details: option ? `Completed action: ${option}` : 'Action completed successfully.'
       });
       setAgents(await agentService.getAgents());
-      
+
       // Automatically forward to next agent
       await forwardToNextAgent(selectedAgent.id, option || historyItem.action, historyItem.connectionName);
     }, 2000);
@@ -541,7 +564,7 @@ export const AgentWorkflow = ({
 
   const handleScenarioConfirm = async (scenario: string) => {
     if (!selectedAgent) return;
-    
+
     // Add a history item for the scenario selection
     await agentService.addHistoryItem('ingest', {
       action: 'Situation Identified',
@@ -549,9 +572,9 @@ export const AgentWorkflow = ({
       status: 'completed',
       connectionName: activeConnector?.name
     });
-    
+
     setAgents(await agentService.getAgents());
-    
+
     // Forward to next agent
     await forwardToNextAgent('ingest', scenario, activeConnector?.name);
   };
@@ -581,58 +604,62 @@ export const AgentWorkflow = ({
 
   return (
     <div className="w-full flex-col h-full py-1 flex gap-4">
-      {/* Stepper - Agent List */}
-      <div className="flex flex-row w-full pb-4 border-b border-[var(--border)] gap-4 shrink-0">
-        {agents.map((agent, index) => (
-          <div key={agent.id} className="flex-1 flex items-center relative">
-            <button
-              onClick={() => handleStepperClick(agent.id)}
-              className={`
-                flex-1 flex items-center gap-3 p-3 rounded-xl transition-all text-left whitespace-nowrap group
-                ${selectedAgentId === agent.id 
-                  ? 'bg-[var(--accent)] text-white shadow-xl shadow-[var(--accent)]/30 scale-[1.01] ring-2 ring-[var(--accent)]/10' 
-                  : 'bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]'}
-              `}
-            >
-              <div className={`
-                w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105
-                ${selectedAgentId === agent.id ? 'bg-white/20' : 'bg-[var(--accent)]/10 text-[var(--accent)]'}
-              `}>
-                {getIcon(agent.icon)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-black text-base tracking-tight truncate">{agent.name}</div>
-                <div className={`text-[10px] uppercase tracking-[0.2em] font-bold truncate ${selectedAgentId === agent.id ? 'text-white/70' : 'text-[var(--text-secondary)]/60'}`}>
-                  {agent.history.length} Activities
+      {/* Stepper - Agent List (hidden on Query tab) */}
+      {selectedAgentId !== 'query' && (
+        <div className="flex flex-row w-full pb-4 border-b border-[var(--border)] gap-4 shrink-0">
+          {agents.filter(a => a.id !== 'query').map((agent, index, filtered) => (
+            <div key={agent.id} className="flex-1 flex items-center relative">
+              <button
+                onClick={() => handleStepperClick(agent.id)}
+                className={`
+                  flex-1 flex items-center gap-3 p-3 rounded-xl transition-all text-left whitespace-nowrap group
+                  ${selectedAgentId === agent.id
+                    ? 'bg-[var(--accent)] text-white shadow-xl shadow-[var(--accent)]/30 scale-[1.01] ring-2 ring-[var(--accent)]/10'
+                    : 'bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]'}
+                `}
+              >
+                <div className={`
+                  w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105
+                  ${selectedAgentId === agent.id ? 'bg-white/20' : 'bg-[var(--accent)]/10 text-[var(--accent)]'}
+                `}>
+                  {getIcon(agent.icon)}
                 </div>
-              </div>
-            </button>
-            {index < agents.length - 1 && (
-              <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-[2px] bg-[var(--border)] z-10" />
-            )}
-          </div>
-        ))}
-      </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-black text-base tracking-tight truncate">{agent.name}</div>
+                  <div className={`text-[10px] uppercase tracking-[0.2em] font-bold truncate ${selectedAgentId === agent.id ? 'text-white/70' : 'text-[var(--text-secondary)]/60'}`}>
+                    {agent.history.length} Activities
+                  </div>
+                </div>
+              </button>
+              {index < filtered.length - 1 && (
+                <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-[2px] bg-[var(--border)] z-10" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Main Content - Agent History & Actions */}
       <div className="flex-1 flex flex-col min-h-0">
         {selectedAgent && (
           <Card className={`flex-1 flex flex-col border-[var(--border)] shadow-xl overflow-hidden bg-[var(--surface)]/50 ${compact ? 'border-none shadow-none bg-transparent' : ''}`}>
-            <CardHeader className={`${compact ? 'px-0 pt-1 pb-3' : 'bg-[var(--surface)] p-4 border-b border-[var(--border)]'} shrink-0`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20">
-                    {getIcon(selectedAgent.icon)}
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold">{selectedAgent.name}</h2>
-                    <p className="text-xs text-[var(--text-secondary)]">{selectedAgent.description}</p>
+            {selectedAgent.id !== 'query' && (
+              <CardHeader className={`${compact ? 'px-0 pt-1 pb-3' : 'bg-[var(--surface)] p-4 border-b border-[var(--border)]'} shrink-0`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20">
+                      {getIcon(selectedAgent.icon)}
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold">{selectedAgent.name}</h2>
+                      <p className="text-xs text-[var(--text-secondary)]">{selectedAgent.description}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className={`flex-1 ${compact ? 'px-0 overflow-visible' : 'overflow-y-auto p-4'} space-y-4`}>
+              </CardHeader>
+            )}
+
+            <CardContent className={`flex-1 ${selectedAgent.id === 'query' ? 'flex flex-col p-0 overflow-hidden' : compact ? 'px-0 overflow-visible space-y-4' : 'overflow-y-auto p-4 space-y-4'}`}>
               {selectedAgent.id === 'ingest' && (
                 <div className="mb-8 p-6 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/50">
                   <div className="flex items-center justify-between mb-4">
@@ -646,12 +673,12 @@ export const AgentWorkflow = ({
                       </div>
                     )}
                   </div>
-                  
+
                   {!activeConnector ? (
                     <div className="text-center py-6">
-                      <p className="text-sm text-[var(--text-secondary)]">No active connection. Please connect a data source first.</p>
+                      <p className="text-sm text-[var(--text-secondary)]">No active data source. Please connect a data source first.</p>
                       <Button variant="outline" size="sm" className="mt-4" onClick={() => handleStepperClick('connect')}>
-                        Go to Connection
+                        Go to Data source
                       </Button>
                     </div>
                   ) : (
@@ -674,7 +701,7 @@ export const AgentWorkflow = ({
                           <div className="text-sm font-bold mt-2">Just now</div>
                         </div>
                       </div>
-                      
+
                       <div className="mt-6">
                         <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-3">Tables</h4>
                         <div className="space-y-2">
@@ -707,7 +734,7 @@ export const AgentWorkflow = ({
                     {onNewConnector && (
                       <Button variant="outline" size="sm" onClick={onNewConnector}>
                         <Play className="w-4 h-4 mr-2" />
-                        Custom Connection
+                        Custom Data source
                       </Button>
                     )}
                   </div>
@@ -716,105 +743,60 @@ export const AgentWorkflow = ({
               )}
 
               {selectedAgent.id === 'query' ? (
-                <div className="flex-1 flex flex-row min-h-0 gap-6">
-                  {/* Query History Sidebar */}
-                  <div className="w-64 flex flex-col border-r border-[var(--border)] pr-6 overflow-y-auto">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4 flex items-center gap-2">
-                      <Clock className="w-3 h-3" />
-                      Query History
-                    </h3>
-                    <div className="space-y-3">
-                      {selectedAgent.history.length === 0 ? (
-                        <div className="text-center py-8 border border-dashed border-[var(--border)] rounded-xl">
-                          <p className="text-[10px] text-[var(--text-secondary)]">No previous queries</p>
-                        </div>
-                      ) : (
-                        selectedAgent.history.map((item) => (
-                          <button
-                            key={item.id}
-                            className="w-full text-left p-3 rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] transition-all group"
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] font-mono text-[var(--text-secondary)]">
-                                {new Date(item.date).toLocaleDateString()}
-                              </span>
-                              <Badge variant="outline" className="text-[8px] py-0 px-1 opacity-50 group-hover:opacity-100">
-                                {item.connectionName || 'N/A'}
-                              </Badge>
-                            </div>
-                            <div className="text-xs font-bold truncate text-[var(--text-primary)]">
-                              {item.action}
-                            </div>
-                            <div className="text-[10px] text-[var(--text-secondary)] truncate">
-                              {item.details}
-                            </div>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </div>
+                <div className="flex-1 h-full flex flex-col">
+                  <div className="h-full overflow-hidden">
+                    {(() => {
+                      const getSuggestedQuestions = () => {
+                        if (!activeConnector) return [
+                          "How can I help you with your data today?",
+                          "What insights are you looking for?",
+                          "Can you summarize my recent activities?"
+                        ];
 
-                  {/* Chat Window */}
-                  <div className="flex-1 flex flex-col min-h-0">
-                    <div className="mb-6">
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-2">
-                        Ask Anything
-                      </h3>
-                      <div className="h-[1px] w-full bg-[var(--border)]" />
-                    </div>
-                      <div className="flex-1 overflow-hidden">
-                        {(() => {
-                          const getSuggestedQuestions = () => {
-                            if (!activeConnector) return [
-                              "How can I help you with your data today?",
-                              "What insights are you looking for?",
-                              "Can you summarize my recent activities?"
-                            ];
-                            
-                            const name = activeConnector.name;
-                            const nameLower = name.toLowerCase();
-                            const type = activeConnector.type;
-                            
-                            if (type === 'Database' || type === 'Data Warehouse') {
-                              return [
-                                `Show me a summary of the tables in ${name}`,
-                                `What are the most active users in ${name}?`,
-                                `Find any anomalies in the last 24 hours of ${name}`
-                              ];
-                            }
-                            
-                            if (nameLower.includes('stripe')) {
-                              return [
-                                "What is my total revenue this month?",
-                                "Show me the churn rate for the last 30 days",
-                                "List the top 5 customers by lifetime value"
-                              ];
-                            }
+                        const name = activeConnector.name;
+                        const nameLower = name.toLowerCase();
+                        const type = activeConnector.type;
 
-                            if (nameLower.includes('analytics') || nameLower.includes('ga4')) {
-                              return [
-                                "What are my top performing pages?",
-                                "Show me the user acquisition breakdown",
-                                "How has my bounce rate changed this week?"
-                              ];
-                            }
-                            
-                            return [
-                              `Analyze the data from ${name}`,
-                              `What are the key trends in ${name}?`,
-                              `Summarize the ${type} connection status`
-                            ];
-                          };
+                        if (type === 'Database' || type === 'Data Warehouse') {
+                          return [
+                            `Show me a summary of the tables in ${name}`,
+                            `What are the most active users in ${name}?`,
+                            `Find any anomalies in the last 24 hours of ${name}`
+                          ];
+                        }
 
-                          return (
-                            <ChatWindow 
-                              initialMode="chat" 
-                              initialMessage={initialChatMessage} 
-                              suggestedQuestions={getSuggestedQuestions()}
-                            />
-                          );
-                        })()}
-                      </div>
+                        if (nameLower.includes('stripe')) {
+                          return [
+                            "What is my total revenue this month?",
+                            "Show me the churn rate for the last 30 days",
+                            "List the top 5 customers by lifetime value"
+                          ];
+                        }
+
+                        if (nameLower.includes('analytics') || nameLower.includes('ga4')) {
+                          return [
+                            "What are my top performing pages?",
+                            "Show me the user acquisition breakdown",
+                            "How has my bounce rate changed this week?"
+                          ];
+                        }
+
+                        return [
+                          `Analyze the data from ${name}`,
+                          `What are the key trends in ${name}?`,
+                          `Summarize the ${type} connection status`
+                        ];
+                      };
+
+                      return (
+                        <ChatWindow
+                          initialMode="chat"
+                          initialMessage={initialChatMessage}
+                          suggestedQuestions={getSuggestedQuestions()}
+                          onOpenDataSource={onChangeTab ? () => onChangeTab('connectors') : undefined}
+                        />
+                      );
+                    })()}
                   </div>
                 </div>
               ) : (
@@ -822,10 +804,10 @@ export const AgentWorkflow = ({
                   <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
                     {selectedAgent.name} History
                   </h3>
-                  
+
                   <AnimatePresence mode="popLayout">
                     {selectedAgent.history.length === 0 ? (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                         className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-2xl"
                       >
@@ -834,12 +816,12 @@ export const AgentWorkflow = ({
                       </motion.div>
                     ) : (
                       selectedAgent.history.map((item) => (
-                        <HistoryItemCard 
-                          key={item.id} 
-                          item={item} 
-                          agent={selectedAgent} 
-                          onAction={handleAction} 
-                          onForward={forwardToNextAgent} 
+                        <HistoryItemCard
+                          key={item.id}
+                          item={item}
+                          agent={selectedAgent}
+                          onAction={handleAction}
+                          onForward={forwardToNextAgent}
                           onScenarioConfirm={handleScenarioConfirm}
                         />
                       ))

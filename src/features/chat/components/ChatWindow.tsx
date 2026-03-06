@@ -13,13 +13,15 @@ interface ChatWindowProps {
   onNewConnector?: () => void;
   initialMessage?: string;
   suggestedQuestions?: string[];
+  onOpenDataSource?: () => void;
 }
 
-export const ChatWindow = ({ 
-  initialMode = 'landing', 
-  onNewConnector, 
+export const ChatWindow = ({
+  initialMode = 'landing',
+  onNewConnector,
   initialMessage,
-  suggestedQuestions = []
+  suggestedQuestions = [],
+  onOpenDataSource
 }: ChatWindowProps) => {
   const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat } = useChat(initialMode, initialMessage);
   const [connectors, setConnectors] = useState<Connector[]>([]);
@@ -69,9 +71,9 @@ export const ChatWindow = ({
         </div>
       </CardHeader>
 
-      <CardContent 
+      <CardContent
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 scroll-smooth space-y-4 bg-[var(--bg)]/10 relative"
+        className="flex-1 h-full overflow-y-auto p-4 scroll-smooth space-y-4 bg-[var(--bg)]/10 relative"
       >
         <AnimatePresence mode="wait">
           {mode === 'landing' ? (
@@ -89,13 +91,13 @@ export const ChatWindow = ({
                 <h2 className="text-2xl font-bold mb-2">Welcome to Dataor AI</h2>
                 <p className="text-[var(--text-secondary)]">To get started, select an existing data connector or set up a new one.</p>
               </div>
-              
+
               <div className="w-full space-y-3 text-left">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">Available Connectors</h4>
                   <Badge variant="outline" className="text-[10px]">{connectors.length} Active</Badge>
                 </div>
-                
+
                 {isLoadingConnectors ? (
                   <div className="flex justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
@@ -126,8 +128,8 @@ export const ChatWindow = ({
                     </div>
                   ))
                 )}
-                
-                <Button 
+
+                <Button
                   className="w-full h-auto py-4 rounded-xl mt-6 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white font-bold shadow-lg shadow-[var(--accent)]/20"
                   onClick={onNewConnector}
                 >
@@ -146,7 +148,7 @@ export const ChatWindow = ({
               {messages.map((msg) => (
                 <ChatMessage key={msg.id} message={msg} />
               ))}
-              
+
               {isLoading && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -163,7 +165,7 @@ export const ChatWindow = ({
                   {processingSteps.length > 0 && (
                     <div className="pl-4 border-l-2 border-[var(--border)] ml-4 mt-2 space-y-2">
                       {processingSteps.map((step, idx) => (
-                        <motion.div 
+                        <motion.div
                           key={idx}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
@@ -189,7 +191,7 @@ export const ChatWindow = ({
       </CardContent>
 
       <CardFooter className="p-4 bg-[var(--surface)]/80 backdrop-blur-md border-t border-[var(--border)] relative z-30">
-        <div className="w-full max-w-3xl mx-auto">
+        <div className="w-full">
           {mode === 'chat' && messages.length <= 1 && suggestedQuestions.length > 0 && !isLoading && (
             <div className="flex flex-wrap gap-2 mb-4 justify-center">
               {suggestedQuestions.map((q, i) => (
@@ -207,11 +209,11 @@ export const ChatWindow = ({
               ))}
             </div>
           )}
-          <ChatInput onSend={sendMessage} disabled={isLoading || mode !== 'chat'} />
+          <ChatInput onSend={sendMessage} disabled={isLoading || mode !== 'chat'} onOpenDataSource={onOpenDataSource} />
           <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-[var(--text-secondary)]/60 uppercase tracking-[0.2em] font-black">
 
             <span className="w-1 h-1 rounded-full bg-[var(--border)]" />
-         
+
           </div>
         </div>
       </CardFooter>

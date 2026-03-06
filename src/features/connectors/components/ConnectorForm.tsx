@@ -14,8 +14,8 @@ interface FieldGuide {
 
 const GUIDES: Record<string, FieldGuide> = {
   name: {
-    title: "Connection Name",
-    description: "Give your connection a unique name to identify it later.",
+    title: "Data source Name",
+    description: "Give your data source a unique name to identify it later.",
     tip: "Example: 'Production Postgres' or 'Marketing Data Warehouse'"
   },
   host: {
@@ -80,7 +80,7 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
       <div className="lg:col-span-2 space-y-6">
-        <button 
+        <button
           onClick={onBack}
           className="flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mb-4 group"
         >
@@ -96,82 +96,82 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
               </div>
               <div>
                 <h2 className="text-xl font-bold">
-                  {connector ? `Connect to ${connector.name}` : 'New Server Connection'}
+                  {connector ? `Connect to ${connector.name}` : 'New Data source'}
                 </h2>
-                <p className="text-sm text-[var(--text-secondary)]">Configure your database connection settings</p>
+                <p className="text-sm text-[var(--text-secondary)]">Configure your data source settings</p>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div 
+              <div
                 onMouseEnter={() => handleMouseEnter('name')}
                 className="md:col-span-2"
               >
-                <Input 
-                  label="Connection Name"
+                <Input
+                  label="Data source Name"
                   placeholder="e.g. Production Database"
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   onFocus={() => handleFocus('name')}
                   required
                 />
               </div>
 
               <div onMouseEnter={() => handleMouseEnter('host')}>
-                <Input 
+                <Input
                   label="Host / IP Address"
                   placeholder="db.example.com"
                   value={formData.host}
-                  onChange={(e) => setFormData({...formData, host: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, host: e.target.value })}
                   onFocus={() => handleFocus('host')}
                   required
                 />
               </div>
 
               <div onMouseEnter={() => handleMouseEnter('port')}>
-                <Input 
+                <Input
                   label="Port"
                   placeholder="5432"
                   value={formData.port}
-                  onChange={(e) => setFormData({...formData, port: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, port: e.target.value })}
                   onFocus={() => handleFocus('port')}
                   required
                 />
               </div>
 
               <div onMouseEnter={() => handleMouseEnter('database')}>
-                <Input 
+                <Input
                   label="Database Name"
                   placeholder="main_db"
                   value={formData.database}
-                  onChange={(e) => setFormData({...formData, database: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, database: e.target.value })}
                   onFocus={() => handleFocus('database')}
                   required
                 />
               </div>
 
               <div onMouseEnter={() => handleMouseEnter('username')}>
-                <Input 
+                <Input
                   label="Username"
                   placeholder="readonly_user"
                   value={formData.username}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   onFocus={() => handleFocus('username')}
                   required
                 />
               </div>
 
-              <div 
+              <div
                 onMouseEnter={() => handleMouseEnter('password')}
                 className="md:col-span-2"
               >
-                <Input 
+                <Input
                   label="Password"
                   type="password"
                   placeholder="••••••••"
                   value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   onFocus={() => handleFocus('password')}
                   required
                 />
@@ -180,8 +180,8 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
 
             <div className="pt-6 flex justify-end gap-4">
               <Button variant="outline" onClick={onBack} disabled={isTesting}>Cancel</Button>
-              <Button 
-                className="px-8" 
+              <Button
+                className="px-8"
                 onClick={handleTestConnection}
                 disabled={isTesting}
               >
@@ -190,7 +190,7 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Testing...
                   </>
-                ) : 'Test Connection'}
+                ) : 'Test Data source'}
               </Button>
             </div>
           </CardContent>
@@ -212,17 +212,17 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
                 <div className="bg-[var(--surface)] border border-[var(--border)] p-6 rounded-3xl shadow-2xl relative">
                   {/* Speech Bubble Arrow */}
                   <div className="absolute -left-2 top-10 w-4 h-4 bg-[var(--surface)] border-l border-b border-[var(--border)] rotate-45 hidden lg:block" />
-                  
+
                   <div className="flex items-center gap-2 mb-3">
                     <Sparkles className="w-4 h-4 text-[var(--accent)]" />
                     <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">Dataor Guide</span>
                   </div>
-                  
+
                   <h4 className="font-bold text-lg mb-2">{guide.title}</h4>
                   <p className="text-sm text-[var(--text-secondary)] mb-4 leading-relaxed">
                     {guide.description}
                   </p>
-                  
+
                   <div className="p-3 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10">
                     <div className="flex items-start gap-2">
                       <Info className="w-4 h-4 text-[var(--accent)] shrink-0 mt-0.5" />
@@ -263,7 +263,7 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
         <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/30 space-y-4">
           <div className="flex items-center gap-3">
             <Shield className="w-5 h-5 text-emerald-500" />
-            <span className="text-sm font-medium">Secure Connection</span>
+            <span className="text-sm font-medium">Secure Data source</span>
           </div>
           <div className="flex items-center gap-3">
             <Globe className="w-5 h-5 text-blue-500" />

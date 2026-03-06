@@ -4,8 +4,8 @@ class AgentService {
   private agents: AgentData[] = [
     {
       id: 'connect',
-      name: 'Connection',
-      historyName: 'Connection',
+      name: 'Data source',
+      historyName: 'Data source',
       icon: 'database',
       description: 'Establishing secure link to database',
       history: [
@@ -35,8 +35,8 @@ class AgentService {
     },
     {
       id: 'ingest',
-      name: 'Collection',
-      historyName: 'Collection',  
+      name: 'Import',
+      historyName: 'Import',
       icon: 'server',
       description: 'Fetching and storing remote data',
       history: [
@@ -66,8 +66,8 @@ class AgentService {
     },
     {
       id: 'analyze',
-      name: 'Analysis',
-      historyName: 'Analysis',
+      name: 'Process',
+      historyName: 'Process',
       icon: 'bar-chart',
       description: 'Generating insights and visuals',
       history: [
@@ -77,7 +77,13 @@ class AgentService {
           action: 'Analyzed Production DB',
           details: 'Generated 5 statistical summaries and detected 2 anomalies.',
           connectionName: 'Production DB',
-          status: 'completed'
+          status: 'completed',
+          contextualInsights: [
+            'User activity peaked on weekdays between 9am–12pm.',
+            '2 anomalous spikes detected in transaction volume on Feb 28.',
+            'Average order value increased by 14.3% compared to last month.',
+            'Top 3 products account for 61% of total revenue.'
+          ]
         }
       ]
     },

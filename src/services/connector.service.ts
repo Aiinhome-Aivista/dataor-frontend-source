@@ -20,14 +20,6 @@ class ConnectorService implements IConnectorService {
     },
     {
       id: '2',
-      name: 'Slack',
-      description: 'Connect your Slack workspace to receive reports and insights',
-      type: 'Integration',
-      icon: 'share-2',
-      status: 'disconnected',
-    },
-    {
-      id: '3',
       name: 'MySQL',
       description: 'Connect your MySQL database for instant AI analysis',
       type: 'Database',
@@ -35,7 +27,7 @@ class ConnectorService implements IConnectorService {
       status: 'disconnected',
     },
     {
-      id: '4',
+      id: '3',
       name: 'MSSQL',
       description: 'Connect your Microsoft SQL Server for instant AI analysis',
       type: 'Database',
@@ -43,11 +35,27 @@ class ConnectorService implements IConnectorService {
       status: 'disconnected',
     },
     {
-      id: '5',
+      id: '4',
       name: 'PostgreSQL',
       description: 'Connect your PostgreSQL database for instant AI analysis',
       type: 'Database',
       icon: 'database',
+      status: 'disconnected',
+    },
+    {
+      id: '5',
+      name: 'Google Sheets',
+      description: 'Connect your Google Sheets to query and analyze spreadsheet data with AI',
+      type: 'Integration',
+      icon: 'table',
+      status: 'disconnected',
+    },
+    {
+      id: '6',
+      name: 'Web Search using LLM',
+      description: 'Query the web using large language models to fetch and analyze live data',
+      type: 'Integration',
+      icon: 'globe',
       status: 'disconnected',
     },
   ];
@@ -83,10 +91,10 @@ class ConnectorService implements IConnectorService {
       id: Math.random().toString(36).substr(2, 9),
       status: 'connected'
     };
-    
+
     this.connectors.push(newConnector);
     this.collections[newConnector.id] = ['new_table_1', 'new_table_2'];
-    
+
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve(newConnector);

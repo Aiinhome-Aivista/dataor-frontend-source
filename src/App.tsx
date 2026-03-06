@@ -4,10 +4,11 @@ import { ChatWindow } from './features/chat';
 import { AgentWorkflow } from './features/workflow';
 import { LandingPage } from './features/marketing/LandingPage';
 import { LoginPage } from './features/auth/LoginPage';
-import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles, BarChart3 } from 'lucide-react';
+import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles, BarChart3, Clock, Search, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { agentService } from './services/agent.service';
+import { AgentHistoryItem } from './features/workflow/types';
 
 type Tab = 'chat' | 'new-connector' | 'collection' | 'analysis';
 type ViewMode = 'landing' | 'login' | 'app';
@@ -21,6 +22,20 @@ function AppContent() {
   const [justFinishedWorkflow, setJustFinishedWorkflow] = useState(false);
   const [initialChatMessage, setInitialChatMessage] = useState<string | undefined>(undefined);
   const [chatKey, setChatKey] = useState(0);
+  const [queryHistory, setQueryHistory] = useState<AgentHistoryItem[]>([]);
+  const [isQueryHistoryOpen, setIsQueryHistoryOpen] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
+
+  useEffect(() => {
+    const fetchQueryHistory = async () => {
+      const history = await agentService.getAgentHistory('query');
+      setQueryHistory(history);
+    };
+    fetchQueryHistory();
+    // Poll for updates when on chat tab
+    const interval = setInterval(fetchQueryHistory, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogin = () => setViewMode('login');
   const handleGetStarted = () => setViewMode('login');
@@ -134,50 +149,127 @@ function AppContent() {
           </button>
         </div>
 
-        <nav className="flex-1 px-3 space-y-1 mt-2">
-          {[
-            // { icon: Database, label: 'Connection', id: 'connectors' as Tab },
-            // { icon: Sparkles, label: 'Collection', id: 'collection' as Tab },
-            // { icon: BarChart3, label: 'Analysis', id: 'analysis' as Tab },
-            { icon: MessageSquare, label: 'Query', id: 'chat' as Tab },
-            { icon: Settings, label: 'Settings', id: 'settings' },
-          ].map((item) => (
+        {/* Main nav area */}
+        <div className="flex flex-col mt-2">
+          {/* Query nav item */}
+          <div className="px-3 shrink-0">
             <button
-              key={item.label}
               onClick={() => {
-                if (typeof item.id === 'string' && item.id !== 'settings') {
-                  changeTab(item.id as Tab);
-                }
+                changeTab('chat');
+                setIsQueryHistoryOpen(o => !o);
               }}
               className={`
                 w-full flex items-center gap-2.5 p-2.5 rounded-xl transition-all duration-200
-                ${(activeTab === item.id || (activeTab === 'new-connector' && item.id === 'connectors'))
+                ${activeTab === 'chat'
                   ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
                   : 'hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
               `}
             >
-              <item.icon className="w-4 h-4 shrink-0" />
+              <MessageSquare className="w-4 h-4 shrink-0" />
+              {isSidebarOpen && (
+                <>
+                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm flex-1 text-left">
+                    Query
+                  </motion.span>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isQueryHistoryOpen ? 'rotate-180' : ''}`} />
+                  </motion.div>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Query History — collapsible, nested under Query */}
+          <AnimatePresence>
+            {isSidebarOpen && isQueryHistoryOpen && (
+              <motion.div
+                key="query-history"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 px-3 pt-1 pb-3 overflow-hidden flex flex-col min-h-0"
+              >
+                {/* Search */}
+                <div className="relative mb-2 shrink-0">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-secondary)]" />
+                  <input
+                    type="text"
+                    placeholder="Search queries..."
+                    value={historySearch}
+                    onChange={e => setHistorySearch(e.target.value)}
+                    className="w-full pl-7 pr-3 py-1.5 text-[11px] rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/40"
+                  />
+                </div>
+                {/* Items */}
+                <div className="space-y-1.5 overflow-y-auto flex-1">
+                  {(() => {
+                    const filtered = queryHistory.filter(item =>
+                      !historySearch ||
+                      item.action.toLowerCase().includes(historySearch.toLowerCase()) ||
+                      item.details.toLowerCase().includes(historySearch.toLowerCase())
+                    );
+                    return filtered.length === 0 ? (
+                      <div className="text-center py-6 border border-dashed border-[var(--border)] rounded-xl">
+                        <p className="text-[10px] text-[var(--text-secondary)]">
+                          {historySearch ? 'No matching queries' : 'No previous queries'}
+                        </p>
+                      </div>
+                    ) : (
+                      filtered.map((item) => (
+                        <div
+                          key={item.id}
+                          className="w-full text-left p-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] transition-all cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-[9px] font-mono text-[var(--text-secondary)]">
+                              {new Date(item.date).toLocaleDateString()}
+                            </span>
+                            {item.connectionName && (
+                              <span className="text-[8px] text-[var(--accent)] bg-[var(--accent)]/10 px-1.5 py-0.5 rounded-full font-bold truncate max-w-[80px]">
+                                {item.connectionName}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] font-bold truncate text-[var(--text-primary)]">
+                            {item.action}
+                          </div>
+                          <div className="text-[10px] text-[var(--text-secondary)] truncate">
+                            {item.details}
+                          </div>
+                        </div>
+                      ))
+                    );
+                  })()}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Settings + Logout — directly after Query/History */}
+          <div className="px-3 pb-3 space-y-1 shrink-0">
+            <button
+              className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-200"
+            >
+              <Settings className="w-4 h-4 shrink-0" />
               {isSidebarOpen && (
                 <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm">
-                  {item.label}
+                  Settings
                 </motion.span>
               )}
             </button>
-          ))}
-        </nav>
-
-        <div className="p-3 border-t border-[var(--border)] space-y-1">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-rose-500/10 text-[var(--text-secondary)] hover:text-rose-500 transition-all duration-200"
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-            {isSidebarOpen && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm">
-                Logout
-              </motion.span>
-            )}
-          </button>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-rose-500/10 text-[var(--text-secondary)] hover:text-rose-500 transition-all duration-200"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              {isSidebarOpen && (
+                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm">
+                  Logout
+                </motion.span>
+              )}
+            </button>
+          </div>
         </div>
       </motion.aside>
 
@@ -191,8 +283,8 @@ function AppContent() {
             <h1 className="text-lg font-bold tracking-tight">
               {activeTab === 'chat' ? 'Query' :
                 activeTab === 'new-connector' ? 'Add Connector' :
-                  activeTab === 'collection' ? 'Collection' :
-                    activeTab === 'analysis' ? 'Analysis' : 'Connection'}
+                  activeTab === 'collection' ? 'Import' :
+                    activeTab === 'analysis' ? 'Process' : 'Data source'}
             </h1>
             <p className="text-sm text-[var(--text-secondary)]">
               {activeTab === 'chat'
