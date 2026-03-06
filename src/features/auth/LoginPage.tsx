@@ -67,25 +67,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
                 Continue with Google
               </Button>
               
-              <Button 
-                variant="outline" 
-                className="w-full h-12 rounded-xl border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-3 font-medium transition-all text-slate-900"
-                onClick={() => handleSocialLogin('apple')}
-                disabled={isLoading}
-              >
-                <Apple className="w-5 h-5 text-slate-900" />
-                Continue with Apple
-              </Button>
-
-              <Button 
-                variant="outline" 
-                className="w-full h-12 rounded-xl border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-3 font-medium transition-all text-slate-900"
-                onClick={() => handleSocialLogin('microsoft')}
-                disabled={isLoading}
-              >
-                <LayoutGrid className="w-5 h-5 text-blue-500" />
-                Continue with Microsoft
-              </Button>
+          
             </div>
 
             <div className="relative">
@@ -154,10 +136,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
             </p>
           </CardFooter>
         </Card>
-
+{/* 
         <p className="mt-8 text-center text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
           By continuing, you agree to Dataor's <span className="underline cursor-pointer">Terms of Service</span> and <span className="underline cursor-pointer">Privacy Policy</span>.
-        </p>
+        </p> */}
       </motion.div>
     </div>
   );
