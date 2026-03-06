@@ -388,7 +388,7 @@ const HistoryItemCard = ({
                     onClick={() => onAction(item, 'Continue')}
                     className="ml-auto"
                   >
-                    {getContinueText(agent.id)} <ArrowRight className="w-4 h-4 ml-2" />
+                    {getContinueText(agent.id)}
                   </Button>
                 </div>
               )}

@@ -32,19 +32,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
   };
 
   return (
-    <div className="theme-landing min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 selection:bg-accent/10 selection:text-accent">
+    <div className="theme-landing min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 selection:bg-accent/10 selection:text-accent relative">
+      <button 
+        onClick={onBack}
+        className="absolute top-4 left-4 flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-accent transition-colors group"
+      >
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        Back to home
+      </button>
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <button 
-          onClick={onBack}
-          className="flex  gap-2 text-sm font-medium text-slate-500 hover:text-accent transition-colors mb-8 group"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Back to home
-        </button>
 
         <Card className="border-slate-200 shadow-2xl shadow-slate-200/50 rounded-3xl overflow-hidden bg-white">
           <CardHeader className="pt-10 pb-6 text-center space-y-2">
