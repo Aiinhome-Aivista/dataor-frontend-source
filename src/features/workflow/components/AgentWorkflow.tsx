@@ -179,7 +179,8 @@ const HistoryItemCard = ({
             onClick={() => onForward(agent.id, item.action, item.connectionName)}
             className="shadow-lg shadow-[var(--accent)]/20"
           >
-            {getContinueText(agent.id)} <ArrowRight className="w-4 h-4 ml-2" />
+            {getContinueText(agent.id)}
+            {agent.id !== 'analyze' && <ArrowRight className="w-4 h-4 ml-2" />}
           </Button>
         </div>
       )}
@@ -389,6 +390,7 @@ const HistoryItemCard = ({
                     className="ml-auto"
                   >
                     {getContinueText(agent.id)}
+                    {agent.id !== 'analyze' && <ArrowRight className="w-4 h-4 ml-2" />}
                   </Button>
                 </div>
               )}
