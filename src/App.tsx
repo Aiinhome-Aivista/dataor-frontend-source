@@ -150,7 +150,7 @@ function AppContent() {
         </div>
 
         {/* Main nav area */}
-        <div className="flex flex-col mt-2">
+        <div className="flex flex-col mt-2 flex-1">
           {/* Query nav item */}
           <div className="px-3 shrink-0">
             <button
@@ -247,7 +247,7 @@ function AppContent() {
           </AnimatePresence>
 
           {/* Settings + Logout — directly after Query/History */}
-          <div className="px-3 pb-3 space-y-1 shrink-0">
+          <div className="px-3 pb-3 space-y-1 shrink-0 mt-auto">
             <button
               className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-200"
             >

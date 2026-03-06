@@ -2,6 +2,17 @@ import { Connector } from '../types';
 import { Card, CardContent, Badge, Button } from '@/src/ui-kit';
 import { Database, Server, Share2, ArrowUpRight } from 'lucide-react';
 
+const getBrandIcon = (name: string) => {
+  const lower = name.toLowerCase();
+  if (lower.includes('postgres')) return 'https://cdn.simpleicons.org/postgresql';
+  if (lower.includes('mysql')) return 'https://cdn.simpleicons.org/mysql';
+  if (lower.includes('snowflake')) return 'https://cdn.simpleicons.org/snowflake';
+  if (lower.includes('google sheets')) return 'https://cdn.simpleicons.org/googlesheets';
+  if (lower.includes('web search')) return 'https://cdn.simpleicons.org/google  ';
+ 
+  return null;
+};
+
 interface ConnectorCardProps {
   connector: Connector;
   key?: string | number;
@@ -11,6 +22,7 @@ interface ConnectorCardProps {
 export const ConnectorCard = ({ connector, onClick }: ConnectorCardProps) => {
   const Icon = connector.type === 'Database' ? Database : 
                connector.type === 'Data Warehouse' ? Server : Share2;
+  const brandIcon = getBrandIcon(connector.name);
 
   return (
     <Card 
@@ -19,22 +31,28 @@ export const ConnectorCard = ({ connector, onClick }: ConnectorCardProps) => {
       onClick={() => onClick?.(connector)}
     >
       <CardContent className="flex flex-col h-full p-4">
-        <div className="flex justify-between items-start mb-3">
-          <div className="p-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] group-hover:border-[var(--accent)]/50 transition-colors">
-            <Icon className="w-5 h-5 text-[var(--accent)]" />
+        <div className="flex-1 flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] group-hover:border-[var(--accent)]/50 transition-colors shrink-0">
+            {brandIcon ? (
+              <img src={brandIcon} alt={connector.name} className="w-5 h-5 object-contain" />
+            ) : (
+              <Icon className="w-5 h-5 text-[var(--accent)]" />
+            )}
           </div>
-          <Badge variant={connector.status === 'connected' ? 'success' : 'secondary'} className="text-[10px] py-0 px-1.5">
-            {connector.status}
-          </Badge>
-        </div>
-        
-        <div className="flex-1">
-          <h3 className="text-base font-bold mb-1 group-hover:text-[var(--accent)] transition-colors">
-            {connector.name}
-          </h3>
-          <p className="text-xs text-[var(--text-secondary)] line-clamp-2">
-            {connector.description}
-          </p>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start mb-1">
+              <h3 className="text-base font-bold group-hover:text-[var(--accent)] transition-colors">
+                {connector.name}
+              </h3>
+              <Badge variant={connector.status === 'connected' ? 'success' : 'secondary'} className="text-[10px] py-0 px-1.5 shrink-0 ml-2">
+                {connector.status}
+              </Badge>
+            </div>
+            <p className="text-xs text-[var(--text-secondary)] line-clamp-2">
+              {connector.description}
+            </p>
+          </div>
         </div>
 
         <div className="mt-4 pt-3 border-t border-[var(--border)] flex items-center justify-between">

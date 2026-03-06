@@ -39,11 +39,11 @@ export const ConnectorList = ({ onSelect }: ConnectorListProps) => {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-3 items-end justify-between">
-        <div className="w-full md:max-w-md">
+    <div className="">
+      <div className="flex flex-col md:flex-row gap-3 items-end justify-end">
+        <div className="w-full md:max-w-xs">
           <Input 
-            label="Search Connectors"
+         
             placeholder="Search by name or type..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -54,13 +54,13 @@ export const ConnectorList = ({ onSelect }: ConnectorListProps) => {
           </div>
         </div>
         
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium hover:bg-[var(--surface-hover)] transition-colors">
             <Filter className="w-3 h-3" />
             Filter
           </button>
-        </div>
-      </div> */
+        </div> */}
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center items-center py-10">
