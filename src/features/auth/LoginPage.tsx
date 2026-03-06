@@ -40,7 +40,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
       >
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-accent transition-colors mb-8 group"
+          className="flex  gap-2 text-sm font-medium text-slate-500 hover:text-accent transition-colors mb-8 group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to home

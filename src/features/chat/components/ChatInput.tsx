@@ -67,7 +67,7 @@ export const ChatInput = ({ onSend, disabled, onOpenDataSource }: ChatInputProps
                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] transition-colors text-left"
               >
                 <Database className="w-3.5 h-3.5 shrink-0" />
-                Add Connection to Data Source
+                Add Data Source
               </button>
             </div>
           )}
@@ -77,9 +77,9 @@ export const ChatInput = ({ onSend, disabled, onOpenDataSource }: ChatInputProps
       <Button
         type="submit"
         disabled={!value.trim() || disabled}
-        className="h-10 w-10 rounded-lg p-0 shrink-0 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white shadow-lg shadow-[var(--accent)]/20 transition-transform active:scale-95"
+        className="h-11 w-11 rounded-lg p-0 shrink-0 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white shadow-lg shadow-[var(--accent)]/20 transition-transform active:scale-95"
       >
-        <SendHorizontal className="w-4 h-4" />
+        <SendHorizontal className="w-9 h-9" />
       </Button>
     </form>
   );
