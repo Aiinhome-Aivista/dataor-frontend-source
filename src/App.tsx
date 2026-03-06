@@ -15,7 +15,7 @@ type ViewMode = 'landing' | 'login' | 'app';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
-  const [viewMode, setViewMode] = useState<ViewMode>('app');
+  const [viewMode, setViewMode] = useState<ViewMode>('landing');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [selectedConnector, setSelectedConnector] = useState<Connector | null>(null);

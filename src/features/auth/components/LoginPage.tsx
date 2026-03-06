@@ -25,16 +25,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
   const [isLoading, setIsLoading] = React.useState(false);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [errorMsg, setErrorMsg] = React.useState('');
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsLoading(true);
+    setErrorMsg('');
     try {
-      const response = await authService.login(email, password);
-      console.log('Login API Response:', response);
-      // Not calling onLoginSuccess() as per instructions
-    } catch (error) {
+      const response: any = await authService.login(email, password);
+      
+      if (response.status === true && response.statuscode === 200) {
+        onLoginSuccess();
+      } else {
+        // Handle positive HTTP response but negative API status (e.g. status: false)
+        setErrorMsg(response.msg || 'Login failed. Please try again.');
+      }
+    } catch (error: any) {
       console.error('Login Error:', error);
+      // Display the actual message from the backend parsed by api.service.ts
+      setErrorMsg(error.message || 'An error occurred during login.');
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +96,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
                 Continue with Google
               </Button>
               
-          
             </div>
 
             <div className="relative">
@@ -100,6 +108,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
             </div>
 
             <form className="space-y-4" onSubmit={handleLogin}>
+              {errorMsg && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium text-center">
+                  {errorMsg}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Email address</label>
                 <div className="relative">
