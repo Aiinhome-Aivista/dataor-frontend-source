@@ -1,5 +1,7 @@
 import { ThemeProvider, useTheme, Button } from './ui-kit';
 import { ConnectorList, ConnectorForm, Connector } from './features/connectors';
+import { ConnectorProvider, useConnectorContext } from './context/ConnectorContext';
+import { AuthProvider } from './context/AuthContext';
 import { ChatWindow } from './features/chat';
 import { AgentWorkflow } from './features/workflow';
 import { LandingPage } from './features/marketing/components/LandingPage';
@@ -18,7 +20,7 @@ function AppContent() {
   const [viewMode, setViewMode] = useState<ViewMode>('landing');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
-  const [selectedConnector, setSelectedConnector] = useState<Connector | null>(null);
+  const { selectedConnector, setSelectedConnector } = useConnectorContext();
   const [justFinishedWorkflow, setJustFinishedWorkflow] = useState(false);
   const [initialChatMessage, setInitialChatMessage] = useState<string | undefined>(undefined);
   const [chatKey, setChatKey] = useState(0);
@@ -384,8 +386,6 @@ function AppContent() {
                   defaultAgentId="connect"
                   onChangeTab={changeTab}
                   onNewConnector={handleNewConnector}
-                  onSelectConnector={handleSelectConnector}
-                  activeConnector={selectedConnector}
                 />
               </motion.div>
             ) : null}
@@ -399,7 +399,11 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <AuthProvider>
+        <ConnectorProvider>
+          <AppContent />
+        </ConnectorProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

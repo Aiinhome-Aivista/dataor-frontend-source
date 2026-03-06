@@ -3,8 +3,9 @@ import { Button, Input, Card, CardContent, CardHeader } from '@/src/ui-kit';
 import { motion, AnimatePresence } from 'motion/react';
 import { Server, Shield, Globe, Info, ChevronLeft, Sparkles, Loader2 } from 'lucide-react';
 import { ThreeAvatar } from '../../chat/components/ThreeAvatar';
-import { Connector } from '../types';
 import { connectorService } from '@/src/services/connector.service';
+import { useConnectorContext } from '../../../context/ConnectorContext';
+import { useAuthContext } from '../../../context/AuthContext';
 
 interface FieldGuide {
   title: string;
@@ -47,11 +48,12 @@ const GUIDES: Record<string, FieldGuide> = {
 
 interface ConnectorFormProps {
   onBack: () => void;
-  connector?: Connector | null;
   onTestSuccess?: (connectionName: string) => void;
 }
 
-export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFormProps) => {
+export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => {
+  const { selectedConnector: connector } = useConnectorContext();
+  const { userId } = useAuthContext();
   const [activeField, setActiveField] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [formData, setFormData] = useState({
@@ -63,16 +65,40 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
     password: ''
   });
 
+  const [errorMsg, setErrorMsg] = useState('');
+
   const handleFocus = (field: string) => setActiveField(field);
   const handleMouseEnter = (field: string) => setActiveField(field);
 
   const handleTestConnection = async () => {
     setIsTesting(true);
-    // Simulate successful test
-    setTimeout(async () => {
+    setErrorMsg('');
+    try {
+      const payload = {
+        user_id: userId,
+        name: formData.name,
+        type: connector?.name ? connector.name.toLowerCase() : 'mysql',
+        host: formData.host,
+        port: Number(formData.port),
+        username: formData.username,
+        password: formData.password,
+        database: formData.database
+      };
+
+      const response: any = await connectorService.createConnector(payload);
+
+      if (response.status === 'success') {
+        onTestSuccess?.(formData.name);
+      } else {
+        const errorMsg = response.message;
+        setErrorMsg(errorMsg || 'Connection failed. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Connection Error:', error);
+      setErrorMsg(error.message || 'An error occurred during connection.');
+    } finally {
       setIsTesting(false);
-      onTestSuccess?.(formData.name);
-    }, 1500);
+    }
   };
 
   const guide = activeField ? GUIDES[activeField] : null;
@@ -103,6 +129,11 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
             </div>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
+            {errorMsg && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium text-center">
+                {errorMsg}
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div
                 onMouseEnter={() => handleMouseEnter('name')}

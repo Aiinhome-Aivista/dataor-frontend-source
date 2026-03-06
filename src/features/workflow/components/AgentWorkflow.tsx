@@ -8,6 +8,7 @@ import { agentService } from '@/src/services/agent.service';
 import { ConnectorList } from '../../connectors/components/ConnectorList';
 import { Connector } from '../../connectors/types';
 import { ChatWindow } from '../../chat/components/ChatWindow';
+import { useConnectorContext } from '../../../context/ConnectorContext';
 
 interface AgentWorkflowProps {
   onComplete: () => void;
@@ -15,9 +16,7 @@ interface AgentWorkflowProps {
   defaultAgentId?: string;
   onChangeTab?: (tabId: string) => void;
   onNewConnector?: () => void;
-  onSelectConnector?: (connector: Connector) => void;
   onForwardWithContext?: (agentId: string, context: string) => void;
-  activeConnector?: Connector | null;
   initialChatMessage?: string;
 }
 
@@ -62,6 +61,7 @@ const HistoryItemCard = ({
 
   const [tableAction, setTableAction] = useState('update');
   const [selectedNewTables, setSelectedNewTables] = useState<string[]>([]);
+  const { selectedConnector: activeConnector } = useConnectorContext(); // Access activeConnector via context
 
   useEffect(() => {
     if (item.customInputType === 'table_selection' && item.customInputData?.newTables) {
@@ -408,11 +408,10 @@ export const AgentWorkflow = ({
   defaultAgentId = 'connect',
   onChangeTab,
   onNewConnector,
-  onSelectConnector,
   onForwardWithContext,
-  activeConnector,
   initialChatMessage
 }: AgentWorkflowProps) => {
+  const { selectedConnector: activeConnector } = useConnectorContext();
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(defaultAgentId);
   const [isLoading, setIsLoading] = useState(true);
@@ -740,7 +739,7 @@ export const AgentWorkflow = ({
                       </Button>
                     )}
                   </div>
-                  <ConnectorList onSelect={onSelectConnector} />
+                  <ConnectorList onSelect={() => onChangeTab?.('new-connector')} />
                 </div>
               )}
 

@@ -1,3 +1,5 @@
+import { connect } from "http2";
+
 export interface ApiConfig {
   baseUrl: string;
   timeout?: number;
@@ -10,12 +12,13 @@ export const defaultConfig: ApiConfig = {
 
 export const API_ENDPOINTS = {
   AUTH: {
-    login: '/login',
+    LOGIN: '/login',
   },
-  CONNECTORS: {
-    CONNECTOR: '/connectors',
+  DATA_SOURCE: {
+    CONNECTION_HISTORY: '/connection_history',
+    CREATE_CONNECTORS: '/create_connectors',
   },
-  AGENTS: {
+  IMPORT: {
     AGENT: '/agents',
   },
 };

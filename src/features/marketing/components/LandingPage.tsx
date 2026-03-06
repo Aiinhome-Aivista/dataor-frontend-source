@@ -18,8 +18,8 @@ import {
   Linkedin
 } from 'lucide-react';
 import { Button, Badge } from '@/src/ui-kit';
-import image1 from '@/src/asset/images/landing1.jpg';
-import image2 from '@/src/asset/images/landing2.jpg';
+import image1 from '@/src/assets/images/landing1.jpg';
+import image2 from '@/src/assets/images/landing2.jpg';
 
 interface LandingPageProps {
   onGetStarted: () => void;

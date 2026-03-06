@@ -1,39 +1,20 @@
 import { Connector } from '../types';
 import { ConnectorCard } from './ConnectorCard';
 import { Input } from '@/src/ui-kit';
-import { Search, Filter, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { connectorService } from '@/src/services/connector.service';
+import { Search } from 'lucide-react';
+import { useState } from 'react';
+import { useConnectorContext } from '../../../context/ConnectorContext';
+import { SUPPORTED_CONNECTORS } from '../constants';
 
 interface ConnectorListProps {
-  onSelect?: (connector: Connector) => void;
+  onSelect?: (connector: any) => void;
 }
 
-export const ConnectorList = ({ onSelect }: ConnectorListProps) => {
+export const ConnectorList = ({ onSelect }: ConnectorListProps = {}) => {
   const [search, setSearch] = useState('');
-  const [connectors, setConnectors] = useState<Connector[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { setSelectedConnector } = useConnectorContext();
 
-  useEffect(() => {
-    const fetchConnectors = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await connectorService.getConnectors();
-        setConnectors(data);
-      } catch (err) {
-        setError('Failed to load connectors. Please try again.');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchConnectors();
-  }, []);
-
-  const filtered = connectors.filter(c => 
+  const filtered = SUPPORTED_CONNECTORS.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.type.toLowerCase().includes(search.toLowerCase())
   );
@@ -62,32 +43,23 @@ export const ConnectorList = ({ onSelect }: ConnectorListProps) => {
         </div> */}
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center py-10">
-          <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
-        </div>
-      ) : error ? (
-        <div className="text-center py-10 border-2 border-dashed border-red-200 rounded-xl bg-red-50">
-          <p className="text-red-500 text-sm">{error}</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((connector) => (
-              <ConnectorCard 
-                key={connector.id} 
-                connector={connector} 
-                onClick={onSelect}
-              />
-            ))}
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map((connector) => (
+          <ConnectorCard 
+            key={connector.id} 
+            connector={connector as any} 
+            onClick={() => {
+              setSelectedConnector(connector as any);
+              onSelect?.(connector as any);
+            }}
+          />
+        ))}
+      </div>
 
-          {filtered.length === 0 && (
-            <div className="text-center py-20 border-2 border-dashed border-[var(--border)] rounded-2xl">
-              <p className="text-[var(--text-secondary)]">No connectors found matching your search.</p>
-            </div>
-          )}
-        </>
+      {filtered.length === 0 && (
+        <div className="text-center py-20 border-2 border-dashed border-[var(--border)] rounded-2xl">
+          <p className="text-[var(--text-secondary)]">No connectors found matching your search.</p>
+        </div>
       )}
     </div>
   );

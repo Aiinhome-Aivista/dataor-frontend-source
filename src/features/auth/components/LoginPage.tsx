@@ -12,15 +12,17 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { Button, Card, CardContent, CardHeader, CardFooter } from '@/src/ui-kit';
-import { authService } from '../auth.service';
+import { authService } from '../../../services/auth.service';
 import googleIcon from '@/src/assets/icons/google.svg';
+import { useAuthContext } from '../../../context/AuthContext';
 
 interface LoginPageProps {
   onBack: () => void;
   onLoginSuccess: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) => {
+export const LoginPage = ({ onBack, onLoginSuccess }: LoginPageProps) => {
+  const { setUserId } = useAuthContext();
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [email, setEmail] = React.useState('');
@@ -35,14 +37,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
       const response: any = await authService.login(email, password);
       
       if (response.status === true && response.statuscode === 200) {
+        if (response.data && response.data.user_id) {
+          setUserId(response.data.user_id);
+        }
         onLoginSuccess();
       } else {
-        // Handle positive HTTP response but negative API status (e.g. status: false)
         setErrorMsg(response.msg || 'Login failed. Please try again.');
       }
     } catch (error: any) {
       console.error('Login Error:', error);
-      // Display the actual message from the backend parsed by api.service.ts
       setErrorMsg(error.message || 'An error occurred during login.');
     } finally {
       setIsLoading(false);

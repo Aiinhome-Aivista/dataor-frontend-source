@@ -1,64 +1,15 @@
 import { Connector } from '../features/connectors/types';
 import { apiService, IApiService } from './api.service';
+import { API_ENDPOINTS } from './api.config';
 
 export interface IConnectorService {
-  getConnectors(): Promise<Connector[]>;
   getCollections(connectorId: string): Promise<string[]>;
   addConnector(connector: Omit<Connector, 'id' | 'status'>): Promise<Connector>;
+  createConnector(payload: any): Promise<any>;
 }
 
 class ConnectorService implements IConnectorService {
   private api: IApiService;
-  private connectors: Connector[] = [
-    {
-      id: '1',
-      name: 'Snowflake',
-      description: 'Connect your Snowflake data warehouse for instant AI analysis',
-      type: 'Data Warehouse',
-      icon: 'database',
-      status: 'disconnected',
-    },
-    {
-      id: '2',
-      name: 'MySQL',
-      description: 'Connect your MySQL database for instant AI analysis',
-      type: 'Database',
-      icon: 'server',
-      status: 'disconnected',
-    },
-    {
-      id: '3',
-      name: 'MSSQL',
-      description: 'Connect your Microsoft SQL Server for instant AI analysis',
-      type: 'Database',
-      icon: 'server',
-      status: 'disconnected',
-    },
-    {
-      id: '4',
-      name: 'PostgreSQL',
-      description: 'Connect your PostgreSQL database for instant AI analysis',
-      type: 'Database',
-      icon: 'database',
-      status: 'disconnected',
-    },
-    {
-      id: '5',
-      name: 'Google Sheets',
-      description: 'Connect your Google Sheets to query and analyze spreadsheet data with AI',
-      type: 'Integration',
-      icon: 'table',
-      status: 'disconnected',
-    },
-    {
-      id: '6',
-      name: 'Web Search using LLM',
-      description: 'Query the web using large language models to fetch and analyze live data',
-      type: 'Integration',
-      icon: 'globe',
-      status: 'disconnected',
-    },
-  ];
 
   private collections: Record<string, string[]> = {
     '1': ['users', 'orders', 'products', 'transactions'],
@@ -67,14 +18,6 @@ class ConnectorService implements IConnectorService {
 
   constructor(api: IApiService) {
     this.api = api;
-  }
-
-  async getConnectors(): Promise<Connector[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([...this.connectors]);
-      }, 500);
-    });
   }
 
   async getCollections(connectorId: string): Promise<string[]> {
@@ -92,7 +35,6 @@ class ConnectorService implements IConnectorService {
       status: 'connected'
     };
 
-    this.connectors.push(newConnector);
     this.collections[newConnector.id] = ['new_table_1', 'new_table_2'];
 
     return new Promise((resolve) => {
@@ -100,6 +42,10 @@ class ConnectorService implements IConnectorService {
         resolve(newConnector);
       }, 500);
     });
+  }
+
+  async createConnector(payload: any): Promise<any> {
+    return this.api.post(API_ENDPOINTS.DATA_SOURCE.CREATE_CONNECTORS, payload);
   }
 }
 

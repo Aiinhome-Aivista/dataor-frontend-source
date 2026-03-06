@@ -15,8 +15,10 @@ class ApiService implements IApiService {
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      // Backend returns {"msg": "Invalid credentials", "status": false, ...}
-      throw new Error(errorData.msg || errorData.message || `API Error: ${response.status} ${response.statusText}`);
+      // Backend returns {"msg": "...", "status": false} or {"message": "...", "details": "...", "status": "error"}
+      const errorMessage = errorData.message || errorData.msg || `API Error: ${response.status} ${response.statusText}`;
+      const detailedMessage = errorData.details ? `${errorMessage}: ${errorData.details}` : errorMessage;
+      throw new Error(detailedMessage);
     }
     return response.json();
   }

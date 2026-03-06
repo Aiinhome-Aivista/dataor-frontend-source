@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardFooter, Badge, Button } from '@/src/
 import { MessageSquare, Sparkles, MoreVertical, Database, Plus, ArrowRight, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
-import { connectorService } from '@/src/services/connector.service';
 import { Connector } from '../../connectors/types';
 
 interface ChatWindowProps {
@@ -29,19 +28,10 @@ export const ChatWindow = ({
 
   useEffect(() => {
     if (mode === 'landing') {
-      const fetchConnectors = async () => {
-        try {
-          setIsLoadingConnectors(true);
-          const data = await connectorService.getConnectors();
-          const connected = data.filter(c => c.status === 'connected');
-          setConnectors(connected);
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setIsLoadingConnectors(false);
-        }
-      };
-      fetchConnectors();
+      setIsLoadingConnectors(true);
+      // TODO: Fetch connected data sources from the backend
+      setConnectors([]);
+      setIsLoadingConnectors(false);
     }
   }, [mode]);
 
