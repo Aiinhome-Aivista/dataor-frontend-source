@@ -12,6 +12,8 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { Button, Card, CardContent, CardHeader, CardFooter } from '@/src/ui-kit';
+import { authService } from '../auth.service';
+import googleIcon from '@/src/assets/icons/google.svg';
 
 interface LoginPageProps {
   onBack: () => void;
@@ -21,10 +23,26 @@ interface LoginPageProps {
 export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsLoading(true);
+    try {
+      const response = await authService.login(email, password);
+      console.log('Login API Response:', response);
+      // Not calling onLoginSuccess() as per instructions
+    } catch (error) {
+      console.error('Login Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSocialLogin = (provider: string) => {
     setIsLoading(true);
-    // Simulate login
+    // Simulate social login
     setTimeout(() => {
       setIsLoading(false);
       onLoginSuccess();
@@ -59,12 +77,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
           <CardContent className="px-8 space-y-6">
             <div className="space-y-4">
               <Button 
+                type="button"
                 variant="outline" 
                 className="w-full h-12 rounded-xl border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-3 font-medium transition-all text-slate-900"
                 onClick={() => handleSocialLogin('google')}
                 disabled={isLoading}
               >
-                <Chrome className="w-5 h-5 text-red-500" />
+                <img src={googleIcon} alt="Google" className="w-5 h-5" />
                 Continue with Google
               </Button>
               
@@ -80,14 +99,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
               </div>
             </div>
 
-            <div className="space-y-4">
+            <form className="space-y-4" onSubmit={handleLogin}>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Email address</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input 
                     type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@company.com"
+                    required
                     className="w-full h-12 pl-11 pr-4 rounded-xl border border-slate-200 focus:border-accent focus:ring-4 focus:ring-accent/5 outline-none transition-all text-sm text-slate-900"
                   />
                 </div>
@@ -96,16 +118,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
                   <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Password</label>
-                  <button className="text-xs font-bold text-accent hover:text-accent-hover">Forgot password?</button>
+                  <button type="button" className="text-xs font-bold text-accent hover:text-accent-hover">Forgot password?</button>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input 
                     type={showPassword ? "text" : "password"} 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
+                    required
                     className="w-full h-12 pl-11 pr-12 rounded-xl border border-slate-200 focus:border-accent focus:ring-4 focus:ring-accent/5 outline-none transition-all text-sm text-slate-900"
                   />
                   <button 
+                    type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                   >
@@ -115,8 +141,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
               </div>
 
               <Button 
+                type="submit"
                 className="w-full h-12 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold shadow-lg shadow-accent/20 mt-2"
-                onClick={() => handleSocialLogin('email')}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -128,7 +154,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
                   'Sign in to Dataor'
                 )}
               </Button>
-            </div>
+            </form>
           </CardContent>
 
           <CardFooter className="pb-10 pt-6 text-center">
