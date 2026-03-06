@@ -4,6 +4,18 @@ export interface ApiConfig {
 }
 
 export const defaultConfig: ApiConfig = {
-  baseUrl: 'https://api.example.com', // Replace with actual DB config later
+  baseUrl: 'http://122.163.121.176:3004',
   timeout: 10000,
+};
+
+export const API_ENDPOINTS = {
+  AUTH: {
+    login: '/login',
+  },
+  CONNECTORS: {
+    CONNECTOR: '/connectors',
+  },
+  AGENTS: {
+    AGENT: '/agents',
+  },
 };
