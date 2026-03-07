@@ -29,13 +29,23 @@ class ApiService implements IApiService {
     // You could integrate a toast library here (e.g., toast.error(error.message))
   }
 
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    const userId = localStorage.getItem('dataor_user_id');
+    if (userId) {
+      headers['user_id'] = userId;
+      headers['user-id'] = userId; // Fallback in case backend expects kebab-case
+    }
+    return headers;
+  }
+
   async get<T>(endpoint: string): Promise<T> {
     try {
       const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
       });
       return this.handleResponse<T>(response);
     } catch (error) {
@@ -48,9 +58,7 @@ class ApiService implements IApiService {
     try {
       const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(data),
       });
       return this.handleResponse<T>(response);

@@ -84,8 +84,12 @@ class AgentService {
     }
   ];
 
-  async getAgents(userId: number | null): Promise<AgentData[]> {
+  async getAgents(userId: number | null, fetchFromApi: boolean = true): Promise<AgentData[]> {
     if (!userId) {
+      return this.agents.map(agent => ({ ...agent, history: [...agent.history] }));
+    }
+
+    if (!fetchFromApi) {
       return this.agents.map(agent => ({ ...agent, history: [...agent.history] }));
     }
 

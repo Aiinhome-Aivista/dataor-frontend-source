@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 interface AuthContextType {
   userId: number | null;
@@ -8,15 +8,10 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [userId, setUserId] = useState<number | null>(null);
-
-  // Optional: load from localStorage on init
-  useEffect(() => {
+  const [userId, setUserId] = useState<number | null>(() => {
     const stored = localStorage.getItem('dataor_user_id');
-    if (stored) {
-      setUserId(parseInt(stored, 10));
-    }
-  }, []);
+    return stored ? parseInt(stored, 10) : null;
+  });
 
   const handleSetUserId = (id: number | null) => {
     setUserId(id);

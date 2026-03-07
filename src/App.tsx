@@ -1,7 +1,7 @@
 import { ThemeProvider, useTheme, Button } from './ui-kit';
 import { ConnectorList, ConnectorForm, Connector } from './features/connectors';
 import { ConnectorProvider, useConnectorContext } from './context/ConnectorContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { ChatWindow } from './features/chat';
 import { AgentWorkflow } from './features/workflow';
 import { LandingPage } from './features/marketing/components/LandingPage';
@@ -12,12 +12,13 @@ import { useState, useEffect } from 'react';
 import { agentService } from './services/agent.service';
 import { AgentHistoryItem } from './features/workflow/types';
 
-type Tab = 'chat' | 'new-connector' | 'collection' | 'analysis';
+type Tab = 'chat' | 'connectors' | 'new-connector' | 'collection' | 'analysis';
 type ViewMode = 'landing' | 'login' | 'app';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
-  const [viewMode, setViewMode] = useState<ViewMode>('landing');
+  const { userId, setUserId } = useAuthContext();
+  const [viewMode, setViewMode] = useState<ViewMode>(userId ? 'app' : 'landing');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const { selectedConnector, setSelectedConnector } = useConnectorContext();
@@ -43,7 +44,10 @@ function AppContent() {
   const handleGetStarted = () => setViewMode('login');
   const handleLoginSuccess = () => setViewMode('app');
   const handleBackToLanding = () => setViewMode('landing');
-  const handleLogout = () => setViewMode('landing');
+  const handleLogout = () => {
+    setUserId(null); // This will clear the localStorage key in AuthContext
+    setViewMode('landing');
+  };
 
   const handleNewConnector = () => {
     setSelectedConnector(null);
@@ -321,7 +325,6 @@ function AppContent() {
                   onComplete={handleWorkflowComplete}
                   defaultAgentId="query"
                   onChangeTab={changeTab}
-                  activeConnector={selectedConnector}
                   initialChatMessage={initialChatMessage}
                 />
               </motion.div>
@@ -335,7 +338,6 @@ function AppContent() {
               >
                 <ConnectorForm
                   onBack={handleBackToConnectors}
-                  connector={selectedConnector}
                   onTestSuccess={handleStartWorkflow}
                 />
               </motion.div>
@@ -352,7 +354,6 @@ function AppContent() {
                   onComplete={handleWorkflowComplete}
                   defaultAgentId="ingest"
                   onChangeTab={changeTab}
-                  activeConnector={selectedConnector}
                 />
               </motion.div>
             ) : activeTab === 'analysis' ? (
@@ -369,7 +370,6 @@ function AppContent() {
                   defaultAgentId="analyze"
                   onChangeTab={changeTab}
                   onForwardWithContext={handleForwardWithContext}
-                  activeConnector={selectedConnector}
                 />
               </motion.div>
             ) : activeTab === 'connectors' ? (
