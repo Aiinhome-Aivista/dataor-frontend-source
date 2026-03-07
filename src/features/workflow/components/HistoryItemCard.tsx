@@ -81,18 +81,18 @@ export const HistoryItemCard = ({
       className={`
         p-3 rounded-xl border transition-all
         ${item.status === 'processing' ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-lg shadow-[var(--accent)]/10' :
-          item.status === 'failed' ? 'border-red-500/20 bg-red-500/[0.02]' :
-          item.status === 'pending_input' ? 'border-amber-500/20 bg-amber-500/[0.02]' :
+          item.status === 'failed' ? 'border-red-500/10 bg-red-500/[0.02]' :
+          item.status === 'pending_input' ? 'border-[var(--warning)]/20 bg-[var(--warning)]/[0.02]' :
             'border-[var(--border)] bg-[var(--bg)]/50'}
       `}
     >
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            {item.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+            {item.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-[var(--success)] shrink-0" />}
             {item.status === 'failed' && <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
             {item.status === 'processing' && <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin shrink-0" />}
-            {item.status === 'pending_input' && <RotateCcw className="w-4 h-4 text-amber-500 shrink-0" />}
+            {item.status === 'pending_input' && <RotateCcw className="w-4 h-4 text-[var(--warning)] shrink-0" />}
             <h4 className="font-bold text-[var(--text-primary)] truncate">
               {item.action}
             </h4>
@@ -132,7 +132,7 @@ export const HistoryItemCard = ({
               {i === displayIndex && item.status === 'processing' ? (
                 <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />
               ) : (
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <CheckCircle2 className="w-4 h-4 text-[var(--success)]" />
               )}
               <span className={i === displayIndex && item.status === 'processing' ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}>
                 {activity}
@@ -170,7 +170,13 @@ export const HistoryItemCard = ({
           <Button
             variant="primary"
             size="sm"
-            onClick={() => onForward(agent.id, item.action, item.connectionName)}
+            onClick={() => {
+              if (agent.id === 'connect') {
+                onAction(item, 'Continue');
+              } else {
+                onForward(agent.id, item.action, item.connectionName);
+              }
+            }}
             className="shadow-lg shadow-[var(--accent)]/20"
           >
             {getContinueText(agent.id)}

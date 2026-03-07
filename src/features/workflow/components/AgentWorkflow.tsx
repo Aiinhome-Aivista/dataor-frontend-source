@@ -10,6 +10,7 @@ import { Connector } from '../../connectors/types';
 import { ChatWindow } from '../../chat/components/ChatWindow';
 import { useConnectorContext } from '../../../context/ConnectorContext';
 import { useAuthContext } from '../../../context/AuthContext';
+import { connectorService } from '@/src/services/connector.service';
 
 interface AgentWorkflowProps {
   onComplete: () => void;
@@ -60,7 +61,9 @@ export const AgentWorkflow = ({
 
     if (hasProcessing) {
       const interval = setInterval(async () => {
-        const updatedAgents = await agentService.getAgents(userId, selectedAgentId === 'connect');
+        // We set fetchFromApi to false here so that we don't spam the connection_history
+        // API every 1 second while waiting for simulated local processing to finish.
+        const updatedAgents = await agentService.getAgents(userId, false);
         setAgents(updatedAgents);
       }, 1000);
       return () => clearInterval(interval);
@@ -149,6 +152,53 @@ export const AgentWorkflow = ({
 
   const handleAction = async (historyItem: AgentHistoryItem, option?: string) => {
     if (!selectedAgent) return;
+
+    if (selectedAgentId === 'connect' && (option === 'Continue' || !option)) {
+       // Stop if no valid IDs
+       if (!userId || !historyItem.connectorId) {
+          console.error("Missing userId or connectorId to continue import");
+          return;
+       }
+
+       const newActivities = historyItem.activities
+          ? [...historyItem.activities, 'Initiating import process...']
+          : ['Initiating import process...'];
+
+       // 1. Show processing state
+       await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+          status: 'processing',
+          details: 'Triggering data import from data source...',
+          activities: newActivities
+       });
+       setAgents(await agentService.getAgents(userId, false));
+
+       try {
+          // 2. Call the API
+          await connectorService.continueToImport({
+             user_id: userId.toString(),
+             connection_id: historyItem.connectorId
+          });
+
+          // 3. Mark completed and forward
+          await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+             status: 'completed',
+             details: 'Import trigger successful.'
+          });
+          setAgents(await agentService.getAgents(userId, false));
+          await forwardToNextAgent(selectedAgent.id, 'Import Triggered', historyItem.connectionName);
+
+       } catch (error) {
+          // 4. Handle failure
+          await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+             status: 'failed',
+             details: `Failed to start import: ${error instanceof Error ? error.message : 'Unknown error'}`
+          });
+          setAgents(await agentService.getAgents(userId, false));
+       }
+
+       return; // Exit early since we handled the 'connect' continue specifically
+    }
+
 
     const newActivities = historyItem.activities
       ? [...historyItem.activities, `Executing: ${option || 'Continue'}`]

@@ -13,6 +13,9 @@
   --color-text-secondary-default: #475569;
   --color-accent-default: #3b82f6;
   --color-accent-hover-default: #2563eb;
+  --color-error-default: #ef4444;
+  --color-success-default: #10b981;
+  --color-warning-default: #f59e0b;
 
   /* Theme 2: Warm Organic (Alternative) */
   --color-bg-warm: #f5f5f0;
@@ -23,6 +26,9 @@
   --color-text-secondary-warm: #57534e;
   --color-accent-warm: #5a5a40;
   --color-accent-hover-warm: #4a4a35;
+  --color-error-warm: #ef4444;
+  --color-success-warm: #10b981;
+  --color-warning-warm: #f59e0b;
 
   /* Dynamic Variables */
   --color-bg: var(--bg);
@@ -33,6 +39,9 @@
   --color-text-secondary: var(--text-secondary);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-error: var(--error);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
 }
 
 @layer base {
@@ -45,6 +54,9 @@
     --text-secondary: var(--color-text-secondary-default);
     --accent: var(--color-accent-default);
     --accent-hover: var(--color-accent-hover-default);
+    --error: var(--color-error-default);
+    --success: var(--color-success-default);
+    --warning: var(--color-warning-default);
   }
 
   .theme-warm {
@@ -56,6 +68,9 @@
     --text-secondary: var(--color-text-secondary-warm);
     --accent: var(--color-accent-warm);
     --accent-hover: var(--color-accent-hover-warm);
+    --error: var(--color-error-warm);
+    --success: var(--color-success-warm);
+    --warning: var(--color-warning-warm);
   }
 
   .theme-landing {
@@ -67,6 +82,9 @@
     --text-secondary: #475569;
     --accent: #3b82f6;
     --accent-hover: #2563eb;
+    --error: #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
   }
 
   body {

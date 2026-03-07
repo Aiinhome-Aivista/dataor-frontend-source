@@ -28,6 +28,7 @@ export interface AgentHistoryItem {
   customInputType?: 'table_selection';
   customInputData?: any;
   connectionName?: string;
+  connectorId?: string;
   contextualInsights?: string[];
 }
 
