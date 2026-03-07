@@ -6,7 +6,7 @@ import { ChatWindow } from './features/chat';
 import { AgentWorkflow } from './features/workflow';
 import { LandingPage } from './features/marketing/components/LandingPage';
 import { LoginPage } from './features/auth/components/LoginPage';
-import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles, BarChart3, Clock, Search, ChevronDown } from 'lucide-react';
+import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles, BarChart3, Clock, Search, ChevronDown, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { agentService } from './services/agent.service';
@@ -305,7 +305,12 @@ function AppContent() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm">Docs</Button>
+            <Button variant="outline" size="sm" className="flex items-center gap-2.5 rounded-full pr-4 pl-1.5 h-9 border-[var(--border)] hover:bg-[var(--surface-hover)] transition-all">
+              <div className="w-6 h-6 rounded-full bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)]">
+                <User className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-medium">Welcome aiinhome</span>
+            </Button>
           </div>
         </header>
 
