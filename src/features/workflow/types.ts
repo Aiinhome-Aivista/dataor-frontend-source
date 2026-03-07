@@ -21,7 +21,7 @@ export interface AgentHistoryItem {
   date: string;
   action: string;
   details: string;
-  status: 'completed' | 'pending_input' | 'processing';
+  status: 'completed' | 'pending_input' | 'processing' | 'failed';
   prompt?: string;
   options?: string[];
   activities?: string[];

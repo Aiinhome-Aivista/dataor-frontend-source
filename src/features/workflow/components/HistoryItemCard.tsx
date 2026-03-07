@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AgentData, AgentHistoryItem } from '../types';
 import { Button } from '@/src/ui-kit';
 import { motion } from 'motion/react';
-import { CheckCircle2, Loader2, RotateCcw, Sparkles, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Loader2, RotateCcw, Sparkles, ArrowRight, XCircle } from 'lucide-react';
 import { useConnectorContext } from '../../../context/ConnectorContext';
 
 export const HistoryItemCard = ({
@@ -19,7 +19,7 @@ export const HistoryItemCard = ({
   onScenarioConfirm?: (scenario: string) => void
 }) => {
   const [activityIndex, setActivityIndex] = useState(() => {
-    return (item.status === 'pending_input' || item.status === 'completed')
+    return (item.status === 'pending_input' || item.status === 'completed' || item.status === 'failed')
       ? (item.activities?.length || 1) - 1
       : 0;
   });
@@ -34,12 +34,12 @@ export const HistoryItemCard = ({
   }, [item.status, item.activities, activityIndex]);
 
   useEffect(() => {
-    if (item.status === 'pending_input' || item.status === 'completed') {
+    if (item.status === 'pending_input' || item.status === 'completed' || item.status === 'failed') {
       setActivityIndex((item.activities?.length || 1) - 1);
     }
   }, [item.status, item.activities]);
 
-  const displayIndex = (item.status === 'pending_input' || item.status === 'completed')
+  const displayIndex = (item.status === 'pending_input' || item.status === 'completed' || item.status === 'failed')
     ? (item.activities?.length || 1) - 1
     : activityIndex;
 
@@ -81,28 +81,30 @@ export const HistoryItemCard = ({
       className={`
         p-3 rounded-xl border transition-all
         ${item.status === 'processing' ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-lg shadow-[var(--accent)]/10' :
-          item.status === 'pending_input' ? 'border-amber-500/50 bg-amber-500/5' :
+          item.status === 'failed' ? 'border-red-500/20 bg-red-500/[0.02]' :
+          item.status === 'pending_input' ? 'border-amber-500/20 bg-amber-500/[0.02]' :
             'border-[var(--border)] bg-[var(--bg)]/50'}
       `}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            {item.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-            {item.status === 'processing' && <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />}
-            {item.status === 'pending_input' && <RotateCcw className="w-4 h-4 text-amber-500" />}
-            <h4 className="font-bold text-[var(--text-primary)]">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            {item.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+            {item.status === 'failed' && <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
+            {item.status === 'processing' && <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin shrink-0" />}
+            {item.status === 'pending_input' && <RotateCcw className="w-4 h-4 text-amber-500 shrink-0" />}
+            <h4 className="font-bold text-[var(--text-primary)] truncate">
               {item.action}
-              {item.connectionName && (
-                <span className="text-[var(--accent)] ml-2 font-medium text-xs bg-[var(--accent)]/10 px-2 py-0.5 rounded-full">
-                  {item.connectionName}
-                </span>
-              )}
             </h4>
+            {item.connectionName && (
+              <span className="text-[var(--accent)] font-medium text-xs bg-[var(--accent)]/10 px-2 py-0.5 rounded-full shrink-0">
+                {item.connectionName}
+              </span>
+            )}
           </div>
-          <p className="text-sm text-[var(--text-secondary)]">{item.details}</p>
+          <p className="text-sm text-[var(--text-secondary)] break-words whitespace-pre-wrap">{item.details}</p>
         </div>
-        <span className="text-xs font-mono text-[var(--text-secondary)] bg-[var(--surface)] px-2 py-1 rounded-md border border-[var(--border)] h-fit">
+        <div className="text-[11px] shrink-0 whitespace-nowrap font-mono text-[var(--text-secondary)] bg-[var(--bg)]/50 px-2 py-1 rounded-md border border-[var(--border)]/50 h-fit">
           {(() => {
             const d = new Date(item.date);
             const day = String(d.getUTCDate()).padStart(2, '0');
@@ -112,7 +114,7 @@ export const HistoryItemCard = ({
             const minutes = String(d.getUTCMinutes()).padStart(2, '0');
             return `${day}/${month}/${year} ${hours}:${minutes}`;
           })()}
-        </span>
+        </div>
       </div>
 
       {item.activities && item.activities.length > 0 && (item.status === 'processing' || item.status === 'pending_input') && (
