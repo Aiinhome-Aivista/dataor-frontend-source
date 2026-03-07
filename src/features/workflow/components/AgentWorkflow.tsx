@@ -119,8 +119,16 @@ const HistoryItemCard = ({
           </div>
           <p className="text-sm text-[var(--text-secondary)]">{item.details}</p>
         </div>
-        <span className="text-[10px] font-mono text-[var(--text-secondary)] bg-[var(--surface)] px-2 py-1 rounded-md border border-[var(--border)] h-fit">
-          {new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <span className="text-xs font-mono text-[var(--text-secondary)] bg-[var(--surface)] px-2 py-1 rounded-md border border-[var(--border)] h-fit">
+          {(() => {
+            const d = new Date(item.date);
+            const day = String(d.getUTCDate()).padStart(2, '0');
+            const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+            const year = d.getUTCFullYear();
+            const hours = String(d.getUTCHours()).padStart(2, '0');
+            const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+          })()}
         </span>
       </div>
 
