@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
   DATA_SOURCE: {
     CONNECTION_HISTORY: '/connection_history',
     CREATE_CONNECTORS: '/create_connectors',
+    CONTINUE_TO_IMPORT: '/connect-external-db',
   },
   IMPORT: {
     AGENT: '/agents',

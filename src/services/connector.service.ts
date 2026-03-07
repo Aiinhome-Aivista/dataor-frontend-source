@@ -7,6 +7,7 @@ export interface IConnectorService {
   addConnector(connector: Omit<Connector, 'id' | 'status'>): Promise<Connector>;
   createConnector(payload: any, userId?: number | null): Promise<any>;
   getConnectionHistory(userId: number | null): Promise<any>;
+  continueToImport(payload: { user_id: string; connection_id: string }): Promise<any>;
 }
 
 class ConnectorService implements IConnectorService {
@@ -51,6 +52,10 @@ class ConnectorService implements IConnectorService {
 
   async getConnectionHistory(userId: number | null): Promise<any> {
     return this.api.get(`${API_ENDPOINTS.DATA_SOURCE.CONNECTION_HISTORY}?user_id=${userId}`);
+  }
+
+  async continueToImport(payload: { user_id: string; connection_id: string }): Promise<any> {
+    return this.api.post(API_ENDPOINTS.DATA_SOURCE.CONTINUE_TO_IMPORT, payload);
   }
 }
 

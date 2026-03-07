@@ -8,6 +8,9 @@ export const themes = {
     textSecondary: '#4b5563',
     accent: '#3b82f6',
     accentHover: '#2563eb',
+    error: '#ef4444',
+    success: '#10b981',
+    warning: '#f59e0b',
   }
 };
 
