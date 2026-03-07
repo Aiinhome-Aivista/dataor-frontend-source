@@ -35,7 +35,14 @@ export const AgentWorkflow = ({
   onForwardWithContext,
   initialChatMessage
 }: AgentWorkflowProps) => {
-  const { selectedConnector: activeConnector } = useConnectorContext();
+  const {
+    selectedConnector: activeConnector,
+    setSelectedConnector,
+    connectorResults,
+    setConnectorResults,
+    isImporting,
+    setIsImporting
+  } = useConnectorContext();
   const { userId } = useAuthContext();
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(defaultAgentId);
@@ -154,49 +161,74 @@ export const AgentWorkflow = ({
     if (!selectedAgent) return;
 
     if (selectedAgentId === 'connect' && (option === 'Continue' || !option)) {
-       // Stop if no valid IDs
-       if (!userId || !historyItem.connectorId) {
-          console.error("Missing userId or connectorId to continue import");
-          return;
-       }
+      if (!userId || !historyItem.connectorId) {
+        console.error("Missing userId or connectorId to continue import");
+        return;
+      }
 
-       const newActivities = historyItem.activities
-          ? [...historyItem.activities, 'Initiating import process...']
-          : ['Initiating import process...'];
+      // 1. Set active connector if not already set (reconstruct from history)
+      if (!activeConnector) {
+        setSelectedConnector({
+          id: historyItem.connectorId,
+          name: historyItem.connectionName || 'Data source',
+          description: historyItem.details || '',
+          type: 'Database',
+          icon: 'database',
+          status: 'connected'
+        });
+      }
 
-       // 1. Show processing state
-       await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
-          status: 'processing',
-          details: 'Triggering data import from data source...',
-          activities: newActivities
-       });
-       setAgents(await agentService.getAgents(userId, false));
+      // 2. Set importing state
+      setIsImporting(true);
 
-       try {
-          // 2. Call the API
-          await connectorService.continueToImport({
-             user_id: userId.toString(),
-             connection_id: historyItem.connectorId
+      // 3. Update history to show processing
+      const newActivities = historyItem.activities
+        ? [...historyItem.activities, 'Initiating import process...']
+        : ['Initiating import process...'];
+
+      await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+        status: 'processing',
+        details: 'Triggering data import from data source...',
+        activities: newActivities
+      });
+      setAgents(await agentService.getAgents(userId, false));
+
+      // 4. Forward IMMEDIATELY to switch tabs
+      await forwardToNextAgent(selectedAgent.id, 'Import Triggered', historyItem.connectionName);
+
+      // 5. Run API call in background
+      (async () => {
+        try {
+          const response = await connectorService.continueToImport({
+            user_id: userId.toString(),
+            connection_id: historyItem.connectorId || ''
           });
 
-          // 3. Mark completed and forward
+          if (response) {
+            setConnectorResults(response);
+          }
+
+          // Also update the agent history so it's reflected in the UI eventually
           await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
-             status: 'completed',
-             details: 'Import trigger successful.'
+            status: 'completed',
+            details: 'Import trigger successful.'
           });
-          setAgents(await agentService.getAgents(userId, false));
-          await forwardToNextAgent(selectedAgent.id, 'Import Triggered', historyItem.connectionName);
-
-       } catch (error) {
-          // 4. Handle failure
+        } catch (error) {
+          console.error("Import failed:", error);
           await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
-             status: 'failed',
-             details: `Failed to start import: ${error instanceof Error ? error.message : 'Unknown error'}`
+            status: 'failed',
+            details: `Failed to start import: ${error instanceof Error ? error.message : 'Unknown error'}`
           });
-          setAgents(await agentService.getAgents(userId, false));
-       }
+        } finally {
+          setIsImporting(false);
+          // We don't necessarily need to reload agents here as they'll be reloaded on tab entry,
+          // but for safety in case we're still on the same tab:
+          const freshAgents = await agentService.getAgents(userId, false);
+          setAgents(freshAgents);
+        }
+      })();
 
-       return; // Exit early since we handled the 'connect' continue specifically
+      return;
     }
 
 
@@ -271,10 +303,10 @@ export const AgentWorkflow = ({
     <div className="w-full flex-col h-full py-1 flex gap-4">
       {/* Stepper - Agent List (hidden on Query tab) */}
       {selectedAgentId !== 'query' && (
-        <AgentStepper 
-          agents={agents} 
-          selectedAgentId={selectedAgentId} 
-          onSelectAgent={handleStepperClick} 
+        <AgentStepper
+          agents={agents}
+          selectedAgentId={selectedAgentId}
+          onSelectAgent={handleStepperClick}
         />
       )}
 
@@ -300,9 +332,11 @@ export const AgentWorkflow = ({
 
             <CardContent className={`flex-1 ${selectedAgent.id === 'query' ? 'flex flex-col p-0 overflow-hidden' : compact ? 'px-0 overflow-visible space-y-4' : 'overflow-y-auto p-4 space-y-4'}`}>
               {selectedAgent.id === 'ingest' && (
-                <IngestDataView 
-                  activeConnector={activeConnector} 
-                  onGoToDataSource={() => handleStepperClick('connect')} 
+                <IngestDataView
+                  activeConnector={activeConnector}
+                  connectorResults={connectorResults}
+                  isImporting={isImporting}
+                  onGoToDataSource={() => handleStepperClick('connect')}
                 />
               )}
 
