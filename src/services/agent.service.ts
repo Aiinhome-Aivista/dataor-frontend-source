@@ -1,4 +1,5 @@
 import { AgentData, AgentHistoryItem } from '../features/workflow/types';
+import { connectorService } from './connector.service';
 
 class AgentService {
   private agents: AgentData[] = [
@@ -8,30 +9,7 @@ class AgentService {
       historyName: 'Data source',
       icon: 'database',
       description: 'Establishing secure link to database',
-      history: [
-        {
-          id: 'h2',
-          date: '2026-03-03T08:30:00Z',
-          action: 'Reconnected to Sales Analytics',
-          details: 'MySQL connection established successfully.',
-          connectionName: 'Sales Analytics',
-          status: 'completed',
-          activities: [
-            'Verifying credentials...',
-            'Establishing SSL tunnel...',
-            'Handshaking with MySQL...',
-            'Mapping schema structures...'
-          ]
-        },
-        {
-          id: 'h1',
-          date: '2026-03-02T10:00:00Z',
-          action: 'Connected to Production DB',
-          details: 'PostgreSQL connection established successfully.',
-          connectionName: 'Production DB',
-          status: 'completed'
-        }
-      ]
+      history: []
     },
     {
       id: 'ingest',
@@ -106,10 +84,27 @@ class AgentService {
     }
   ];
 
-  async getAgents(): Promise<AgentData[]> {
-    return new Promise(resolve => setTimeout(() => resolve(
-      this.agents.map(agent => ({ ...agent, history: [...agent.history] }))
-    ), 500));
+  async getAgents(userId: number | null): Promise<AgentData[]> {
+    if (!userId) {
+      return this.agents.map(agent => ({ ...agent, history: [...agent.history] }));
+    }
+
+    try {
+      const response = await connectorService.getConnectionHistory(userId);
+      if (response.status === 'success') {
+        const apiAgents = response.agents;
+        this.agents = this.agents.map(localAgent => {
+          const apiAgent = apiAgents.find(a => a.id === localAgent.id);
+          return apiAgent ? { ...localAgent, history: apiAgent.history } : localAgent;
+        });
+
+        return this.agents;
+      }
+      return this.agents;
+    } catch (error) {
+      console.error('Failed to fetch agents:', error);
+      return this.agents;
+    }
   }
 
   async getAgentHistory(agentId: string): Promise<AgentHistoryItem[]> {

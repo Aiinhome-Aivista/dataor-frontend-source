@@ -5,7 +5,8 @@ import { API_ENDPOINTS } from './api.config';
 export interface IConnectorService {
   getCollections(connectorId: string): Promise<string[]>;
   addConnector(connector: Omit<Connector, 'id' | 'status'>): Promise<Connector>;
-  createConnector(payload: any): Promise<any>;
+  createConnector(payload: any, userId?: number | null): Promise<any>;
+  getConnectionHistory(userId: number | null): Promise<any>;
 }
 
 class ConnectorService implements IConnectorService {
@@ -46,6 +47,10 @@ class ConnectorService implements IConnectorService {
 
   async createConnector(payload: any): Promise<any> {
     return this.api.post(API_ENDPOINTS.DATA_SOURCE.CREATE_CONNECTORS, payload);
+  }
+
+  async getConnectionHistory(userId: number | null): Promise<any> {
+    return this.api.get(`${API_ENDPOINTS.DATA_SOURCE.CONNECTION_HISTORY}?user_id=${userId}`);
   }
 }
 

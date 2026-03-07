@@ -9,6 +9,7 @@ import { ConnectorList } from '../../connectors/components/ConnectorList';
 import { Connector } from '../../connectors/types';
 import { ChatWindow } from '../../chat/components/ChatWindow';
 import { useConnectorContext } from '../../../context/ConnectorContext';
+import { useAuthContext } from '../../../context/AuthContext';
 
 interface AgentWorkflowProps {
   onComplete: () => void;
@@ -412,6 +413,7 @@ export const AgentWorkflow = ({
   initialChatMessage
 }: AgentWorkflowProps) => {
   const { selectedConnector: activeConnector } = useConnectorContext();
+  const { userId } = useAuthContext();
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(defaultAgentId);
   const [isLoading, setIsLoading] = useState(true);
@@ -423,12 +425,12 @@ export const AgentWorkflow = ({
   useEffect(() => {
     const fetchAgents = async () => {
       setIsLoading(true);
-      const data = await agentService.getAgents();
+      const data = await agentService.getAgents(userId);
       setAgents(data);
       setIsLoading(false);
     };
     fetchAgents();
-  }, []);
+  }, [userId]);
 
   // Poll for updates if there are any processing items to handle tab-switching state sync
   useEffect(() => {
@@ -436,7 +438,7 @@ export const AgentWorkflow = ({
 
     if (hasProcessing) {
       const interval = setInterval(async () => {
-        const updatedAgents = await agentService.getAgents();
+        const updatedAgents = await agentService.getAgents(userId);
         setAgents(updatedAgents);
       }, 1000);
       return () => clearInterval(interval);
@@ -502,7 +504,7 @@ export const AgentWorkflow = ({
       });
 
       setSelectedAgentId(nextAgentId);
-      setAgents(await agentService.getAgents());
+      setAgents(await agentService.getAgents(userId));
 
       // Sync sidebar with stepper
       if (onChangeTab) {
@@ -526,7 +528,7 @@ export const AgentWorkflow = ({
           customInputType: nextCustomInputType,
           customInputData: nextCustomInputData
         });
-        setAgents(await agentService.getAgents());
+        setAgents(await agentService.getAgents(userId));
       }, processingTime);
     } else if (currentAgentId === 'query') {
       onComplete();
@@ -548,7 +550,7 @@ export const AgentWorkflow = ({
     });
 
     // Refresh data
-    setAgents(await agentService.getAgents());
+    setAgents(await agentService.getAgents(userId));
 
     // Simulate completion
     setTimeout(async () => {
@@ -556,7 +558,7 @@ export const AgentWorkflow = ({
         status: 'completed',
         details: option ? `Completed action: ${option}` : 'Action completed successfully.'
       });
-      setAgents(await agentService.getAgents());
+      setAgents(await agentService.getAgents(userId));
 
       // Automatically forward to next agent
       await forwardToNextAgent(selectedAgent.id, option || historyItem.action, historyItem.connectionName);
@@ -574,7 +576,7 @@ export const AgentWorkflow = ({
       connectionName: activeConnector?.name
     });
 
-    setAgents(await agentService.getAgents());
+    setAgents(await agentService.getAgents(userId));
 
     // Forward to next agent
     await forwardToNextAgent('ingest', scenario, activeConnector?.name);
