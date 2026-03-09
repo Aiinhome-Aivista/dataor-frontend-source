@@ -6,7 +6,7 @@ import { ChatWindow } from './features/chat';
 import { AgentWorkflow } from './features/workflow';
 import { LandingPage } from './features/marketing/components/LandingPage';
 import { LoginPage } from './features/auth/components/LoginPage';
-import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles, BarChart3, Clock, Search, ChevronDown, User } from 'lucide-react';
+import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles, BarChart3, Clock, Search, ChevronDown, User, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { agentService } from './services/agent.service';
@@ -28,6 +28,20 @@ function AppContent() {
   const [queryHistory, setQueryHistory] = useState<AgentHistoryItem[]>([]);
   const [isQueryHistoryOpen, setIsQueryHistoryOpen] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
+
+  // Workspace state
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
+  const [workspaceSearch, setWorkspaceSearch] = useState('');
+  const [selectedWorkspace, setSelectedWorkspace] = useState('Default Workspace');
+  const [workspaces, setWorkspaces] = useState<string[]>([
+    'Default Workspace',
+    'Marketing Project',
+    'Sales Analysis',
+    'Q4 Reports',
+    'Customer Feedback'
+  ]);
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState('');
 
   useEffect(() => {
     const fetchQueryHistory = async () => {
@@ -156,7 +170,166 @@ function AppContent() {
         </div>
 
         {/* Main nav area */}
-        <div className="flex flex-col mt-2 flex-1">
+        <div className="flex flex-col mt-2 flex-1 min-h-0">
+          {/* Workspace nav item */}
+          <div className="px-3 shrink-0 mb-1">
+            <button
+              onClick={() => setIsWorkspaceOpen(o => !o)}
+              className={`
+                w-full flex items-center gap-2.5 p-2.5 rounded-xl transition-all duration-200
+                hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]
+              `}
+            >
+              <Layout className="w-4 h-4 shrink-0" />
+              {isSidebarOpen && (
+                <>
+                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm flex-1 text-left truncate">
+                    {selectedWorkspace}
+                  </motion.span>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
+                  </motion.div>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Workspace Dropdown */}
+          <AnimatePresence>
+            {isSidebarOpen && isWorkspaceOpen && (
+              <motion.div
+                key="workspace-dropdown"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="px-3 pt-1 pb-3 overflow-hidden flex flex-col shrink-0 max-h-[300px]"
+              >
+                {/* Create Workspace */}
+                <div className="mb-2 shrink-0">
+                  {isCreatingWorkspace ? (
+                    <div className="flex items-center gap-1.5 p-1 rounded-lg border border-[var(--border)] bg-[var(--surface-hover)]">
+                      <input
+                        autoFocus
+                        type="text"
+                        placeholder="Workspace name..."
+                        value={newWorkspaceName}
+                        onChange={e => setNewWorkspaceName(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && newWorkspaceName.trim()) {
+                            const trimmed = newWorkspaceName.trim();
+                            if (!workspaces.includes(trimmed)) {
+                              setWorkspaces(prev => [...prev, trimmed]);
+                              setSelectedWorkspace(trimmed);
+                              setWorkspaceSearch('');
+                              setIsCreatingWorkspace(false);
+                              setNewWorkspaceName('');
+                            }
+                          } else if (e.key === 'Escape') {
+                            setIsCreatingWorkspace(false);
+                            setNewWorkspaceName('');
+                          }
+                        }}
+                        className="flex-1 min-w-0 bg-transparent text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none px-1 py-0.5"
+                      />
+                      <button
+                        onClick={() => {
+                          if (newWorkspaceName.trim()) {
+                            const trimmed = newWorkspaceName.trim();
+                            if (!workspaces.includes(trimmed)) {
+                              setWorkspaces(prev => [...prev, trimmed]);
+                              setSelectedWorkspace(trimmed);
+                              setWorkspaceSearch('');
+                              setIsCreatingWorkspace(false);
+                              setNewWorkspaceName('');
+                            }
+                          }
+                        }}
+                        className="p-1 rounded-md text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors shrink-0"
+                      >
+                        <Check className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsCreatingWorkspace(false);
+                          setNewWorkspaceName('');
+                        }}
+                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-start px-1 mb-1">
+                      <button
+                        onClick={() => setIsCreatingWorkspace(true)}
+                        className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors text-xs font-semibold"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Create workspace
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Search */}
+                <div className="relative mb-2 shrink-0">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-secondary)]" />
+                  <input
+                    type="text"
+                    placeholder="Search workspace..."
+                    value={workspaceSearch}
+                    onChange={e => setWorkspaceSearch(e.target.value)}
+                    className="w-full pl-7 pr-3 py-1.5 text-[11px] rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/40"
+                  />
+                </div>
+                {/* Items */}
+                <div className="space-y-1.5 overflow-y-auto flex-1">
+                  {(() => {
+                    const filtered = workspaces.filter(w =>
+                      w.toLowerCase().includes(workspaceSearch.toLowerCase())
+                    );
+                    return filtered.length === 0 ? (
+                      <div className="text-center py-6 border border-dashed border-[var(--border)] rounded-xl">
+                        <p className="text-[10px] text-[var(--text-secondary)]">No matching workspace</p>
+                      </div>
+                    ) : (
+                      filtered.map((workspace) => (
+                        <button
+                          key={workspace}
+                          onClick={() => {
+                            setSelectedWorkspace(workspace);
+                            setIsWorkspaceOpen(false);
+                          }}
+                          className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer
+                            ${selectedWorkspace === workspace
+                              ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text-primary)]'
+                              : 'border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
+                          `}
+                        >
+                          <div className="flex flex-col gap-0.5 overflow-hidden">
+                            <span className={`text-[11px] font-bold truncate ${selectedWorkspace === workspace ? 'text-[var(--accent)]' : ''}`}>
+                              {workspace}
+                            </span>
+                            <span className="text-[9px] font-mono text-[var(--text-secondary)]">
+                              Local Workspace
+                            </span>
+                          </div>
+                          {selectedWorkspace === workspace && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_8px_var(--accent)]" />
+                          )}
+                        </button>
+                      ))
+                    );
+                  })()}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Divider */}
+          {isSidebarOpen && <div className="mx-4 my-1 h-px bg-[var(--border)] shrink-0" />}
+
           {/* Query nav item */}
           <div className="px-3 shrink-0">
             <button
