@@ -283,7 +283,8 @@ export const AgentWorkflow = ({
         try {
           const response = await connectorService.continueToImport({
             user_id: userId.toString(),
-            connection_id: historyItem.connectorId || ''
+            connection_id: historyItem.connectorId || '',
+            session_id: historyItem.session_id
           });
 
           if (response) {

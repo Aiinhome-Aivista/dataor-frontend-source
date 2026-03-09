@@ -311,12 +311,11 @@ function AppContent() {
                             <span className={`text-[11px] font-bold truncate ${selectedWorkspace === workspace ? 'text-[var(--accent)]' : ''}`}>
                               {workspace}
                             </span>
-                            <span className="text-[9px] font-mono text-[var(--text-secondary)]">
-                              Local Workspace
-                            </span>
+
                           </div>
                           {selectedWorkspace === workspace && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_8px_var(--accent)]" />
+                            // <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_8px_var(--accent)]" />
+                            <></>
                           )}
                         </button>
                       ))

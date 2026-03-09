@@ -29,6 +29,7 @@ export interface AgentHistoryItem {
   customInputData?: any;
   connectionName?: string;
   connectorId?: string;
+  session_id?: string;
   contextualInsights?: string[];
 }
 
