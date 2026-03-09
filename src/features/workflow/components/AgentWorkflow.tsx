@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AgentData, AgentHistoryItem } from '../types';
 import { Card, CardContent, CardHeader, Badge, Button } from '@/src/ui-kit';
 import { motion, AnimatePresence } from 'motion/react';
@@ -48,6 +48,7 @@ export const AgentWorkflow = ({
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(defaultAgentId);
   const [isLoading, setIsLoading] = useState(true);
+  const isDescribingRef = useRef(false);
 
   useEffect(() => {
     setSelectedAgentId(defaultAgentId);
@@ -91,6 +92,9 @@ export const AgentWorkflow = ({
       !!processingItem;
 
     if (isAnalyzeProcessing && !connectorResults?.description) {
+      if (isDescribingRef.current) return;
+      isDescribingRef.current = true;
+
       const describeContent = async () => {
         try {
           const response = await connectorService.describeSavedContent(activeUserId);
@@ -115,6 +119,8 @@ export const AgentWorkflow = ({
             });
             setAgents(await agentService.getAgents(userId, false));
           }
+        } finally {
+          isDescribingRef.current = false;
         }
       };
       describeContent();

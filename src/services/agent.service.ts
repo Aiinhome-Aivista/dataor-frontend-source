@@ -101,11 +101,17 @@ class AgentService {
           const apiAgent = apiAgents.find((a: any) => a.id === localAgent.id);
           if (apiAgent) {
             // Map the backend 'id' from the history item to our frontend 'connectorId'
-            const mappedHistory = apiAgent.history.map((h: any) => ({
-              ...h,
-              connectorId: h.id, // The backend uses 'id' for the connection ID
-              id: h.id // keep original id as well for react keys
-            }));
+            const mappedHistory = apiAgent.history.map((h: any) => {
+              // Ensure session_id is captured, checking multiple possible backend keys just in case.
+              const extractedSessionId = h.session_id || h.sessionId || h.sessionID || (apiAgent as any).session_id || response.session_id;
+
+              return {
+                ...h,
+                session_id: extractedSessionId,
+                connectorId: h.id, // The backend uses 'id' for the connection ID
+                id: h.id // keep original id as well for react keys
+              };
+            });
             return { ...localAgent, history: mappedHistory };
           }
           return localAgent;
