@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Input, Card, CardContent, CardHeader } from '@/src/ui-kit';
 import { motion, AnimatePresence } from 'motion/react';
-import { Server, Shield, Globe, Info, ChevronLeft, Sparkles, Loader2 } from 'lucide-react';
+import { Server, Shield, Globe, Info, ChevronLeft, Sparkles, Loader2, Search, Check, ListFilter } from 'lucide-react';
 import { ThreeAvatar } from '../../chat/components/ThreeAvatar';
 import { connectorService } from '@/src/services/connector.service';
 import { useConnectorContext } from '../../../context/ConnectorContext';
@@ -43,6 +43,11 @@ const GUIDES: Record<string, FieldGuide> = {
     title: "Password",
     description: "The password for the specified database user.",
     tip: "Your password is encrypted and stored securely using AES-256."
+  },
+  search: {
+    title: "Web Search Query",
+    description: "Enter keywords to search the live web for data and insights.",
+    tip: "Use specific queries like 'Market trends for semiconductor industry 2024'"
   }
 };
 
@@ -52,7 +57,7 @@ interface ConnectorFormProps {
 }
 
 export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => {
-  const { selectedConnector: connector } = useConnectorContext();
+  const { selectedConnector: connector, setSearchTopic } = useConnectorContext();
   const { userId } = useAuthContext();
   const [activeField, setActiveField] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
@@ -64,6 +69,13 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
     username: '',
     password: ''
   });
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasResearched, setHasResearched] = useState(false);
+  const [viewResults, setViewResults] = useState(false);
+  const [selectedResultIds, setSelectedResultIds] = useState<Set<string>>(new Set());
 
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -101,6 +113,84 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
     }
   };
 
+  const handleWebSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    setHasResearched(false);
+    setViewResults(false);
+    setErrorMsg('');
+    try {
+      const response = await connectorService.searchWeb(searchQuery);
+      if (response.status === 'success') {
+        setSearchResults(response.results);
+        setHasResearched(true);
+        setSearchTopic(searchQuery);
+
+        // Store top-level search_id from response as requested
+        if (response.search_id) {
+          localStorage.setItem('last_search_id', response.search_id);
+        }
+
+        // Default select all - prioritize individual result identifiers
+        const ids = response.results.map((r: any) => r.search_id || r.id || r.url);
+        setSelectedResultIds(new Set(ids));
+
+      } else {
+        setErrorMsg('Search failed. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Search Error:', error);
+      setErrorMsg(error.message || 'An error occurred during search.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedResultIds.size === searchResults.length) {
+      setSelectedResultIds(new Set());
+    } else {
+      setSelectedResultIds(new Set(searchResults.map(r => r.search_id || r.id || r.url)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedResultIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedResultIds(next);
+  };
+
+  const handleImport = async () => {
+    if (selectedResultIds.size > 0) {
+      // Sync with backend on import
+      const userId = localStorage.getItem('dataor_user_id') || '1';
+      const lastSearchId = localStorage.getItem('last_search_id') || '';
+      const selectedResults = searchResults.filter(r => selectedResultIds.has(r.search_id || r.id || r.url));
+
+      try {
+        // We can use Promise.all to save all selected results
+        await Promise.all(selectedResults.map(result =>
+          connectorService.saveResult({
+            user_id: userId,
+            search_id: lastSearchId, // Use the top-level session search_id
+            topic: searchQuery,
+            title: result.title,
+            url: result.url,
+            brief: result.brief
+          })
+        ));
+
+        onTestSuccess?.(connector?.name || formData.name || 'Web Search Context');
+      } catch (err) {
+        console.error('Failed to save results:', err);
+        setErrorMsg('Failed to save selected results. Please try again.');
+      }
+    }
+  };
+
+  const isWebSearch = connector?.name === 'Web Search using LLM';
+
   const guide = activeField ? GUIDES[activeField] : null;
 
   return (
@@ -124,7 +214,9 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 <h2 className="text-xl font-bold">
                   {connector ? `Connect to ${connector.name}` : 'New Data source'}
                 </h2>
-                <p className="text-sm text-[var(--text-secondary)]">Configure your data source settings</p>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {isWebSearch ? 'Identify live data for AI analysis' : 'Configure your data source settings'}
+                </p>
               </div>
             </div>
           </CardHeader>
@@ -134,10 +226,9 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 {errorMsg}
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
               <div
                 onMouseEnter={() => handleMouseEnter('name')}
-                className="md:col-span-2"
               >
                 <Input
                   label="Data source Name"
@@ -149,64 +240,218 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 />
               </div>
 
-              <div onMouseEnter={() => handleMouseEnter('host')}>
-                <Input
-                  label="Host / IP Address"
-                  placeholder="db.example.com"
-                  value={formData.host}
-                  onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                  onFocus={() => handleFocus('host')}
-                  required
-                />
-              </div>
+              {isWebSearch ? (
+                <div className="space-y-6">
+                  <div onMouseEnter={() => handleMouseEnter('search')}>
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1">
+                        <Input
+                          label="search Query"
+                          placeholder="e.g. Latest stock market trends"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onFocus={() => handleFocus('search')}
+                        />
+                      </div>
+                      <Button
+                        onClick={handleWebSearch}
+                        disabled={isSearching}
+                        className="px-6 h-11"
+                      >
+                        <Search className="w-4 h-4 mr-2" />
+                        Search
+                      </Button>
+                    </div>
+                  </div>
 
-              <div onMouseEnter={() => handleMouseEnter('port')}>
-                <Input
-                  label="Port"
-                  placeholder="5432"
-                  value={formData.port}
-                  onChange={(e) => setFormData({ ...formData, port: e.target.value })}
-                  onFocus={() => handleFocus('port')}
-                  required
-                />
-              </div>
+                  <AnimatePresence mode="wait">
+                    {isSearching && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--accent)]/5 flex items-center gap-4"
+                      >
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full border-2 border-[var(--accent)]/20 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
+                          </div>
+                          <div className="absolute inset-0 rounded-full border-2 border-[var(--accent)] animate-ping opacity-20" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-sm">Researching Websites...</h4>
+                          <p className="text-xs text-[var(--text-secondary)]">Analyzing live web data and extracting insights</p>
+                        </div>
+                      </motion.div>
+                    )}
 
-              <div onMouseEnter={() => handleMouseEnter('database')}>
-                <Input
-                  label="Database Name"
-                  placeholder="main_db"
-                  value={formData.database}
-                  onChange={(e) => setFormData({ ...formData, database: e.target.value })}
-                  onFocus={() => handleFocus('database')}
-                  required
-                />
-              </div>
+                    {hasResearched && !isSearching && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-4"
+                      >
+                        {!viewResults && (
+                          <div className="flex items-center gap-2 text-[var(--accent)] text-xs font-bold mb-2">
+                            <Check className="w-3.5 h-3.5" />
+                            Fast Research completed!
+                          </div>
+                        )}
 
-              <div onMouseEnter={() => handleMouseEnter('username')}>
-                <Input
-                  label="Username"
-                  placeholder="readonly_user"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  onFocus={() => handleFocus('username')}
-                  required
-                />
-              </div>
+                        <div className="space-y-4">
+                          <div className="grid gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                            {(viewResults ? searchResults : searchResults.slice(0, 3)).map((result) => {
+                              const resultId = result.id || result.url;
+                              return (
+                                <div
+                                  key={resultId}
+                                  onClick={() => toggleSelect(resultId)}
+                                  className={`
+                                    p-4 rounded-xl border transition-all cursor-pointer group flex items-start gap-4
+                                    ${selectedResultIds.has(resultId)
+                                      ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+                                      : 'border-[var(--border)] bg-[var(--surface-hover)]/30 hover:border-[var(--accent)]/40'}
+                                  `}
+                                >
+                                  <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-1">
+                                      <h4 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
+                                        {result.title}
+                                      </h4>
+                                    </div>
+                                    <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed mb-2">
+                                      {result.brief}
+                                    </p>
+                                    <a
+                                      href={result.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-[10px] text-[var(--accent)] hover:underline flex items-center gap-1"
+                                    >
+                                      {result.url}
+                                    </a>
+                                  </div>
+                                  <div className="pt-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedResultIds.has(resultId)}
+                                      onChange={() => { }} // Controlled via parent div click
+                                      className="w-4 h-4 rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
 
-              <div
-                onMouseEnter={() => handleMouseEnter('password')}
-                className="md:col-span-2"
-              >
-                <Input
-                  label="Password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  onFocus={() => handleFocus('password')}
-                  required
-                />
-              </div>
+                          {!viewResults && searchResults.length > 3 && (
+                            <div className="flex items-center justify-between pt-2">
+                              <div className="flex items-center gap-2">
+                                <div className="flex -space-x-2">
+                                  <div className="w-3 h-3 rounded-full bg-[var(--accent)] border border-white" />
+                                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]/60 border border-white" />
+                                </div>
+                                <button
+                                  onClick={() => setViewResults(true)}
+                                  className="text-xs font-bold text-[var(--accent)] hover:underline flex items-center gap-1"
+                                >
+                                  {searchResults.length - 3} more sources
+                                  <span className="text-[var(--text-secondary)] font-medium">View</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+                            <p className="text-xs font-medium text-[var(--text-secondary)]">
+                              {selectedResultIds.size} sources selected
+                            </p>
+                            <div className="flex gap-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => { setViewResults(false); setHasResearched(false); }}
+                              >
+                                Delete
+                              </Button>
+                              <Button
+                                size="sm"
+                                disabled={selectedResultIds.size === 0}
+                                onClick={handleImport}
+                                className="px-6 rounded-full"
+                              >
+                                Import
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div onMouseEnter={() => handleMouseEnter('host')}>
+                    <Input
+                      label="Host / IP Address"
+                      placeholder="db.example.com"
+                      value={formData.host}
+                      onChange={(e) => setFormData({ ...formData, host: e.target.value })}
+                      onFocus={() => handleFocus('host')}
+                      required
+                    />
+                  </div>
+
+                  <div onMouseEnter={() => handleMouseEnter('port')}>
+                    <Input
+                      label="Port"
+                      placeholder="5432"
+                      value={formData.port}
+                      onChange={(e) => setFormData({ ...formData, port: e.target.value })}
+                      onFocus={() => handleFocus('port')}
+                      required
+                    />
+                  </div>
+
+                  <div onMouseEnter={() => handleMouseEnter('database')}>
+                    <Input
+                      label="Database Name"
+                      placeholder="main_db"
+                      value={formData.database}
+                      onChange={(e) => setFormData({ ...formData, database: e.target.value })}
+                      onFocus={() => handleFocus('database')}
+                      required
+                    />
+                  </div>
+
+                  <div onMouseEnter={() => handleMouseEnter('username')}>
+                    <Input
+                      label="Username"
+                      placeholder="readonly_user"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      onFocus={() => handleFocus('username')}
+                      required
+                    />
+                  </div>
+
+                  <div
+                    onMouseEnter={() => handleMouseEnter('password')}
+                    className="md:col-span-2"
+                  >
+                    <Input
+                      label="Password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      onFocus={() => handleFocus('password')}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="pt-6 flex justify-end gap-4">

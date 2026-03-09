@@ -18,8 +18,14 @@ export const API_ENDPOINTS = {
     CONNECTION_HISTORY: '/connection_history',
     CREATE_CONNECTORS: '/create_connectors',
     CONTINUE_TO_IMPORT: '/connect-external-db',
+    WEB_SEARCH: '/search',
   },
   IMPORT: {
     AGENT: '/agents',
+    SAVE_RESULT_SEARCH: '/save-result',
+    GET_SAVED_RESULTS: '/saved-results',
+    DELETE_SAVED_RESULT: '/saved-results',
+    DESCRIBE_CONTENT: '/saved-content/describe',
   },
+
 };

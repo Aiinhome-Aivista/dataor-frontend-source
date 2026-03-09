@@ -8,6 +8,8 @@ interface ConnectorContextType {
   setConnectorResults: (results: any | null) => void;
   isImporting: boolean;
   setIsImporting: (isImporting: boolean) => void;
+  searchTopic: string;
+  setSearchTopic: (topic: string) => void;
 }
 
 const ConnectorContext = createContext<ConnectorContextType | undefined>(undefined);
@@ -16,6 +18,7 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [selectedConnector, setSelectedConnector] = useState<Connector | null>(null);
   const [connectorResults, setConnectorResults] = useState<any | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [searchTopic, setSearchTopic] = useState('');
 
   return (
     <ConnectorContext.Provider value={{
@@ -24,7 +27,9 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       connectorResults,
       setConnectorResults,
       isImporting,
-      setIsImporting
+      setIsImporting,
+      searchTopic,
+      setSearchTopic
     }}>
       {children}
     </ConnectorContext.Provider>

@@ -1,5 +1,5 @@
 import { Connector } from '../../connectors/types';
-import { Button } from '@/src/ui-kit';
+import { Button, Badge } from '@/src/ui-kit';
 import { Loader2 } from 'lucide-react';
 
 interface IngestDataViewProps {
@@ -7,15 +7,23 @@ interface IngestDataViewProps {
   isImporting?: boolean;
   connectorResults?: any;
   onGoToDataSource: () => void;
+  onContinue?: () => void;
 }
 
-export const IngestDataView = ({ activeConnector, isImporting, connectorResults, onGoToDataSource }: IngestDataViewProps) => {
-  // Handle potential nested data property and inconsistent keys
-  const data = connectorResults?.data || connectorResults;
+export const IngestDataView = ({
+  activeConnector,
+  isImporting,
+  connectorResults,
+  onGoToDataSource,
+  onContinue
+}: IngestDataViewProps) => {
+  // Handle potential nested results array - be very defensive
+  const results = connectorResults?.results || (Array.isArray(connectorResults) ? connectorResults : []);
+
+  // Handle potential nested data property and inconsistent keys for DB views
+  const data = connectorResults?.data || connectorResults || {};
   const summary = data?.summary;
   const tables = data?.tables || [];
-
-  // Handle "data size mb" vs "data_size_mb"
   const dataSize = summary?.data_size_mb || summary?.['data size mb'] || 0;
 
   return (
@@ -39,13 +47,52 @@ export const IngestDataView = ({ activeConnector, isImporting, connectorResults,
             Go to Data source
           </Button>
         </div>
-      ) : isImporting || (!summary && tables.length === 0) ? (
+      ) : (isImporting ||
+        (activeConnector.name === 'Web Search using LLM' && !results.length && !connectorResults?.status) ||
+        (activeConnector.name !== 'Web Search using LLM' && !summary && tables.length === 0)) ? (
         <div className="flex flex-col items-center justify-center py-12 gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-[var(--accent)]" />
           <div className="text-center">
             <p className="text-sm font-bold text-[var(--text-primary)]">Importing your data...</p>
             <p className="text-xs text-[var(--text-secondary)]">Mapping schemas and fetching table structures</p>
           </div>
+        </div>
+      ) : activeConnector && activeConnector.name === 'Web Search using LLM' ? (
+        <div className="space-y-6">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">Saved Sources</h4>
+              <Badge variant="outline" className="text-[10px]">{results.length} items</Badge>
+            </div>
+
+            <div className="grid gap-3">
+              {results.length > 0 ? (
+                results.map((item: any, idx: number) => (
+                  <div key={item.search_id || item.id || item.url || idx} className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors group">
+                    <div className="flex justify-between items-start mb-1">
+                      <h5 className="text-sm font-bold group-hover:text-[var(--accent)] transition-colors line-clamp-1">{item.title}</h5>
+                    </div>
+                    <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{item.brief}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center border-2 border-dashed border-[var(--border)] rounded-2xl">
+                  <p className="text-sm text-[var(--text-secondary)]">No saved results found for this research.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {results.length > 0 && (
+            <div className="flex justify-end pt-4 border-t border-[var(--border)]">
+              <Button
+                onClick={() => onContinue?.()}
+                className="bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white gap-2 px-6"
+              >
+                Continue to Process
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -78,7 +125,7 @@ export const IngestDataView = ({ activeConnector, isImporting, connectorResults,
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-3">Tables</h4>
             <div className="space-y-2">
               {tables.length > 0 ? (
-                tables.map((t, idx) => (
+                tables.map((t: any, idx: number) => (
                   <div key={idx} className="flex justify-between items-center p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors">
                     <span className="font-mono text-sm">{t.table}</span>
                     <span className="text-xs text-[var(--text-secondary)]">{t.rows.toLocaleString()} rows • {t.columns} cols</span>

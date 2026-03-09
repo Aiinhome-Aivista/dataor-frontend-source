@@ -8,6 +8,11 @@ export interface IConnectorService {
   createConnector(payload: any, userId?: number | null): Promise<any>;
   getConnectionHistory(userId: number | null): Promise<any>;
   continueToImport(payload: { user_id: string; connection_id: string }): Promise<any>;
+  searchWeb(query: string): Promise<any>;
+  saveResult(payload: any): Promise<any>;
+  getSavedResults(userId: string, topic?: string): Promise<any>;
+  deleteSavedResult(id: string, userId: string): Promise<any>;
+  describeSavedContent(userId: string): Promise<any>;
 }
 
 class ConnectorService implements IConnectorService {
@@ -56,6 +61,33 @@ class ConnectorService implements IConnectorService {
 
   async continueToImport(payload: { user_id: string; connection_id: string }): Promise<any> {
     return this.api.post(API_ENDPOINTS.DATA_SOURCE.CONTINUE_TO_IMPORT, payload);
+  }
+
+  async searchWeb(query: string): Promise<any> {
+    const userId = localStorage.getItem('dataor_user_id');
+    return this.api.post(API_ENDPOINTS.DATA_SOURCE.WEB_SEARCH, {
+      topic: query,
+      user_id: userId
+    });
+  }
+
+  async saveResult(payload: any): Promise<any> {
+    return this.api.post(API_ENDPOINTS.IMPORT.SAVE_RESULT_SEARCH, payload);
+  }
+
+  async getSavedResults(userId: string, topic?: string): Promise<any> {
+    const url = topic
+      ? `${API_ENDPOINTS.IMPORT.GET_SAVED_RESULTS}?user_id=${userId}&topic=${encodeURIComponent(topic)}`
+      : `${API_ENDPOINTS.IMPORT.GET_SAVED_RESULTS}?user_id=${userId}`;
+    return this.api.get(url);
+  }
+
+  async deleteSavedResult(id: string, userId: string): Promise<any> {
+    return this.api.delete(`${API_ENDPOINTS.IMPORT.DELETE_SAVED_RESULT}/${id}?user_id=${userId}`);
+  }
+
+  async describeSavedContent(userId: string): Promise<any> {
+    return this.api.post(API_ENDPOINTS.IMPORT.DESCRIBE_CONTENT, { user_id: userId });
   }
 }
 

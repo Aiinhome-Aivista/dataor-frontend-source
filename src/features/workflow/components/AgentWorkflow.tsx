@@ -41,7 +41,8 @@ export const AgentWorkflow = ({
     connectorResults,
     setConnectorResults,
     isImporting,
-    setIsImporting
+    setIsImporting,
+    searchTopic
   } = useConnectorContext();
   const { userId } = useAuthContext();
   const [agents, setAgents] = useState<AgentData[]>([]);
@@ -61,6 +62,64 @@ export const AgentWorkflow = ({
     };
     fetchAgents();
   }, [userId, defaultAgentId]);
+
+  // Handle specialized saved results fetch for Web Search in Ingest (Import) tab
+  useEffect(() => {
+    const activeUserId = userId?.toString() || '1';
+    if (selectedAgentId === 'ingest' && activeConnector?.name === 'Web Search using LLM' && activeUserId && !connectorResults?.results) {
+      const getResults = async () => {
+        try {
+          const savedResults = await connectorService.getSavedResults(activeUserId, searchTopic);
+          if (savedResults) {
+            setConnectorResults(savedResults);
+          }
+        } catch (err) {
+          console.error('Failed to fetch saved results:', err);
+        }
+      };
+      getResults();
+    }
+  }, [selectedAgentId, activeConnector, userId, setConnectorResults, connectorResults?.results]);
+
+  // Handle specialized 'Describe' for Web Search in Analyze tab
+  useEffect(() => {
+    const activeUserId = userId?.toString() || '1';
+    const analyzeAgent = agents.find(a => a.id === 'analyze');
+    const processingItem = analyzeAgent?.history.find(h => h.status === 'processing');
+    const isAnalyzeProcessing = selectedAgentId === 'analyze' &&
+      activeConnector?.name === 'Web Search using LLM' &&
+      !!processingItem;
+
+    if (isAnalyzeProcessing && !connectorResults?.description) {
+      const describeContent = async () => {
+        try {
+          const response = await connectorService.describeSavedContent(activeUserId);
+          if (response) {
+            setConnectorResults(prev => ({ ...prev, description: response.description || response }));
+
+            // Sync history item status to completed
+            if (processingItem) {
+              await agentService.updateHistoryItem('analyze', processingItem.id, {
+                status: 'completed',
+                details: 'Content analysis successfully generated.'
+              });
+              setAgents(await agentService.getAgents(userId, false));
+            }
+          }
+        } catch (err) {
+          console.error('Failed to describe content:', err);
+          if (processingItem) {
+            await agentService.updateHistoryItem('analyze', processingItem.id, {
+              status: 'failed',
+              details: 'Failed to generate content analysis.'
+            });
+            setAgents(await agentService.getAgents(userId, false));
+          }
+        }
+      };
+      describeContent();
+    }
+  }, [selectedAgentId, activeConnector, userId, setConnectorResults, connectorResults?.description, agents]);
 
   // Poll for updates if there are any processing items to handle tab-switching state sync
   useEffect(() => {
@@ -157,8 +216,31 @@ export const AgentWorkflow = ({
     }
   };
 
+  const handleContinueToProcess = async () => {
+    const historyItem = selectedAgent?.history[selectedAgent.history.length - 1];
+    if (!selectedAgent || !historyItem) return;
+
+    try {
+      await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+        status: 'completed',
+        details: 'Data details verified. Moving to process phase.'
+      });
+      setAgents(await agentService.getAgents(userId, false));
+
+      // Forward to analyze tab
+      await forwardToNextAgent(selectedAgent.id, 'Data Verified', historyItem.connectionName);
+    } catch (error) {
+      console.error('Failed to continue to process:', error);
+    }
+  };
+
   const handleAction = async (historyItem: AgentHistoryItem, option?: string) => {
     if (!selectedAgent) return;
+
+    if (selectedAgentId === 'ingest' && (option === 'Continue' || !option) && activeConnector?.name === 'Web Search using LLM') {
+      await handleContinueToProcess();
+      return;
+    }
 
     if (selectedAgentId === 'connect' && (option === 'Continue' || !option)) {
       if (!userId || !historyItem.connectorId) {
@@ -248,6 +330,19 @@ export const AgentWorkflow = ({
 
     // Simulate completion
     setTimeout(async () => {
+      // If continuing from Ingest for Web Search, trigger the describe API
+      if (selectedAgent.id === 'ingest' && activeConnector?.name === 'Web Search using LLM') {
+        try {
+          const activeUserId = userId?.toString() || '1';
+          const response = await connectorService.describeSavedContent(activeUserId);
+          if (response) {
+            setConnectorResults(prev => ({ ...prev, description: response.description || response }));
+          }
+        } catch (err) {
+          console.error('Failed to describe content on continue:', err);
+        }
+      }
+
       await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
         status: 'completed',
         details: option ? `Completed action: ${option}` : 'Action completed successfully.'
@@ -337,6 +432,7 @@ export const AgentWorkflow = ({
                   connectorResults={connectorResults}
                   isImporting={isImporting}
                   onGoToDataSource={() => handleStepperClick('connect')}
+                  onContinue={handleContinueToProcess}
                 />
               )}
 
@@ -421,6 +517,24 @@ export const AgentWorkflow = ({
                     {selectedAgent.name} History
                   </h3>
 
+                  {selectedAgent.id === 'analyze' && connectorResults?.description && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mb-8 p-6 rounded-2xl border border-[var(--border)] bg-[var(--accent)]/5"
+                    >
+                      {/* <div className="flex items-center gap-2 text-[var(--accent)] text-xs font-bold mb-4">
+                        <Sparkles className="w-4 h-4" />
+                        AI CONTENT ANALYSIS
+                      </div> */}
+                      <div className="prose prose-sm max-w-none text-[var(--text-primary)] leading-relaxed">
+                        {typeof connectorResults.description === 'string'
+                          ? connectorResults.description
+                          : JSON.stringify(connectorResults.description, null, 2)}
+                      </div>
+                    </motion.div>
+                  )}
+
                   <AnimatePresence mode="popLayout">
                     {selectedAgent.history.length === 0 ? (
                       <motion.div
@@ -449,6 +563,6 @@ export const AgentWorkflow = ({
           </Card>
         )}
       </div>
-    </div>
+    </div >
   );
 };

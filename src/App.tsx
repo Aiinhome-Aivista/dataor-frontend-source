@@ -91,8 +91,8 @@ function AppContent() {
       ]
     });
 
-    // Stay on connectors tab to show the success message and "Continue" button
-    changeTab('connectors');
+    // Redirect to collection tab where AgentWorkflow will handle the rest
+    changeTab('collection');
   };
 
   const handleWorkflowComplete = () => {
