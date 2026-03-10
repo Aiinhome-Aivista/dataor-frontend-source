@@ -52,19 +52,87 @@ class AgentService {
         const apiAgents = response.agents;
         this.agents = this.agents.map(localAgent => {
           const apiAgent = apiAgents.find((a: any) => a.id === localAgent.id);
-          if (apiAgent) {
+          let rawHistory: any[] = [];
+
+          if (apiAgent && apiAgent.history) {
+            rawHistory = [...apiAgent.history];
+          }
+
+          if (localAgent.id === 'connect') {
+            const savedResultsAgent = apiAgents.find((a: any) => a.id === 'saved_results');
+            if (savedResultsAgent && savedResultsAgent.history) {
+              // Group saved results by topic
+              const groupedResults = new Map<string, any>();
+
+              savedResultsAgent.history.forEach((item: any) => {
+                const topicActivity = item.activities?.find((act: string) => act.startsWith('Topic: '));
+                const topic = topicActivity ? topicActivity.replace('Topic: ', '').trim() : 'Unknown Topic';
+
+                if (!groupedResults.has(topic)) {
+                  groupedResults.set(topic, {
+                    ...item,
+                    action: `Saved Research: ${topic}`,
+                    details: `Found multiple sources for "${topic}".`,
+                    groupedItems: [item]
+                  });
+                } else {
+                  const existing = groupedResults.get(topic);
+                  existing.groupedItems.push(item);
+                }
+              });
+
+              // Format grouped results
+              const aggregatedResults = Array.from(groupedResults.values()).map(group => {
+                const sourceCount = group.groupedItems.length;
+                const firstFewSources = group.groupedItems.slice(0, 2).map((item: any) => {
+                  const linkActivity = item.activities?.find((act: string) => act.startsWith('Link: '));
+                  return linkActivity ? linkActivity.replace('Link: ', '').trim() : item.connectionName;
+                });
+
+                let detailsText = `Found ${sourceCount} sources for "${group.action.replace('Saved Research: ', '')}".`;
+                if (firstFewSources.length > 0) {
+                  detailsText += ` Including ${firstFewSources[0]}`;
+                  if (firstFewSources.length > 1) {
+                    detailsText += ` and ${firstFewSources[1]}`;
+                  }
+                  if (sourceCount > 2) {
+                    detailsText += ` and ${sourceCount - 2} more...`;
+                  }
+                }
+
+                return {
+                  ...group,
+                  details: detailsText,
+                  activities: [
+                    `Topic: ${group.action.replace('Saved Research: ', '')}`,
+                    `Compiled ${sourceCount} sources`,
+                    'Ready to import and process this research'
+                  ],
+                  connectionName: 'Web Search'
+                };
+              });
+
+              rawHistory = [...rawHistory, ...aggregatedResults];
+            }
+          }
+
+          if (apiAgent || (localAgent.id === 'connect' && rawHistory.length > 0)) {
             // Map the backend 'id' from the history item to our frontend 'connectorId'
-            const mappedHistory = apiAgent.history.map((h: any) => {
+            const mappedHistory = rawHistory.map((h: any) => {
               // Ensure session_id is captured, checking multiple possible backend keys just in case.
-              const extractedSessionId = h.session_id || h.sessionId || h.sessionID || (apiAgent as any).session_id || response.session_id;
+              const extractedSessionId = h.session_id || h.sessionId || h.sessionID || apiAgent?.session_id || response.session_id;
 
               return {
                 ...h,
                 session_id: extractedSessionId,
                 connectorId: h.id, // The backend uses 'id' for the connection ID
-                id: h.id // keep original id as well for react keys
+                id: h.id || Math.random().toString(36).substr(2, 9) // keep original id as well for react keys
               };
             });
+
+            // Sort by date descending
+            mappedHistory.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
             return { ...localAgent, history: mappedHistory };
           }
           return localAgent;

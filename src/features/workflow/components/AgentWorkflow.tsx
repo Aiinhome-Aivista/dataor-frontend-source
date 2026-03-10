@@ -233,8 +233,24 @@ export const AgentWorkflow = ({
       });
       setAgents(await agentService.getAgents(userId, false));
 
-      // Forward to analyze tab
+      // Forward to analyze tab IMMEDIATELY
       await forwardToNextAgent(selectedAgent.id, 'Data Verified', historyItem.connectionName);
+
+      const isWebSearch = activeConnector?.name === 'Web Search using LLM' || activeConnector?.name === 'Web Search';
+
+      if (isWebSearch && userId) {
+        // Run describe API in background
+        (async () => {
+          try {
+            const response = await connectorService.describeSavedContent(userId.toString());
+            if (response) {
+              setConnectorResults(prev => ({ ...prev, description: response.description || response }));
+            }
+          } catch (err) {
+            console.error('Failed to describe content on continue to process:', err);
+          }
+        })();
+      }
     } catch (error) {
       console.error('Failed to continue to process:', error);
     }
@@ -243,7 +259,9 @@ export const AgentWorkflow = ({
   const handleAction = async (historyItem: AgentHistoryItem, option?: string) => {
     if (!selectedAgent) return;
 
-    if (selectedAgentId === 'ingest' && (option === 'Continue' || !option) && activeConnector?.name === 'Web Search using LLM') {
+    const isWebSearch = activeConnector?.name === 'Web Search using LLM' || activeConnector?.name === 'Web Search';
+
+    if (selectedAgentId === 'ingest' && (option === 'Continue' || !option) && isWebSearch) {
       await handleContinueToProcess();
       return;
     }
@@ -256,12 +274,13 @@ export const AgentWorkflow = ({
 
       // 1. Set active connector if not already set (reconstruct from history)
       if (!activeConnector) {
+        const isWebSearch = historyItem.connectionName === 'Web Search' || historyItem.action?.startsWith('Saved Research:');
         setSelectedConnector({
           id: historyItem.connectorId,
-          name: historyItem.connectionName || 'Data source',
+          name: isWebSearch ? 'Web Search using LLM' : (historyItem.connectionName || 'Data source'),
           description: historyItem.details || '',
-          type: 'Database',
-          icon: 'database',
+          type: isWebSearch ? 'Integration' : 'Database',
+          icon: isWebSearch ? 'globe' : 'database',
           status: 'connected'
         });
       }
@@ -288,16 +307,23 @@ export const AgentWorkflow = ({
       // 5. Run API call in background
       (async () => {
         try {
-          const response = await connectorService.continueToImport({
-            user_id: userId.toString(),
-            connection_id: historyItem.connectorId || '',
-            session_id: historyItem.session_id
-          });
+          let response;
+          if (historyItem.connectionName === 'Web Search' || historyItem.action?.startsWith('Saved Research:')) {
+            const topicStr = historyItem.action?.replace('Saved Research: ', '') || '';
+            // For Web Search, we want to fetch the saved results instead of trigger regular import
+            response = await connectorService.getSavedResults(userId.toString(), topicStr);
+          } else {
+            response = await connectorService.continueToImport({
+              user_id: userId.toString(),
+              connection_id: historyItem.connectorId || '',
+              session_id: historyItem.session_id
+            });
+          }
 
           if (response) {
             setConnectorResults(response);
           } else {
-            setConnectorResults(null); 
+            setConnectorResults(null);
           }
 
           // Also update the agent history so it's reflected in the UI eventually

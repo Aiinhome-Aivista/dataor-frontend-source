@@ -67,14 +67,6 @@ export const HistoryItemCard = ({
     return 'Open Query';
   };
 
-  const SCENARIOS = [
-    "I see there are 2 new data sources available. Do you want to add them?",
-    "I see that my last attempt failed. I'm trying again.",
-    "I found some discrepancy. I'm doing reconciliation.",
-    "i see that there are 2 new dataset avalable for me to concaet , do you want to add them",
-    "failed attempt -- I see that my complet faild to collect data im traying again",
-    "i found some discrepancy in my attempt to complet data im doing a reconcillation and come back with a report"
-  ];
 
   return (
     <motion.div
@@ -189,59 +181,31 @@ export const HistoryItemCard = ({
 
       {(item.status === 'pending_input' || (item.status === 'processing' && agent.id === 'ingest')) && (
         <div className="mt-4 pt-4 border-t border-[var(--border)]">
-          {agent.id === 'ingest' ? (
+          {(agent.id === 'ingest' && situations && situations.length > 0) ? (
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-4 h-4 text-[var(--accent)]" />
                 <h5 className="text-sm font-bold">Situations Identified</h5>
               </div>
               <div className="grid grid-cols-1 gap-3">
-                {(situations && situations.length > 0) ? (
-                  situations.map((situation: any, idx: number) => (
-                    <div key={idx} className="p-4 rounded-xl border border-[var(--border)] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-                      <p className="text-sm font-medium leading-relaxed flex-1">{situation.message}</p>
-                      <div className="flex gap-2 shrink-0">
-                        {situation.buttons.map(btn => (
-                          <Button
-                            key={btn}
-                            variant={btn.toLowerCase() === 'no' ? 'outline' : 'primary'}
-                            size="sm"
-                            onClick={() => onScenarioConfirm?.(situation.message)}
-                            className="h-9 px-6"
-                          >
-                            {btn}
-                          </Button>
-                        ))}
-                      </div>
+                {situations.map((situation: any, idx: number) => (
+                  <div key={idx} className="p-4 rounded-xl border border-[var(--border)] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                    <p className="text-sm font-medium leading-relaxed flex-1">{situation.message}</p>
+                    <div className="flex gap-2 shrink-0">
+                      {situation.buttons.map((btn: string) => (
+                        <Button
+                          key={btn}
+                          variant={btn.toLowerCase() === 'no' ? 'outline' : 'primary'}
+                          size="sm"
+                          onClick={() => onScenarioConfirm?.(situation.message)}
+                          className="h-9 px-6"
+                        >
+                          {btn}
+                        </Button>
+                      ))}
                     </div>
-                  ))
-                ) : (
-                  SCENARIOS.map((scenario, idx) => {
-                    const isFailed = scenario.toLowerCase().includes('failed');
-                    return (
-                      <div key={idx} className="p-4 rounded-xl border border-[var(--border)] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-                        <p className="text-sm font-medium leading-relaxed flex-1">{scenario}</p>
-                        <div className="flex gap-2 shrink-0">
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => onScenarioConfirm?.(scenario)}
-                            className="h-9 px-6"
-                          >
-                            {isFailed ? 'Retry' : 'Yes'}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-9 px-6"
-                          >
-                            No
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
+                  </div>
+                ))}
               </div>
 
               {item.customInputType === 'table_selection' && (
