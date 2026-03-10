@@ -56,11 +56,15 @@ function AppContent() {
 
   const handleLogin = () => setViewMode('login');
   const handleGetStarted = () => setViewMode('login');
-  const handleLoginSuccess = () => setViewMode('app');
+  const handleLoginSuccess = () => {
+    setViewMode('app');
+    setIsWorkspaceOpen(false);
+  };
   const handleBackToLanding = () => setViewMode('landing');
   const handleLogout = () => {
     setUserId(null); // This will clear the localStorage key in AuthContext
     setViewMode('landing');
+    setIsWorkspaceOpen(false);
   };
 
   const handleNewConnector = () => {
