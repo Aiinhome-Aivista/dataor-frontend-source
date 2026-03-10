@@ -266,8 +266,9 @@ export const AgentWorkflow = ({
         });
       }
 
-      // 2. Set importing state
+      // 2. Set importing state and clear any stale results
       setIsImporting(true);
+      setConnectorResults(null);
 
       // 3. Update history to show processing
       const newActivities = historyItem.activities
@@ -295,6 +296,8 @@ export const AgentWorkflow = ({
 
           if (response) {
             setConnectorResults(response);
+          } else {
+            setConnectorResults(null); 
           }
 
           // Also update the agent history so it's reflected in the UI eventually
@@ -304,6 +307,7 @@ export const AgentWorkflow = ({
           });
         } catch (error) {
           console.error("Import failed:", error);
+          setConnectorResults(null); // Clear previous data on failure
           await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
             status: 'failed',
             details: `Failed to start import: ${error instanceof Error ? error.message : 'Unknown error'}`

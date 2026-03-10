@@ -109,8 +109,8 @@ function AppContent() {
       ]
     });
 
-    // Redirect to collection tab where AgentWorkflow will handle the rest
-    changeTab('collection');
+    // Redirect to connectors tab so user stays in the data source view
+    changeTab('connectors');
   };
 
   const handleWorkflowComplete = () => {
