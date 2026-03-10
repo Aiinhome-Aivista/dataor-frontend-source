@@ -36,13 +36,13 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
     >
       <div
         className={`
-          max-w-[85%] px-3 py-2 rounded-xl text-sm leading-relaxed
+          max-w-[85%] px-3 py-2 rounded-xl text-sm leading-relaxed overflow-hidden min-w-0
           ${isAssistant 
             ? 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-tl-none' 
             : 'bg-[var(--accent)] text-white rounded-tr-none shadow-lg shadow-[var(--accent)]/10'}
         `}
       >
-        <div className="mb-2">{message.content}</div>
+        <div className="mb-2 whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.content}</div>
         
         {message.data?.type === 'chart_and_table' && (
           <div className="mt-4 space-y-4">
