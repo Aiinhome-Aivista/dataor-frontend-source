@@ -45,6 +45,11 @@ export const HistoryItemCard = ({
 
   const [tableAction, setTableAction] = useState('update');
   const [selectedNewTables, setSelectedNewTables] = useState<string[]>([]);
+
+  // State for session analysis selection
+  const [selectedSessionTopics, setSelectedSessionTopics] = useState<string[]>([]);
+  const [selectedSessionDatabases, setSelectedSessionDatabases] = useState<string[]>([]);
+
   const { selectedConnector: activeConnector, connectorResults } = useConnectorContext();
 
   const situations = item.situations || connectorResults?.data?.situations || connectorResults?.situations;
@@ -52,12 +57,23 @@ export const HistoryItemCard = ({
   useEffect(() => {
     if (item.customInputType === 'table_selection' && item.customInputData?.newTables) {
       setSelectedNewTables(item.customInputData.newTables);
+    } else if (item.customInputType === 'session_analysis_selection' && item.customInputData) {
+      if (item.customInputData.topics) setSelectedSessionTopics(item.customInputData.topics);
+      if (item.customInputData.databases) setSelectedSessionDatabases(item.customInputData.databases);
     }
   }, [item]);
 
   const handleTableSelectionSubmit = () => {
     const actionText = `Existing: ${tableAction === 'update' ? 'Update' : 'Replace'}, New: ${selectedNewTables.length > 0 ? selectedNewTables.join(', ') : 'None'}`;
     onAction(item, actionText);
+  };
+
+  const handleSessionAnalysisSubmit = () => {
+    const payload = JSON.stringify({
+      topics: selectedSessionTopics,
+      databases: selectedSessionDatabases
+    });
+    onAction(item, `SESSION_ANALYSIS:${payload}`);
   };
 
   const getContinueText = (currentId: string) => {
@@ -288,6 +304,7 @@ export const HistoryItemCard = ({
               )}
 
               {item.customInputType === 'table_selection' ? (
+                // ... table selection UI ...
                 <div className="space-y-6 mb-6 bg-white p-4 rounded-xl border border-[var(--border)]">
                   <div>
                     <h5 className="text-sm font-semibold mb-3">Existing Tables Action</h5>
@@ -349,6 +366,70 @@ export const HistoryItemCard = ({
                       onClick={handleTableSelectionSubmit}
                     >
                       Confirm & Continue <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              ) : item.customInputType === 'session_analysis_selection' ? (
+                <div className="space-y-6 mb-6 bg-white p-4 rounded-xl border border-[var(--border)]">
+                  {item.customInputData?.topics && item.customInputData.topics.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-semibold mb-3">Include Web Topics</h5>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {item.customInputData.topics.map((topic: string) => (
+                          <label key={`topic-${topic}`} className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedSessionTopics.includes(topic)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedSessionTopics([...selectedSessionTopics, topic]);
+                                } else {
+                                  setSelectedSessionTopics(selectedSessionTopics.filter(t => t !== topic));
+                                }
+                              }}
+                              className="rounded text-[var(--accent)] focus:ring-[var(--accent)]"
+                            />
+                            {topic}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {item.customInputData?.databases && item.customInputData.databases.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-semibold mb-3">Include External Databases</h5>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {item.customInputData.databases.map((db: string) => (
+                          <label key={`db-${db}`} className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedSessionDatabases.includes(db)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedSessionDatabases([...selectedSessionDatabases, db]);
+                                } else {
+                                  setSelectedSessionDatabases(selectedSessionDatabases.filter(d => d !== db));
+                                }
+                              }}
+                              className="rounded text-[var(--accent)] focus:ring-[var(--accent)]"
+                            />
+                            {db}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end pt-4 border-t border-[var(--border)]">
+                  
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSessionAnalysisSubmit}
+                      disabled={selectedSessionTopics.length === 0 && selectedSessionDatabases.length === 0}
+                    >
+                      {getContinueText(agent.id)} <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
                 </div>

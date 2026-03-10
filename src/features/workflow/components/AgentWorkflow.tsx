@@ -26,6 +26,70 @@ import { HistoryItemCard } from './HistoryItemCard';
 import { AgentStepper, getAgentIcon } from './AgentStepper';
 import { IngestDataView } from './IngestDataView';
 
+const formatInsightsText = (text: string) => {
+  if (typeof text !== 'string') return JSON.stringify(text, null, 2);
+
+  let processed = text.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[var(--accent)] hover:underline"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>$1</a>'
+  );
+
+  processed = processed.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-[var(--text-primary)]">$1</strong>');
+  processed = processed.replace(/^### (.*$)/gim, '<h4 class="text-md font-bold text-[var(--text-primary)] mt-4 mb-2">$1</h4>');
+  processed = processed.replace(/^## (.*$)/gim, '<h3 class="text-lg font-bold text-[var(--text-primary)] mt-5 mb-3">$1</h3>');
+
+  let html = '';
+  const lines = processed.split('\n');
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ');
+    const isNumbered = /^\d+\.\s/.test(trimmed);
+
+    if (isBullet || isNumbered) {
+      if (!inList) {
+        html += `<ul class="space-y-3 my-4 ml-2">`;
+        inList = true;
+      }
+
+      let itemContent = trimmed;
+      if (isBullet) {
+        itemContent = `<div class="flex items-start gap-3"><div class="w-1.5 h-1.5 rounded-full bg-[var(--accent)] mt-2 shrink-0"></div><div class="flex-1 leading-relaxed">${trimmed.substring(2)}</div></div>`;
+      } else {
+        const match = trimmed.match(/^(\d+)\.\s(.*)/);
+        if (match) {
+          itemContent = `<div class="flex items-start gap-3"><div class="font-bold text-[var(--accent)] min-w-4 text-right pt-0.5">${match[1]}.</div><div class="flex-1 leading-relaxed">${match[2]}</div></div>`;
+        }
+      }
+      html += `<li>${itemContent}</li>`;
+    } else {
+      if (inList) {
+        html += `</ul>`;
+        inList = false;
+      }
+      if (trimmed === '') {
+        html += `<div class="h-2"></div>`;
+      } else {
+        // Only wrap in p if it's not a header we just injected
+        if (trimmed.startsWith('<h')) {
+          html += trimmed;
+        } else {
+          html += `<p class="mb-2 leading-relaxed">${trimmed}</p>`;
+        }
+      }
+    }
+  }
+
+  if (inList) {
+    html += `</ul>`;
+  }
+
+  return html;
+};
+
 export const AgentWorkflow = ({
   onComplete,
   compact = false,
@@ -334,6 +398,65 @@ export const AgentWorkflow = ({
     }
 
 
+    if (option && option.startsWith('SESSION_ANALYSIS:')) {
+      const payloadStr = option.replace('SESSION_ANALYSIS:', '');
+      try {
+        const payload = JSON.parse(payloadStr);
+        if (!historyItem.session_id) {
+          console.error("Missing session_id for session analysis");
+          return;
+        }
+
+        setIsAnalyzing(true);
+        await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+          status: 'processing',
+          details: 'Initiating session analysis with selected topics and databases...',
+          activities: ['Gathering selected items...', 'Sending to analysis engine...', 'Awaiting insights...']
+        });
+        setAgents(await agentService.getAgents(userId, false));
+
+        await forwardToNextAgent(selectedAgent.id, 'Session Analysis Triggered', historyItem.connectionName);
+
+        // Run API call in background
+        const response = await connectorService.processSessionAnalysis({
+          session_id: historyItem.session_id,
+          topics: payload.topics,
+          databases: payload.databases
+        });
+
+        if (response) {
+          setConnectorResults(prev => ({ ...prev, description: response.description || response }));
+          const freshAgents = await agentService.getAgents(userId, false);
+          const analyzeAgent = freshAgents.find(a => a.id === 'analyze');
+          const processingItem = analyzeAgent?.history.find(h => h.status === 'processing');
+          if (processingItem) {
+            await agentService.updateHistoryItem('analyze', processingItem.id, {
+              status: 'completed',
+              details: 'Content analysis successfully generated.'
+            });
+            setAgents(await agentService.getAgents(userId, false));
+          }
+        }
+
+        await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+          status: 'completed',
+          details: 'Session analysis started successfully.'
+        });
+        setAgents(await agentService.getAgents(userId, false));
+
+      } catch (error) {
+        console.error("Session analysis failed:", error);
+        await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+          status: 'failed',
+          details: `Failed to start analysis: ${error instanceof Error ? error.message : 'Unknown error'}`
+        });
+        setAgents(await agentService.getAgents(userId, false));
+      } finally {
+        setIsAnalyzing(false);
+      }
+      return;
+    }
+
     const newActivities = historyItem.activities
       ? [...historyItem.activities, `Executing: ${option || 'Continue'}`]
       : [`Executing: ${option || 'Continue'}`];
@@ -553,7 +676,7 @@ export const AgentWorkflow = ({
                     >
                       <div className="prose prose-sm max-w-none text-[var(--text-primary)] leading-relaxed prose-a:text-[var(--accent)] hover:prose-a:underline">
                         {typeof connectorResults.description === 'string'
-                          ? <div dangerouslySetInnerHTML={{ __html: connectorResults.description.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>$1</a>').replace(/\n/g, '<br />') }} />
+                          ? <div dangerouslySetInnerHTML={{ __html: formatInsightsText(connectorResults.description) }} />
                           : JSON.stringify(connectorResults.description, null, 2)}
                       </div>
                     </motion.div>

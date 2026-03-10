@@ -32,7 +32,7 @@ export interface AgentHistoryItem {
   prompt?: string;
   options?: string[];
   activities?: string[];
-  customInputType?: 'table_selection';
+  customInputType?: 'table_selection' | 'session_analysis_selection';
   customInputData?: any;
   connectionName?: string;
   connectorId?: string;

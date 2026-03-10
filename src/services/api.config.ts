@@ -22,6 +22,8 @@ export const API_ENDPOINTS = {
   },
   IMPORT: {
     AGENT: '/agents',
+    SESSION_SOURCES: '/session-sources',
+    SESSION_ANALYSIS: '/session-analysis',
     SAVE_RESULT_SEARCH: '/save-result',
     GET_SAVED_RESULTS: '/saved-results',
     DELETE_SAVED_RESULT: '/saved-results',

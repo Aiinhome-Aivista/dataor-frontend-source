@@ -13,6 +13,8 @@ export interface IConnectorService {
   getSavedResults(userId: string, topic?: string): Promise<any>;
   deleteSavedResult(id: string, userId: string): Promise<any>;
   describeSavedContent(userId: string): Promise<any>;
+  getSessionSources(sessionId: string): Promise<any>;
+  processSessionAnalysis(payload: { session_id: string; topics?: string[]; databases?: string[] }): Promise<any>;
 }
 
 class ConnectorService implements IConnectorService {
@@ -89,6 +91,14 @@ class ConnectorService implements IConnectorService {
 
   async describeSavedContent(userId: string): Promise<any> {
     return this.api.post(API_ENDPOINTS.IMPORT.DESCRIBE_CONTENT, { user_id: userId });
+  }
+
+  async getSessionSources(sessionId: string): Promise<any> {
+    return this.api.get(`${API_ENDPOINTS.IMPORT.SESSION_SOURCES}?session_id=${sessionId}`);
+  }
+
+  async processSessionAnalysis(payload: { session_id: string; topics?: string[]; databases?: string[] }): Promise<any> {
+    return this.api.post(API_ENDPOINTS.IMPORT.SESSION_ANALYSIS, payload);
   }
 }
 
