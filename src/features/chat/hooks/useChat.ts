@@ -58,7 +58,6 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
     try {
       const chatSessionId = sessionId
         || localStorage.getItem('dataor_session_id')
-        || 'f9c29d15-cc7d-4bf9-96f0-8c03cd638cdb';
 
       const response: any = await connectorService.sendSessionChat({
         session_id: chatSessionId,
