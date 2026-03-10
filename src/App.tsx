@@ -110,7 +110,7 @@ function AppContent() {
     });
 
     // Redirect to connectors tab so user stays in the data source view
-    changeTab('connectors');
+    changeTab('collection');
   };
 
   const handleWorkflowComplete = () => {

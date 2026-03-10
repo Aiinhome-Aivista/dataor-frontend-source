@@ -29,5 +29,8 @@ export const API_ENDPOINTS = {
     DELETE_SAVED_RESULT: '/saved-results',
     DESCRIBE_CONTENT: '/saved-content/describe',
   },
+  CHAT: {
+    CHAT: '/session-chat',
+  },
 
 };

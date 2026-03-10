@@ -15,6 +15,7 @@ export interface IConnectorService {
   describeSavedContent(userId: string): Promise<any>;
   getSessionSources(sessionId: string): Promise<any>;
   processSessionAnalysis(payload: { session_id: string; topics?: string[]; databases?: string[] }): Promise<any>;
+  sendSessionChat(payload: { session_id: string; question: string }): Promise<any>;
 }
 
 class ConnectorService implements IConnectorService {
@@ -99,6 +100,10 @@ class ConnectorService implements IConnectorService {
 
   async processSessionAnalysis(payload: { session_id: string; topics?: string[]; databases?: string[] }): Promise<any> {
     return this.api.post(API_ENDPOINTS.IMPORT.SESSION_ANALYSIS, payload);
+  }
+
+  async sendSessionChat(payload: { session_id: string; question: string }): Promise<any> {
+    return this.api.post(API_ENDPOINTS.CHAT.CHAT, payload);
   }
 }
 
