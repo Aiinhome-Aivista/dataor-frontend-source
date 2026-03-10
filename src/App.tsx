@@ -32,9 +32,9 @@ function AppContent() {
   // Workspace state
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [workspaceSearch, setWorkspaceSearch] = useState('');
-  const [selectedWorkspace, setSelectedWorkspace] = useState('Default Workspace');
+  const [selectedWorkspace, setSelectedWorkspace] = useState('Default');
   const [workspaces, setWorkspaces] = useState<string[]>([
-    'Default Workspace',
+    'Default',
     'Marketing Project',
     'Sales Analysis',
     'Q4 Reports',
@@ -183,8 +183,8 @@ function AppContent() {
               <Layout className="w-4 h-4 shrink-0" />
               {isSidebarOpen && (
                 <>
-                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm flex-1 text-left truncate">
-                    {selectedWorkspace}
+                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm flex-1 text-left ">
+                    Workspace - {selectedWorkspace}
                   </motion.span>
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
