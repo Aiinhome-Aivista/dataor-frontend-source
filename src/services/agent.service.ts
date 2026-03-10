@@ -17,7 +17,30 @@ class AgentService {
       historyName: 'Import',
       icon: 'server',
       description: 'Fetching and storing remote data',
-      history: []
+      history: [
+         {
+          id: 'h4',
+          date: '2026-03-03T08:35:00Z',
+          action: 'Ingesting Sales Analytics',
+          details: 'Checking for new data...',
+          connectionName: 'Sales Analytics',
+          status: 'completed',
+          activities: [
+            'Streaming rows...',
+            'Normalizing data types...',
+            'Indexing primary keys...',
+            'Storing on local cache...'
+          ]
+        },
+        {
+          id: 'h3',
+          date: '2026-03-02T10:05:00Z',
+          action: 'Ingested Production DB',
+          details: 'Fetched 50,000 rows from public.users.',
+          connectionName: 'Production DB',
+          status: 'completed'
+        }
+      ]
     },
     {
       id: 'analyze',
