@@ -17,30 +17,7 @@ class AgentService {
       historyName: 'Import',
       icon: 'server',
       description: 'Fetching and storing remote data',
-      history: [
-        {
-          id: 'h4',
-          date: '2026-03-03T08:35:00Z',
-          action: 'Ingesting Sales Analytics',
-          details: 'Checking for new data...',
-          connectionName: 'Sales Analytics',
-          status: 'completed',
-          activities: [
-            'Streaming rows...',
-            'Normalizing data types...',
-            'Indexing primary keys...',
-            'Storing on local cache...'
-          ]
-        },
-        {
-          id: 'h3',
-          date: '2026-03-02T10:05:00Z',
-          action: 'Ingested Production DB',
-          details: 'Fetched 50,000 rows from public.users.',
-          connectionName: 'Production DB',
-          status: 'completed'
-        }
-      ]
+      history: []
     },
     {
       id: 'analyze',
@@ -48,22 +25,7 @@ class AgentService {
       historyName: 'Process',
       icon: 'bar-chart',
       description: 'Generating insights and visuals',
-      history: [
-        {
-          id: 'h5',
-          date: '2026-03-02T10:10:00Z',
-          action: 'Analyzed Production DB',
-          details: 'Generated 5 statistical summaries and detected 2 anomalies.',
-          connectionName: 'Production DB',
-          status: 'completed',
-          contextualInsights: [
-            'User activity peaked on weekdays between 9am–12pm.',
-            '2 anomalous spikes detected in transaction volume on Feb 28.',
-            'Average order value increased by 14.3% compared to last month.',
-            'Top 3 products account for 61% of total revenue.'
-          ]
-        }
-      ]
+      history: []
     },
     {
       id: 'query',
@@ -71,16 +33,7 @@ class AgentService {
       historyName: 'Query',
       icon: 'message-square',
       description: 'Ready to answer your questions',
-      history: [
-        {
-          id: 'h6',
-          date: '2026-03-02T10:15:00Z',
-          action: 'Chat Session',
-          details: 'Answered 3 questions about user retention.',
-          connectionName: 'Production DB',
-          status: 'completed'
-        }
-      ]
+      history: []
     }
   ];
 

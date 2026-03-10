@@ -1,5 +1,12 @@
 export type StepStatus = 'pending' | 'processing' | 'awaiting_input' | 'completed' | 'error';
 
+export interface AgentSituation {
+  buttons: string[];
+  message: string;
+  table: string;
+  type: string;
+}
+
 export interface WorkflowStep {
   id: string;
   title: string;
@@ -31,6 +38,7 @@ export interface AgentHistoryItem {
   connectorId?: string;
   session_id?: string;
   contextualInsights?: string[];
+  situations?: AgentSituation[];
 }
 
 export interface AgentData {

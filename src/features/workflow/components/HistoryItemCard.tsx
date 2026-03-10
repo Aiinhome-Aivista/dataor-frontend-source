@@ -45,7 +45,9 @@ export const HistoryItemCard = ({
 
   const [tableAction, setTableAction] = useState('update');
   const [selectedNewTables, setSelectedNewTables] = useState<string[]>([]);
-  const { selectedConnector: activeConnector } = useConnectorContext();
+  const { selectedConnector: activeConnector, connectorResults } = useConnectorContext();
+
+  const situations = item.situations || connectorResults?.data?.situations || connectorResults?.situations;
 
   useEffect(() => {
     if (item.customInputType === 'table_selection' && item.customInputData?.newTables) {
@@ -82,8 +84,8 @@ export const HistoryItemCard = ({
         p-3 rounded-xl border transition-all
         ${item.status === 'processing' ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-lg shadow-[var(--accent)]/10' :
           item.status === 'failed' ? 'border-red-500/10 bg-red-500/[0.02]' :
-          item.status === 'pending_input' ? 'border-[var(--warning)]/20 bg-[var(--warning)]/[0.02]' :
-            'border-[var(--border)] bg-[var(--bg)]/50'}
+            item.status === 'pending_input' ? 'border-[var(--warning)]/20 bg-[var(--warning)]/[0.02]' :
+              'border-[var(--border)] bg-[var(--bg)]/50'}
       `}
     >
       <div className="flex items-start justify-between gap-4 mb-3">
@@ -194,31 +196,52 @@ export const HistoryItemCard = ({
                 <h5 className="text-sm font-bold">Situations Identified</h5>
               </div>
               <div className="grid grid-cols-1 gap-3">
-                {SCENARIOS.map((scenario, idx) => {
-                  const isFailed = scenario.toLowerCase().includes('failed');
-                  return (
+                {(situations && situations.length > 0) ? (
+                  situations.map((situation: any, idx: number) => (
                     <div key={idx} className="p-4 rounded-xl border border-[var(--border)] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-                      <p className="text-sm font-medium leading-relaxed flex-1">{scenario}</p>
+                      <p className="text-sm font-medium leading-relaxed flex-1">{situation.message}</p>
                       <div className="flex gap-2 shrink-0">
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => onScenarioConfirm?.(scenario)}
-                          className="h-9 px-6"
-                        >
-                          {isFailed ? 'Retry' : 'Yes'}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-9 px-6"
-                        >
-                          No
-                        </Button>
+                        {situation.buttons.map(btn => (
+                          <Button
+                            key={btn}
+                            variant={btn.toLowerCase() === 'no' ? 'outline' : 'primary'}
+                            size="sm"
+                            onClick={() => onScenarioConfirm?.(situation.message)}
+                            className="h-9 px-6"
+                          >
+                            {btn}
+                          </Button>
+                        ))}
                       </div>
                     </div>
-                  );
-                })}
+                  ))
+                ) : (
+                  SCENARIOS.map((scenario, idx) => {
+                    const isFailed = scenario.toLowerCase().includes('failed');
+                    return (
+                      <div key={idx} className="p-4 rounded-xl border border-[var(--border)] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                        <p className="text-sm font-medium leading-relaxed flex-1">{scenario}</p>
+                        <div className="flex gap-2 shrink-0">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => onScenarioConfirm?.(scenario)}
+                            className="h-9 px-6"
+                          >
+                            {isFailed ? 'Retry' : 'Yes'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 px-6"
+                          >
+                            No
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
               {item.customInputType === 'table_selection' && (
