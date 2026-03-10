@@ -46,7 +46,7 @@ const formatInsightsText = (text: string) => {
     const line = lines[i];
     const trimmed = line.trim();
 
-    const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ');
+    const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ');
     const isNumbered = /^\d+\.\s/.test(trimmed);
 
     if (isBullet || isNumbered) {
@@ -425,7 +425,7 @@ export const AgentWorkflow = ({
         });
 
         if (response) {
-          setConnectorResults(prev => ({ ...prev, description: response.description || response }));
+          setConnectorResults(prev => ({ ...prev, description: response.report || response.description || response }));
           const freshAgents = await agentService.getAgents(userId, false);
           const analyzeAgent = freshAgents.find(a => a.id === 'analyze');
           const processingItem = analyzeAgent?.history.find(h => h.status === 'processing');
