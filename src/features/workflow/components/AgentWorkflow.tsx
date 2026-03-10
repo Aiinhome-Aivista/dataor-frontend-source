@@ -163,6 +163,21 @@ export const AgentWorkflow = ({
     }
   }, [agents, selectedAgentId, userId]);
 
+  // Persist latest session_id to localStorage whenever agents data updates
+  useEffect(() => {
+    const connectAgent = agents.find(a => a.id === 'connect');
+    const latestSessionId = connectAgent?.history
+      .slice()
+      .reverse()
+      .find(h => h.session_id)?.session_id;
+    if (latestSessionId) {
+      const stored = localStorage.getItem('dataor_session_id');
+      if (stored !== latestSessionId) {
+        localStorage.setItem('dataor_session_id', latestSessionId);
+      }
+    }
+  }, [agents]);
+
   const selectedAgent = agents.find(a => a.id === selectedAgentId);
 
   const AGENT_SEQUENCE = ['connect', 'ingest', 'analyze', 'query'];

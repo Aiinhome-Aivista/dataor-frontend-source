@@ -13,6 +13,7 @@ interface ChatWindowProps {
   initialMessage?: string;
   suggestedQuestions?: string[];
   onOpenDataSource?: () => void;
+  sessionId?: string;
 }
 
 export const ChatWindow = ({
@@ -20,9 +21,10 @@ export const ChatWindow = ({
   onNewConnector,
   initialMessage,
   suggestedQuestions = [],
-  onOpenDataSource
+  onOpenDataSource,
+  sessionId
 }: ChatWindowProps) => {
-  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat } = useChat(initialMode, initialMessage);
+  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat, followUpQuestions } = useChat(initialMode, initialMessage, sessionId);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [isLoadingConnectors, setIsLoadingConnectors] = useState(true);
 
@@ -182,7 +184,26 @@ export const ChatWindow = ({
 
       <CardFooter className="p-4 bg-[var(--surface)]/80 backdrop-blur-md border-t border-[var(--border)] relative z-30">
         <div className="w-full">
-          {mode === 'chat' && messages.length <= 1 && suggestedQuestions.length > 0 && !isLoading && (
+          {/* Show follow-up questions from API response */}
+          {followUpQuestions.length > 0 && !isLoading && (
+            <div className="flex flex-wrap gap-2 mb-4 justify-center">
+              {followUpQuestions.map((q, i) => (
+                <motion.button
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  onClick={() => sendMessage(q)}
+                  className="px-4 py-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/40 transition-all shadow-sm flex items-center gap-2 group"
+                >
+                  <Sparkles className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                  {q}
+                </motion.button>
+              ))}
+            </div>
+          )}
+          {/* Show static suggested questions on first load if no follow-ups yet */}
+          {followUpQuestions.length === 0 && mode === 'chat' && messages.length <= 1 && suggestedQuestions.length > 0 && !isLoading && (
             <div className="flex flex-wrap gap-2 mb-4 justify-center">
               {suggestedQuestions.map((q, i) => (
                 <motion.button
