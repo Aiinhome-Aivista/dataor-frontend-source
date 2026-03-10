@@ -253,7 +253,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                     <div className="flex gap-2 items-end">
                       <div className="flex-1">
                         <Input
-                          label="search Query"
+                          label="search"
                           placeholder="e.g. Latest stock market trends"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}

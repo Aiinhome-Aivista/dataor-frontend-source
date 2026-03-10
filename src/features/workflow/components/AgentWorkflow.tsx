@@ -167,7 +167,7 @@ export const AgentWorkflow = ({
         nextOptions = [];
         nextCustomInputType = 'table_selection';
         nextCustomInputData = { newTables: ['user_activity_logs', 'payment_transactions'] };
-        nextActivities = ['Receiving schema definition...', 'Allocating storage...', 'Preparing ingestion pipeline...'];
+        nextActivities = undefined; // Removed mock activities here
       } else if (currentAgentId === 'ingest') {
         nextAction = 'Process Pending';
         nextDetails = `Data successfully ingested and cached (${contextData}).`;
