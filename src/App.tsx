@@ -342,7 +342,9 @@ function AppContent() {
               }}
               className={`
                 w-full flex items-center gap-2.5 p-2.5 rounded-xl transition-all duration-200
-                hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]
+                ${activeTab === 'chat'
+                  ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
+                  : 'hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
               `}
             >
               <MessageSquare className="w-4 h-4 shrink-0" />
