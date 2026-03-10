@@ -82,50 +82,7 @@ export const AgentWorkflow = ({
     }
   }, [selectedAgentId, activeConnector, userId, setConnectorResults, connectorResults?.results]);
 
-  // Handle specialized 'Describe' for Web Search in Analyze tab
-  useEffect(() => {
-    const activeUserId = userId?.toString() || '1';
-    const analyzeAgent = agents.find(a => a.id === 'analyze');
-    const processingItem = analyzeAgent?.history.find(h => h.status === 'processing');
-    const isAnalyzeProcessing = selectedAgentId === 'analyze' &&
-      activeConnector?.name === 'Web Search using LLM' &&
-      !!processingItem;
-
-    if (isAnalyzeProcessing && !connectorResults?.description) {
-      if (isDescribingRef.current) return;
-      isDescribingRef.current = true;
-
-      const describeContent = async () => {
-        try {
-          const response = await connectorService.describeSavedContent(activeUserId);
-          if (response) {
-            setConnectorResults(prev => ({ ...prev, description: response.description || response }));
-
-            // Sync history item status to completed
-            if (processingItem) {
-              await agentService.updateHistoryItem('analyze', processingItem.id, {
-                status: 'completed',
-                details: 'Content analysis successfully generated.'
-              });
-              setAgents(await agentService.getAgents(userId, false));
-            }
-          }
-        } catch (err) {
-          console.error('Failed to describe content:', err);
-          if (processingItem) {
-            await agentService.updateHistoryItem('analyze', processingItem.id, {
-              status: 'failed',
-              details: 'Failed to generate content analysis.'
-            });
-            setAgents(await agentService.getAgents(userId, false));
-          }
-        } finally {
-          isDescribingRef.current = false;
-        }
-      };
-      describeContent();
-    }
-  }, [selectedAgentId, activeConnector, userId, setConnectorResults, connectorResults?.description, agents]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Poll for updates if there are any processing items to handle tab-switching state sync
   useEffect(() => {
@@ -233,23 +190,49 @@ export const AgentWorkflow = ({
       });
       setAgents(await agentService.getAgents(userId, false));
 
-      // Forward to analyze tab IMMEDIATELY
-      await forwardToNextAgent(selectedAgent.id, 'Data Verified', historyItem.connectionName);
-
       const isWebSearch = activeConnector?.name === 'Web Search using LLM' || activeConnector?.name === 'Web Search';
 
       if (isWebSearch && userId) {
-        // Run describe API in background
-        (async () => {
-          try {
-            const response = await connectorService.describeSavedContent(userId.toString());
-            if (response) {
-              setConnectorResults(prev => ({ ...prev, description: response.description || response }));
+        setIsAnalyzing(true);
+        // Forward to analyze tab IMMEDIATELY and wait for it to create history items
+        await forwardToNextAgent(selectedAgent.id, 'Data Verified', historyItem.connectionName);
+
+        // Run describe API
+        try {
+          const response = await connectorService.describeSavedContent(userId.toString());
+          if (response) {
+            setConnectorResults(prev => ({ ...prev, description: response.description || response }));
+            // Get latest agents to find the newly created analyze history item
+            const freshAgents = await agentService.getAgents(userId, false);
+            const analyzeAgent = freshAgents.find(a => a.id === 'analyze');
+            const processingItem = analyzeAgent?.history.find(h => h.status === 'processing');
+            if (processingItem) {
+              await agentService.updateHistoryItem('analyze', processingItem.id, {
+                status: 'completed',
+                details: 'Content analysis successfully generated.'
+              });
+              setAgents(await agentService.getAgents(userId, false));
             }
-          } catch (err) {
-            console.error('Failed to describe content on continue to process:', err);
           }
-        })();
+        } catch (err) {
+          console.error('Failed to describe content on continue to process:', err);
+          // On failure, update history item to failed if possible
+          const freshAgents = await agentService.getAgents(userId, false);
+          const analyzeAgent = freshAgents.find(a => a.id === 'analyze');
+          const processingItem = analyzeAgent?.history.find(h => h.status === 'processing');
+          if (processingItem) {
+            await agentService.updateHistoryItem('analyze', processingItem.id, {
+              status: 'failed',
+              details: 'Failed to generate content analysis.'
+            });
+            setAgents(await agentService.getAgents(userId, false));
+          }
+        } finally {
+          setIsAnalyzing(false);
+        }
+      } else {
+        // Forward to analyze tab normally
+        await forwardToNextAgent(selectedAgent.id, 'Data Verified', historyItem.connectionName);
       }
     } catch (error) {
       console.error('Failed to continue to process:', error);
@@ -367,19 +350,6 @@ export const AgentWorkflow = ({
 
     // Simulate completion
     setTimeout(async () => {
-      // If continuing from Ingest for Web Search, trigger the describe API
-      if (selectedAgent.id === 'ingest' && activeConnector?.name === 'Web Search using LLM') {
-        try {
-          const activeUserId = userId?.toString() || '1';
-          const response = await connectorService.describeSavedContent(activeUserId);
-          if (response) {
-            setConnectorResults(prev => ({ ...prev, description: response.description || response }));
-          }
-        } catch (err) {
-          console.error('Failed to describe content on continue:', err);
-        }
-      }
-
       await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
         status: 'completed',
         details: option ? `Completed action: ${option}` : 'Action completed successfully.'
@@ -561,19 +531,29 @@ export const AgentWorkflow = ({
                     {selectedAgent.name} History
                   </h3>
 
-                  {selectedAgent.id === 'analyze' && connectorResults?.description && (
+                  {selectedAgent.id === 'analyze' && isAnalyzing && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="mb-8 p-6 rounded-2xl border border-[var(--border)] bg-[var(--accent)]/5"
+                      className="mb-8 p-12 rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-center shadow-sm flex flex-col items-center justify-center gap-4"
                     >
-                      {/* <div className="flex items-center gap-2 text-[var(--accent)] text-xs font-bold mb-4">
-                        <Sparkles className="w-4 h-4" />
-                        AI CONTENT ANALYSIS
-                      </div> */}
-                      <div className="prose prose-sm max-w-none text-[var(--text-primary)] leading-relaxed">
+                      <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
+                      <div>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Analyzing your data...</p>
+                        <p className="text-xs text-[var(--text-secondary)] mt-1">Generating insights from the web search results</p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {selectedAgent.id === 'analyze' && !isAnalyzing && connectorResults?.description && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mb-8 p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
+                    >
+                      <div className="prose prose-sm max-w-none text-[var(--text-primary)] leading-relaxed prose-a:text-[var(--accent)] hover:prose-a:underline">
                         {typeof connectorResults.description === 'string'
-                          ? connectorResults.description
+                          ? <div dangerouslySetInnerHTML={{ __html: connectorResults.description.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>$1</a>').replace(/\n/g, '<br />') }} />
                           : JSON.stringify(connectorResults.description, null, 2)}
                       </div>
                     </motion.div>

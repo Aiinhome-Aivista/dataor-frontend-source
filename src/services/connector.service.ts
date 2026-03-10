@@ -76,9 +76,10 @@ class ConnectorService implements IConnectorService {
   }
 
   async getSavedResults(userId: string, topic?: string): Promise<any> {
-    const url = topic
-      ? `${API_ENDPOINTS.IMPORT.GET_SAVED_RESULTS}?user_id=${userId}&topic=${encodeURIComponent(topic)}`
-      : `${API_ENDPOINTS.IMPORT.GET_SAVED_RESULTS}?user_id=${userId}`;
+    if (!topic) {
+      return Promise.resolve({ status: 'success', results: [] });
+    }
+    const url = `${API_ENDPOINTS.IMPORT.GET_SAVED_RESULTS}?user_id=${userId}&topic=${encodeURIComponent(topic)}`;
     return this.api.get(url);
   }
 
