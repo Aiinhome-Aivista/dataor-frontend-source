@@ -249,7 +249,7 @@ function AppContent() {
                             }
                           }
                         }}
-                        className="p-1 rounded-md text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors shrink-0"
+                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition-colors shrink-0"
                       >
                         <Check className="w-3 h-3" />
                       </button>
@@ -258,7 +258,7 @@ function AppContent() {
                           setIsCreatingWorkspace(false);
                           setNewWorkspaceName('');
                         }}
-                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
+                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition-colors shrink-0"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -307,7 +307,7 @@ function AppContent() {
                           }}
                           className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer
                             ${selectedWorkspace === workspace
-                              ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text-primary)]'
+                              ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 text-[var(--accent)]'
                               : 'border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
                           `}
                         >
@@ -342,9 +342,7 @@ function AppContent() {
               }}
               className={`
                 w-full flex items-center gap-2.5 p-2.5 rounded-xl transition-all duration-200
-                ${activeTab === 'chat'
-                  ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : 'hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
+                hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]
               `}
             >
               <MessageSquare className="w-4 h-4 shrink-0" />

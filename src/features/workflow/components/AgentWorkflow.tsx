@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { AgentData, AgentHistoryItem } from '../types';
 import { Card, CardContent, CardHeader, Badge, Button } from '@/src/ui-kit';
 import { motion, AnimatePresence } from 'motion/react';
-import { Database, Server, BarChart3, MessageSquare, Sparkles, CheckCircle2, Loader2, Clock, Play, RotateCcw, ArrowRight, ChevronRight } from 'lucide-react';
+import { Database, Server, BarChart3, MessageSquare, Sparkles, CheckCircle2, Loader2, Clock, Play, RotateCcw, ArrowRight, ChevronRight, Globe, Search } from 'lucide-react';
 import { agentService } from '@/src/services/agent.service';
 
 import { ConnectorList } from '../../connectors/components/ConnectorList';
@@ -420,8 +420,15 @@ export const AgentWorkflow = ({
               <CardHeader className={`${compact ? 'px-0 pt-1 pb-3' : 'bg-[var(--surface)] p-4 border-b border-[var(--border)]'} shrink-0`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20">
-                      {getAgentIcon(selectedAgent.icon)}
+                    <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20 relative">
+                      {selectedAgent.id === 'ingest' && activeConnector?.name === 'Web Search using LLM' ? (
+                        <div className="relative">
+                          <Globe className="w-5 h-5" />
+                          <Search className="w-3 h-3 absolute -bottom-1 -right-1" />
+                        </div>
+                      ) : (
+                        getAgentIcon(selectedAgent.icon)
+                      )}
                     </div>
                     <div>
                       <h2 className="text-lg font-bold">{selectedAgent.name}</h2>

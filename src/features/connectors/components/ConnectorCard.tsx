@@ -1,6 +1,6 @@
 import { Connector } from '../types';
 import { Card, CardContent, Badge, Button } from '@/src/ui-kit';
-import { Database, Server, Share2, ArrowUpRight } from 'lucide-react';
+import { Database, Server, Share2, ArrowUpRight, Globe, Search } from 'lucide-react';
 
 const getBrandIcon = (name: string) => {
   const lower = name.toLowerCase();
@@ -8,8 +8,7 @@ const getBrandIcon = (name: string) => {
   if (lower.includes('mysql')) return 'https://cdn.simpleicons.org/mysql';
   if (lower.includes('snowflake')) return 'https://cdn.simpleicons.org/snowflake';
   if (lower.includes('google sheets')) return 'https://cdn.simpleicons.org/googlesheets';
-  if (lower.includes('web search')) return 'https://cdn.simpleicons.org/google  ';
- 
+  
   return null;
 };
 
@@ -33,7 +32,14 @@ export const ConnectorCard = ({ connector, onClick }: ConnectorCardProps) => {
       <CardContent className="flex flex-col h-full p-4">
         <div className="flex-1 flex items-start gap-3">
           <div className="p-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] group-hover:border-[var(--accent)]/50 transition-colors shrink-0">
-            {brandIcon ? (
+            {connector.name.includes('Web Search') ? (
+              <div className="relative text-[var(--accent)]">
+                <Globe className="w-5 h-5" />
+                <div className="absolute -bottom-1 -right-1 bg-[var(--surface-hover)] rounded-full pt-[1px] pl-[1px]">
+                  <Search className="w-2.5 h-2.5" />
+                </div>
+              </div>
+            ) : brandIcon ? (
               <img src={brandIcon} alt={connector.name} className="w-5 h-5 object-contain" />
             ) : (
               <Icon className="w-5 h-5 text-[var(--accent)]" />

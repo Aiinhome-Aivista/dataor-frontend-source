@@ -208,7 +208,14 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
           <CardHeader className="border-b border-[var(--border)] p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)]">
-                <Server className="w-6 h-6" />
+                {isWebSearch ? (
+                  <div className="relative">
+                    <Globe className="w-6 h-6" />
+                    <Search className="w-3.5 h-3.5 absolute -bottom-1 -right-1" />
+                  </div>
+                ) : (
+                  <Server className="w-6 h-6" />
+                )}
               </div>
               <div>
                 <h2 className="text-xl font-bold">
@@ -454,21 +461,23 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
               )}
             </div>
 
-            <div className="pt-6 flex justify-end gap-4">
-              <Button variant="outline" onClick={onBack} disabled={isTesting}>Cancel</Button>
-              <Button
-                className="px-8"
-                onClick={handleTestConnection}
-                disabled={isTesting}
-              >
-                {isTesting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Testing...
-                  </>
-                ) : 'Test Data source'}
-              </Button>
-            </div>
+            {!isWebSearch && (
+              <div className="pt-6 flex justify-end gap-4">
+                <Button variant="outline" onClick={onBack} disabled={isTesting}>Cancel</Button>
+                <Button
+                  className="px-8"
+                  onClick={handleTestConnection}
+                  disabled={isTesting}
+                >
+                  {isTesting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Testing...
+                    </>
+                  ) : 'Test Data source'}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
