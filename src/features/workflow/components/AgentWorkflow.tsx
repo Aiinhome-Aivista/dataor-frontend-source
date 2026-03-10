@@ -607,8 +607,8 @@ export const AgentWorkflow = ({
               )}
 
               {selectedAgent.id === 'query' ? (
-                <div className="flex-1 h-full flex flex-col">
-                  <div className="h-full overflow-hidden">
+                <div className="flex-1 min-h-0 flex flex-col">
+                  <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                     {(() => {
                       const getSuggestedQuestions = () => {
                         if (!activeConnector) return [
