@@ -108,7 +108,9 @@ export const AgentWorkflow = ({
     setIsImporting,
     searchTopic,
     sessionSources,
-    setSessionSources
+    setSessionSources,
+    isAnalyzing,
+    setIsAnalyzing
   } = useConnectorContext();
   const { userId } = useAuthContext();
   const [agents, setAgents] = useState<AgentData[]>([]);
@@ -164,8 +166,6 @@ export const AgentWorkflow = ({
       getResults();
     }
   }, [selectedAgentId, activeConnector, userId, setConnectorResults, connectorResults?.results]);
-
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Poll for updates if there are any processing items to handle tab-switching state sync
   useEffect(() => {
@@ -277,6 +277,7 @@ export const AgentWorkflow = ({
       const databases = sessionSources?.external_databases?.databases?.map((db: any) => db.external_database) || [];
 
       setIsAnalyzing(true);
+      setConnectorResults(null);
 
       // 3. Switch to analyze tab IMMEDIATELY
       await forwardToNextAgent(selectedAgent.id, 'Session Analysis Started', historyItem?.connectionName);
@@ -290,7 +291,7 @@ export const AgentWorkflow = ({
         });
 
         if (response) {
-          const report = response.report || response.description || response.report_content;
+          const report = response.report || response.description || response.report_content || (typeof response === 'string' ? response : null);
           if (report) {
             setConnectorResults(prev => ({
               ...prev,
@@ -408,6 +409,7 @@ export const AgentWorkflow = ({
         }
 
         setIsAnalyzing(true);
+        setConnectorResults(null);
         await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
           status: 'processing',
           details: 'Initiating session analysis with selected topics and databases...',
@@ -424,8 +426,13 @@ export const AgentWorkflow = ({
         });
 
         if (response) {
-          setConnectorResults(prev => ({ ...prev, description: response.report || response.description || response }));
-          // The polling mechanism will eventually update the history item status
+          const report = response.report || response.description || response.report_content || (typeof response === 'string' ? response : null);
+          if (report) {
+            setConnectorResults(prev => ({ 
+              ...prev, 
+              description: report 
+            }));
+          }
         }
 
         // The polling mechanism will eventually update the agent history
@@ -532,146 +539,163 @@ export const AgentWorkflow = ({
             )}
 
             <CardContent className={`flex-1 ${selectedAgent.id === 'query' ? 'flex flex-col p-0 overflow-hidden' : compact ? 'px-0 overflow-visible space-y-4' : 'overflow-y-auto p-4 space-y-4'}`}>
-              {selectedAgent.id === 'ingest' && (
-                <IngestDataView
-                  activeConnector={activeConnector}
-                  connectorResults={connectorResults}
-                  sessionSources={sessionSources}
-                  isImporting={isImporting}
-                  onGoToDataSource={() => handleStepperClick('connect')}
-                  onContinue={handleContinueToProcess}
-                />
-              )}
-
-              {selectedAgent.id === 'connect' && (
-                <div className="mb-12">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h3 className="text-lg font-bold">Available Connectors</h3>
-                      <p className="text-sm text-[var(--text-secondary)]">Choose from our list of supported data sources</p>
+              {(isAnalyzing && selectedAgent.id !== 'query') ? (
+                <div className="flex flex-col items-center justify-center py-24 gap-6">
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="relative"
+                  >
+                    <div className="absolute inset-0 bg-[var(--accent)]/20 blur-2xl rounded-full scale-150 animate-pulse" />
+                    <Loader2 className="w-12 h-12 animate-spin text-[var(--accent)] relative z-10" />
+                  </motion.div>
+                  <div className="text-center z-10">
+                    <p className="text-lg font-bold text-[var(--text-primary)] mb-2">Analyzing your data...</p>
+                    <p className="text-sm text-[var(--text-secondary)]">Generating multi-source session analysis reports</p>
+                    <div className="mt-6 flex flex-wrap justify-center gap-2 max-w-md">
+                      {['Synthesizing topics', 'Correlating databases', 'Generating insights'].map((tag, idx) => (
+                        <span key={idx} className="px-3 py-1 rounded-full bg-[var(--surface-hover)] border border-[var(--border)] text-[10px] text-[var(--text-secondary)] animate-pulse" style={{ animationDelay: `${idx * 200}ms` }}>
+                          {tag}
+                        </span>
+                      ))}
                     </div>
-                    {onNewConnector && (
-                      <Button variant="outline" size="sm" onClick={onNewConnector}>
-                        <Play className="w-4 h-4 mr-2" />
-                        Custom Data source
-                      </Button>
-                    )}
                   </div>
-                  <ConnectorList onSelect={() => onChangeTab?.('new-connector')} />
                 </div>
-              )}
+              ) : (
+                <>
+                  {selectedAgent.id === 'ingest' && (
+                    <IngestDataView
+                      activeConnector={activeConnector}
+                      connectorResults={connectorResults}
+                      sessionSources={sessionSources}
+                      isImporting={isImporting}
+                      isAnalyzing={isAnalyzing}
+                      onGoToDataSource={() => handleStepperClick('connect')}
+                      onContinue={handleContinueToProcess}
+                    />
+                  )}
 
-              {selectedAgent.id === 'query' ? (
-                <div className="flex-1 h-full flex flex-col">
-                  <div className="h-full overflow-hidden">
-                    {(() => {
-                      return (
+                  {selectedAgent.id === 'connect' && (
+                    <div className="mb-12">
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <h3 className="text-lg font-bold">Available Connectors</h3>
+                          <p className="text-sm text-[var(--text-secondary)]">Choose from our list of supported data sources</p>
+                        </div>
+                        {onNewConnector && (
+                          <Button variant="outline" size="sm" onClick={onNewConnector}>
+                            <Play className="w-4 h-4 mr-2" />
+                            Custom Data source
+                          </Button>
+                        )}
+                      </div>
+                      <ConnectorList onSelect={() => onChangeTab?.('new-connector')} />
+                    </div>
+                  )}
+
+                  {selectedAgent.id === 'query' ? (
+                    <div className="flex-1 h-full flex flex-col">
+                      <div className="h-full overflow-hidden">
                         <ChatWindow
                           initialMode="chat"
                           initialMessage={initialChatMessage}
                           onOpenDataSource={onChangeTab ? () => onChangeTab('connectors') : undefined}
                         />
-                      );
-                    })()}
-                  </div>
-                </div>
-              ) : (
-                (() => {
-                  const isIngest = selectedAgent.id === 'ingest';
-                  const isAnalyze = selectedAgent.id === 'analyze';
-                  const filteredHistory = isIngest
-                    ? selectedAgent.history.filter(item => item.action === 'Session Data Imported')
-                    : isAnalyze ? [] : selectedAgent.history;
+                      </div>
+                    </div>
+                  ) : (
+                    (() => {
+                      const isIngest = selectedAgent.id === 'ingest';
+                      const isAnalyze = selectedAgent.id === 'analyze';
 
-                  const shouldShowHistoryHeader = !isAnalyze && (!isIngest || filteredHistory.length > 0);
+                      if (isIngest) return null; // Handled above
 
-                  return (
-                    <>
-                      {shouldShowHistoryHeader && (
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
-                          {selectedAgent.name} History
-                        </h3>
-                      )}
-                      {isAnalyze && (isAnalyzing ||
-                        selectedAgent.history.some(h => h.status === 'processing') ||
-                        !connectorResults?.description ||
-                        connectorResults.description.toLowerCase().includes('analysis complete')) && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="mb-8 p-12 rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-center shadow-sm flex flex-col items-center justify-center gap-4"
-                          >
-                            <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
-                            <div>
-                              <p className="text-sm font-bold text-[var(--text-primary)]">Analyzing your data...</p>
-                              <p className="text-xs text-[var(--text-secondary)] mt-1">Generating multi-source session analysis reports</p>
-                            </div>
-                          </motion.div>
-                        )}
+                      const filteredHistory = isAnalyze ? [] : selectedAgent.history;
+                      const shouldShowHistoryHeader = !isAnalyze && filteredHistory.length > 0;
 
-                      {isAnalyze && !isAnalyzing && connectorResults?.description &&
-                        !connectorResults.description.toLowerCase().includes('analysis complete') && (
-                          <>
-                            <motion.div
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
-                            >
-                              <div className="prose prose-sm max-w-none text-[var(--text-primary)] leading-relaxed prose-a:text-[var(--accent)] hover:prose-a:underline">
-                                {typeof connectorResults.description === 'string'
-                                  ? <div dangerouslySetInnerHTML={{ __html: formatInsightsText(connectorResults.description) }} />
-                                  : JSON.stringify(connectorResults.description, null, 2)}
-                              </div>
-                            </motion.div>
-
-                            {/* Navigation button to Query section */}
-                            <div className="mt-12 pt-8 border-t border-[var(--border)] flex justify-end">
-                              <Button
-                                onClick={() => setSelectedAgentId('query')}
-                                variant="primary"
-                                size="sm"
-                                className="px-8 shadow-lg shadow-[var(--accent)]/20"
-                              >
-                                Want to know more?
-                              </Button>
-                            </div>
-                          </>
-                        )}
-
-                      {!isAnalyze && (
-                        <AnimatePresence mode="popLayout">
-                          {filteredHistory.length === 0 ? (
-                            isIngest ? null : (
-                              <motion.div
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-2xl"
-                              >
-                                <Clock className="w-8 h-8 text-[var(--text-secondary)] mx-auto mb-3 opacity-50" />
-                                <p className="text-[var(--text-secondary)]">No history found for this agent.</p>
-                              </motion.div>
-                            )
-                          ) : (
-                            filteredHistory.map((item) => (
-                              <HistoryItemCard
-                                key={item.id}
-                                item={item}
-                                agent={selectedAgent}
-                                onAction={handleAction}
-                                onForward={forwardToNextAgent}
-                                onScenarioConfirm={handleScenarioConfirm}
-                              />
-                            ))
+                      return (
+                        <>
+                          {shouldShowHistoryHeader && (
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
+                              {selectedAgent.name} History
+                            </h3>
                           )}
-                        </AnimatePresence>
-                      )}
-                    </>
-                  );
-                })()
+                          {isAnalyze && !isAnalyzing && !selectedAgent.history.some(h => h.status === 'processing') && !connectorResults?.description && (
+                            <motion.div
+                              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                              className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-2xl"
+                            >
+                              <BarChart3 className="w-8 h-8 text-[var(--text-secondary)] mx-auto mb-3 opacity-50" />
+                              <p className="text-[var(--text-secondary)] font-medium">No analysis process found.</p>
+                              <p className="text-xs text-[var(--text-secondary)]/60 mt-1">Start a new analysis from the Import tab.</p>
+                            </motion.div>
+                          )}
+
+                          {isAnalyze && !isAnalyzing && connectorResults?.description && (
+                            <>
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
+                              >
+                                <div className="prose prose-sm max-w-none text-[var(--text-primary)] leading-relaxed prose-a:text-[var(--accent)] hover:prose-a:underline">
+                                  {typeof connectorResults.description === 'string'
+                                    ? <div dangerouslySetInnerHTML={{ __html: formatInsightsText(connectorResults.description) }} />
+                                    : JSON.stringify(connectorResults.description, null, 2)}
+                                </div>
+                              </motion.div>
+
+                              {/* Navigation button to Query section */}
+                              <div className="mt-12 pt-8 border-t border-[var(--border)] flex justify-end">
+                                <Button
+                                  onClick={() => setSelectedAgentId('query')}
+                                  variant="primary"
+                                  size="sm"
+                                  className="px-8 shadow-lg shadow-[var(--accent)]/20"
+                                >
+                                  Want to know more?
+                                </Button>
+                              </div>
+                            </>
+                          )}
+
+                          {!isAnalyze && (
+                            <AnimatePresence mode="popLayout">
+                              {filteredHistory.length === 0 ? (
+                                isIngest ? null : (
+                                  <motion.div
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-2xl"
+                                  >
+                                    <Clock className="w-8 h-8 text-[var(--text-secondary)] mx-auto mb-3 opacity-50" />
+                                    <p className="text-[var(--text-secondary)]">No history found for this agent.</p>
+                                  </motion.div>
+                                )
+                              ) : (
+                                filteredHistory.map((item) => (
+                                  <HistoryItemCard
+                                    key={item.id}
+                                    item={item}
+                                    agent={selectedAgent}
+                                    onAction={handleAction}
+                                    onForward={forwardToNextAgent}
+                                    onScenarioConfirm={handleScenarioConfirm}
+                                  />
+                                ))
+                              )}
+                            </AnimatePresence>
+                          )}
+                        </>
+                      );
+                    })()
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
         )}
       </div>
-    </div >
+    </div>
   );
 };
+

@@ -12,6 +12,8 @@ interface ConnectorContextType {
   setSearchTopic: (topic: string) => void;
   sessionSources: any | null;
   setSessionSources: (sources: any | null) => void;
+  isAnalyzing: boolean;
+  setIsAnalyzing: (isAnalyzing: boolean) => void;
   resetConnectorState: () => void;
 }
 
@@ -31,6 +33,7 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
     return null;
   });
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [searchTopic, setSearchTopic] = useState('');
   const [sessionSources, setSessionSourcesState] = useState<any | null>(() => {
@@ -75,9 +78,20 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const resetConnectorState = () => {
+    try {
+      const sessionId = localStorage.getItem('DAgent_session_id');
+      if (sessionId) {
+        localStorage.removeItem(`connector_results_${sessionId}`);
+        localStorage.removeItem(`session_sources_${sessionId}`);
+      }
+    } catch (e) {
+      console.error('Failed to clear storage on reset', e);
+    }
+
     setSelectedConnector(null);
     setConnectorResultsState(null);
     setIsImporting(false);
+    setIsAnalyzing(false);
     setSearchTopic('');
     setSessionSourcesState(null);
   };
@@ -94,6 +108,8 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSearchTopic,
       sessionSources,
       setSessionSources,
+      isAnalyzing,
+      setIsAnalyzing,
       resetConnectorState
     }}>
       {children}

@@ -9,6 +9,7 @@ interface IngestDataViewProps {
   sessionSources?: any;
   onGoToDataSource: () => void;
   onContinue?: () => void;
+  isAnalyzing?: boolean;
 }
 
 export const IngestDataView = ({
@@ -17,7 +18,8 @@ export const IngestDataView = ({
   connectorResults,
   sessionSources,
   onGoToDataSource,
-  onContinue
+  onContinue,
+  isAnalyzing
 }: IngestDataViewProps) => {
   // Handle potential nested results array - be very defensive
   const results = connectorResults?.results || (Array.isArray(connectorResults) ? connectorResults : []);
@@ -212,11 +214,19 @@ export const IngestDataView = ({
         <div className="mt-12 pt-8 border-t border-[var(--border)] flex justify-end">
           <Button 
             onClick={onContinue}
+            disabled={isAnalyzing}
             variant="primary"
             size="sm"
-            className="px-8 shadow-lg shadow-[var(--accent)]/20"
+            className="px-8 shadow-lg shadow-[var(--accent)]/20 min-w-[200px]"
           >
-            Continue to Process
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Continue to Process'
+            )}
           </Button>
         </div>
       )}

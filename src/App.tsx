@@ -37,26 +37,28 @@ function AppContent() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
+  const [workflowKey, setWorkflowKey] = useState(0);
+
+  const fetchWorkspaces = async () => {
+    try {
+      const response = await workspaceService.getWorkspaces(userId || 6);
+      if (response && response.status === 'success' && response.workspaces) {
+        const fetchedWorkspaces: Workspace[] = response.workspaces;
+        setWorkspaces(fetchedWorkspaces);
+
+        // Always sync selection with the active workspace from API
+        const activeWS = fetchedWorkspaces.find(w => w.is_active === 1) || fetchedWorkspaces[0];
+        if (activeWS) {
+          setSelectedWorkspace(activeWS);
+          localStorage.setItem('DAgent_session_id', activeWS.session_id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch workspaces:', err);
+    }
+  };
 
   useEffect(() => {
-    const fetchWorkspaces = async () => {
-      try {
-        const response = await workspaceService.getWorkspaces(userId || 6);
-        if (response && response.status === 'success' && response.workspaces) {
-          const fetchedWorkspaces: Workspace[] = response.workspaces;
-          setWorkspaces(fetchedWorkspaces);
-          
-          // Always sync selection with the active workspace from API
-          const activeWS = fetchedWorkspaces.find(w => w.is_active === 1) || fetchedWorkspaces[0];
-          if (activeWS) {
-            setSelectedWorkspace(activeWS);
-            localStorage.setItem('DAgent_session_id', activeWS.session_id);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch workspaces:', err);
-      }
-    };
     if (userId || viewMode === 'app') {
       fetchWorkspaces();
     }
@@ -78,6 +80,7 @@ function AppContent() {
   const handleLoginSuccess = () => {
     setViewMode('app');
     setIsWorkspaceOpen(false);
+    setActiveTab('chat');
   };
   const handleBackToLanding = () => setViewMode('landing');
   const { logout } = useAuthContext();
@@ -89,6 +92,7 @@ function AppContent() {
     agentService.reset();
     setViewMode('landing');
     setIsWorkspaceOpen(false);
+    setActiveTab('chat');
     localStorage.clear();
   };
 
@@ -257,6 +261,7 @@ function AppContent() {
                                       setWorkspaceSearch('');
                                       setIsCreatingWorkspace(false);
                                       setNewWorkspaceName('');
+                                      await fetchWorkspaces();
                                     } catch (err) {
                                       console.error('Failed to create workspace:', err);
                                     }
@@ -286,6 +291,7 @@ function AppContent() {
                                       setWorkspaceSearch('');
                                       setIsCreatingWorkspace(false);
                                       setNewWorkspaceName('');
+                                      await fetchWorkspaces();
                                     } catch (err) {
                                       console.error('Failed to create workspace:', err);
                                     }
@@ -344,11 +350,22 @@ function AppContent() {
                             filtered.map((workspace) => (
                               <button
                                 key={workspace.id}
-                                onClick={async () => {
+                                 onClick={async () => {
                                   try {
+                                    // 1. Set active workspace in API
                                     await workspaceService.setActiveWorkspace(userId || 6, workspace.id);
+
+                                    // 2. Clear all session contexts and local storage for current session
+                                    resetConnectorState();
+                                    agentService.reset();
+
+                                    // 3. Update to new session
                                     setSelectedWorkspace(workspace);
                                     localStorage.setItem('DAgent_session_id', workspace.session_id);
+
+                                    // 4. Force re-render of current view to trigger fresh history loading
+                                    setWorkflowKey(prev => prev + 1);
+
                                     setIsWorkspaceOpen(false);
                                   } catch (err) {
                                     console.error('Failed to set active workspace:', err);
@@ -549,7 +566,7 @@ function AppContent() {
                 className="h-[calc(100vh-8rem)]"
               >
                 <AgentWorkflow
-                  key={`chat-${chatKey}`}
+                  key={`chat-${workflowKey}-${chatKey}`}
                   onComplete={handleWorkflowComplete}
                   defaultAgentId="query"
                   onChangeTab={changeTab}
@@ -579,6 +596,7 @@ function AppContent() {
                 className="h-[calc(100vh-8rem)]"
               >
                 <AgentWorkflow
+                  key={`ingest-${workflowKey}`}
                   onComplete={handleWorkflowComplete}
                   defaultAgentId="ingest"
                   onChangeTab={changeTab}
@@ -594,6 +612,7 @@ function AppContent() {
                 className="h-[calc(100vh-8rem)]"
               >
                 <AgentWorkflow
+                  key={`analysis-${workflowKey}`}
                   onComplete={handleWorkflowComplete}
                   defaultAgentId="analyze"
                   onChangeTab={changeTab}
@@ -610,6 +629,7 @@ function AppContent() {
                 className="h-[calc(100vh-8rem)]"
               >
                 <AgentWorkflow
+                  key={`connectors-${workflowKey}`}
                   onComplete={handleWorkflowComplete}
                   defaultAgentId="connect"
                   onChangeTab={changeTab}
