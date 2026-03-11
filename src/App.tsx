@@ -398,7 +398,7 @@ function AppContent() {
                     <div className="mx-4 my-2 h-px bg-[var(--border)] opacity-50 shrink-0" />
 
                     {/* Query nav item - Now nested under Workspace condition */}
-                    <div className="px-3 pb-1 shrink-0">
+                    {/* <div className="px-3 pb-1 shrink-0">
                       <button
                         onClick={() => {
                           changeTab('chat');
@@ -418,7 +418,7 @@ function AppContent() {
                           </>
                         )}
                       </button>
-                    </div>
+                    </div> */}
 
                     {/* Query History — collapsible, nested under Query */}
                     <AnimatePresence>
