@@ -41,7 +41,7 @@ class AgentService {
 
   private sessionSourcesCache: Record<string, any> = {};
 
-  async getAgents(userId: number | null, fetchFromApi: boolean = true): Promise<AgentData[]> {
+  async getAgents(userId: number | null, fetchFromApi: boolean = true, includeSessionSources: boolean = false): Promise<AgentData[]> {
     if (!userId) {
       return this.agents.map(agent => ({ ...agent, history: [...agent.history] }));
     }
@@ -55,68 +55,72 @@ class AgentService {
       if (response.status === 'success') {
         const apiAgents = response.agents;
 
-        // Fetch session sources
-        const allSessionIds = new Set<string>();
-        if (response.session_id) allSessionIds.add(response.session_id);
+        // Fetch session sources if requested
+        if (includeSessionSources) {
+          const allSessionIds = new Set<string>();
+          if (response.session_id) allSessionIds.add(response.session_id);
 
-        apiAgents.forEach((a: any) => {
-          if (a.session_id) allSessionIds.add(a.session_id);
-          if (a.history) {
-            a.history.forEach((h: any) => {
-              const sId = h.session_id || h.sessionId || h.sessionID;
-              if (sId) allSessionIds.add(sId);
-            });
-          }
-        });
+          apiAgents.forEach((a: any) => {
+            if (a.session_id) allSessionIds.add(a.session_id);
+            if (a.history) {
+              a.history.forEach((h: any) => {
+                const sId = h.session_id || h.sessionId || h.sessionID;
+                if (sId) allSessionIds.add(sId);
+              });
+            }
+          });
 
-        await Promise.all(Array.from(allSessionIds).map(async sId => {
-          if (!this.sessionSourcesCache[sId]) {
-            try {
-              const res = await connectorService.getSessionSources(sId);
-              if (res && res.status === 'success') {
-                this.sessionSourcesCache[sId] = res;
-              }
-            } catch (e) { console.warn('Failed to fetch session sources:', e); }
-          }
-        }));
+          await Promise.all(Array.from(allSessionIds).map(async sId => {
+            if (!this.sessionSourcesCache[sId]) {
+              try {
+                const res = await connectorService.getSessionSources(sId);
+                if (res && res.status === 'success') {
+                  this.sessionSourcesCache[sId] = res;
+                }
+              } catch (e) { console.warn('Failed to fetch session sources:', e); }
+            }
+          }));
+        }
 
         const sessionSourcesHistories: any[] = [];
-        Object.entries(this.sessionSourcesCache).forEach(([sId, res]) => {
-          const databases: string[] = [];
-          const topics: string[] = [];
-          const activities: string[] = [];
+        if (includeSessionSources) {
+          Object.entries(this.sessionSourcesCache).forEach(([sId, res]) => {
+            const databases: string[] = [];
+            const topics: string[] = [];
+            const activities: string[] = [];
 
-          if (res.external_databases && res.external_databases.databases) {
-            res.external_databases.databases.forEach((db: any) => {
-              databases.push(db.external_database);
-              activities.push(`Synced ${db.table_count} tables from ${db.external_database}.`);
-            });
-          }
-          if (res.web_topics && res.web_topics.topics) {
-            res.web_topics.topics.forEach((topic: any) => {
-              topics.push(topic.topic);
-              activities.push(`Saved ${topic.result_count} results for topic: ${topic.topic}.`);
-            });
-          }
+            if (res.external_databases && res.external_databases.databases) {
+              res.external_databases.databases.forEach((db: any) => {
+                databases.push(db.external_database);
+                activities.push(`Synced ${db.table_count} tables from ${db.external_database}.`);
+              });
+            }
+            if (res.web_topics && res.web_topics.topics) {
+              res.web_topics.topics.forEach((topic: any) => {
+                topics.push(topic.topic);
+                activities.push(`Saved ${topic.result_count} results for topic: ${topic.topic}.`);
+              });
+            }
 
-          if (databases.length > 0 || topics.length > 0) {
-            sessionSourcesHistories.push({
-              id: `ss-session-${sId}`,
-              session_id: sId,
-              date: new Date().toISOString(),
-              action: `Session Data Imported`,
-              details: `Ready to analyze ${databases.length} databases and ${topics.length} topics.`,
-              connectionName: 'Multiple Sources',
-              status: 'pending_input',
-              activities,
-              customInputType: 'session_analysis_selection',
-              customInputData: {
-                topics,
-                databases
-              }
-            });
-          }
-        });
+            if (databases.length > 0 || topics.length > 0) {
+              sessionSourcesHistories.push({
+                id: `ss-session-${sId}`,
+                session_id: sId,
+                date: new Date().toISOString(),
+                action: `Session Data Imported`,
+                details: `Ready to analyze ${databases.length} databases and ${topics.length} topics.`,
+                connectionName: 'Multiple Sources',
+                status: 'pending_input',
+                activities,
+                customInputType: 'session_analysis_selection',
+                customInputData: {
+                  topics,
+                  databases
+                }
+              });
+            }
+          });
+        }
 
         this.agents = this.agents.map(localAgent => {
           const apiAgent = apiAgents.find((a: any) => a.id === localAgent.id);

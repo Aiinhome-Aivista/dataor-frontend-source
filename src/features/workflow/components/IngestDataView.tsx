@@ -93,16 +93,6 @@ export const IngestDataView = ({
                 </div>
               </div>
 
-              {results.length > 0 && (
-                <div className="flex justify-end pt-4 border-t border-[var(--border)]">
-                  <Button
-                    onClick={() => onContinue?.()}
-                    className="bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white gap-2 px-6"
-                  >
-                    Continue to Process
-                  </Button>
-                </div>
-              )}
             </div>
           );
         }

@@ -121,12 +121,23 @@ export const AgentWorkflow = ({
   useEffect(() => {
     const fetchAgents = async () => {
       setIsLoading(true);
-      const data = await agentService.getAgents(userId, defaultAgentId === 'connect');
+      const data = await agentService.getAgents(userId, defaultAgentId === 'connect', selectedAgentId === 'ingest');
       setAgents(data);
       setIsLoading(false);
     };
     fetchAgents();
   }, [userId, defaultAgentId]);
+
+  // Re-fetch session sources when switching to ingest tab
+  useEffect(() => {
+    if (selectedAgentId === 'ingest' && userId) {
+      const fetchSessionSources = async () => {
+        const data = await agentService.getAgents(userId, true, true);
+        setAgents(data);
+      };
+      fetchSessionSources();
+    }
+  }, [selectedAgentId, userId]);
 
   // Handle specialized saved results fetch for Web Search in Ingest (Import) tab
   useEffect(() => {
@@ -197,13 +208,15 @@ export const AgentWorkflow = ({
       let nextCustomInputData: any = undefined;
 
       if (currentAgentId === 'connect') {
-        nextAction = 'Data Ingestion Required';
-        nextDetails = `New schema/tables mapped from Connection (${contextData}).`;
-        nextPrompt = `Data is ready to be ingested. 2 new tables found. Please configure how to handle the tables.`;
-        nextOptions = [];
-        nextCustomInputType = 'table_selection';
-        nextCustomInputData = { newTables: ['user_activity_logs', 'payment_transactions'] };
-        nextActivities = undefined; // Removed mock activities here
+        // Skip creating history item for ingest as per user request to remove history section
+        setSelectedAgentId('ingest');
+        const freshAgents = await agentService.getAgents(userId, false);
+        setAgents(freshAgents);
+
+        if (onChangeTab) {
+          onChangeTab('collection');
+        }
+        return;
       } else if (currentAgentId === 'ingest') {
         nextAction = 'Process Pending';
         nextDetails = `Data successfully ingested and cached (${contextData}).`;
@@ -226,7 +239,6 @@ export const AgentWorkflow = ({
         connectionName: connectionName
       });
 
-      setSelectedAgentId(nextAgentId);
       setAgents(await agentService.getAgents(userId, nextAgentId === 'connect'));
 
       // Sync sidebar with stepper
@@ -334,18 +346,17 @@ export const AgentWorkflow = ({
         return;
       }
 
-      // 1. Set active connector if not already set (reconstruct from history)
-      if (!activeConnector) {
-        const isWebSearch = historyItem.connectionName === 'Web Search' || historyItem.action?.startsWith('Saved Research:');
-        setSelectedConnector({
-          id: historyItem.connectorId,
-          name: isWebSearch ? 'Web Search using LLM' : (historyItem.connectionName || 'Data source'),
-          description: historyItem.details || '',
-          type: isWebSearch ? 'Integration' : 'Database',
-          icon: isWebSearch ? 'globe' : 'database',
-          status: 'connected'
-        });
-      }
+      // 1. Reconstruct connector from history and always update selected connector
+      // This ensures that switching between types (e.g. Web Search vs Database) from history works correctly.
+      const isWebSearch = historyItem.connectionName === 'Web Search' || historyItem.action?.startsWith('Saved Research:');
+      setSelectedConnector({
+        id: historyItem.connectorId || '',
+        name: isWebSearch ? 'Web Search using LLM' : (historyItem.connectionName || 'Data source'),
+        description: historyItem.details || '',
+        type: isWebSearch ? 'Integration' : 'Database',
+        icon: isWebSearch ? 'globe' : 'database',
+        status: 'connected'
+      });
 
       // 2. Set importing state and clear any stale results
       setIsImporting(true);
@@ -621,62 +632,75 @@ export const AgentWorkflow = ({
                   </div>
                 </div>
               ) : (
-                <>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
-                    {selectedAgent.name} History
-                  </h3>
+                (() => {
+                  const isIngest = selectedAgent.id === 'ingest';
+                  const filteredHistory = isIngest
+                    ? selectedAgent.history.filter(item => item.action === 'Session Data Imported')
+                    : selectedAgent.history;
 
-                  {selectedAgent.id === 'analyze' && isAnalyzing && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mb-8 p-12 rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-center shadow-sm flex flex-col items-center justify-center gap-4"
-                    >
-                      <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
-                      <div>
-                        <p className="text-sm font-bold text-[var(--text-primary)]">Analyzing your data...</p>
-                        <p className="text-xs text-[var(--text-secondary)] mt-1">Generating insights from the web search results</p>
-                      </div>
-                    </motion.div>
-                  )}
+                  const shouldShowHistory = !isIngest || filteredHistory.length > 0;
 
-                  {selectedAgent.id === 'analyze' && !isAnalyzing && connectorResults?.description && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mb-8 p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
-                    >
-                      <div className="prose prose-sm max-w-none text-[var(--text-primary)] leading-relaxed prose-a:text-[var(--accent)] hover:prose-a:underline">
-                        {typeof connectorResults.description === 'string'
-                          ? <div dangerouslySetInnerHTML={{ __html: formatInsightsText(connectorResults.description) }} />
-                          : JSON.stringify(connectorResults.description, null, 2)}
-                      </div>
-                    </motion.div>
-                  )}
+                  if (!shouldShowHistory) return null;
 
-                  <AnimatePresence mode="popLayout">
-                    {selectedAgent.history.length === 0 ? (
-                      <motion.div
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-2xl"
-                      >
-                        <Clock className="w-8 h-8 text-[var(--text-secondary)] mx-auto mb-3 opacity-50" />
-                        <p className="text-[var(--text-secondary)]">No history found for this agent.</p>
-                      </motion.div>
-                    ) : (
-                      selectedAgent.history.map((item) => (
-                        <HistoryItemCard
-                          key={item.id}
-                          item={item}
-                          agent={selectedAgent}
-                          onAction={handleAction}
-                          onForward={forwardToNextAgent}
-                          onScenarioConfirm={handleScenarioConfirm}
-                        />
-                      ))
-                    )}
-                  </AnimatePresence>
-                </>
+                  return (
+                    <>
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
+                        {selectedAgent.name} History
+                      </h3>
+
+                      {selectedAgent.id === 'analyze' && (isAnalyzing || selectedAgent.history.some(h => h.status === 'processing')) && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mb-8 p-12 rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-center shadow-sm flex flex-col items-center justify-center gap-4"
+                        >
+                          <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
+                          <div>
+                            <p className="text-sm font-bold text-[var(--text-primary)]">Analyzing your data...</p>
+                            <p className="text-xs text-[var(--text-secondary)] mt-1">Generating insights from the web search results</p>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {selectedAgent.id === 'analyze' && !isAnalyzing && connectorResults?.description && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mb-8 p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
+                        >
+                          <div className="prose prose-sm max-w-none text-[var(--text-primary)] leading-relaxed prose-a:text-[var(--accent)] hover:prose-a:underline">
+                            {typeof connectorResults.description === 'string'
+                              ? <div dangerouslySetInnerHTML={{ __html: formatInsightsText(connectorResults.description) }} />
+                              : JSON.stringify(connectorResults.description, null, 2)}
+                          </div>
+                        </motion.div>
+                      )}
+
+                      <AnimatePresence mode="popLayout">
+                        {filteredHistory.length === 0 ? (
+                          <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                            className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-2xl"
+                          >
+                            <Clock className="w-8 h-8 text-[var(--text-secondary)] mx-auto mb-3 opacity-50" />
+                            <p className="text-[var(--text-secondary)]">No history found for this agent.</p>
+                          </motion.div>
+                        ) : (
+                          filteredHistory.map((item) => (
+                            <HistoryItemCard
+                              key={item.id}
+                              item={item}
+                              agent={selectedAgent}
+                              onAction={handleAction}
+                              onForward={forwardToNextAgent}
+                              onScenarioConfirm={handleScenarioConfirm}
+                            />
+                          ))
+                        )}
+                      </AnimatePresence>
+                    </>
+                  );
+                })()
               )}
             </CardContent>
           </Card>
