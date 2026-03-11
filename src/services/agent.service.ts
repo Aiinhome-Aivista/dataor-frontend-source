@@ -54,27 +54,47 @@ class AgentService {
 
     try {
       const response = await connectorService.getConnectionHistory(sessionId);
-      if (response && response.status === 'success' && response.agents) {
-        const apiAgents = response.agents;
+      if (response && response.status === 'success' && response.history) {
+        const fullHistory = response.history as any[];
 
         this.agents = this.agents.map(localAgent => {
-          const apiAgent = apiAgents.find((a: any) => a.id === localAgent.id);
-          let rawHistory: any[] = [];
+          let mappedHistory: any[] = [];
 
-          if (apiAgent && apiAgent.history) {
-            rawHistory = [...apiAgent.history];
+          if (localAgent.id === 'connect') {
+            // "connect" history is for connector-level actions
+            mappedHistory = fullHistory
+              .filter(h => h.action !== 'Session Data Imported' && h.status !== 'processing')
+              .map((h: any) => ({
+                ...h,
+                session_id: h.session_id || h.sessionId || h.sessionID || sessionId,
+                connectorId: h.id,
+                id: h.id || Math.random().toString(36).substr(2, 9)
+              }));
+          } else if (localAgent.id === 'ingest') {
+            // "ingest" history focuses on the imported state
+            mappedHistory = fullHistory
+              .filter(h => h.action === 'Session Data Imported' || h.status === 'completed')
+              .map((h: any) => ({
+                ...h,
+                session_id: h.session_id || h.sessionId || h.sessionID || sessionId,
+                connectorId: h.id,
+                id: h.id || Math.random().toString(36).substr(2, 9)
+              }));
+          } else if (localAgent.id === 'analyze') {
+            // "analyze" history for reports and insights
+            mappedHistory = fullHistory
+              .filter(h => h.db_type === 'session_analysis_result')
+              .map((h: any) => ({
+                ...h,
+                session_id: h.session_id || h.sessionId || h.sessionID || sessionId,
+                id: h.id || Math.random().toString(36).substr(2, 9)
+              }));
           }
 
-          // Map and sort history items
-          const mappedHistory = rawHistory.map((h: any) => ({
-            ...h,
-            session_id: h.session_id || h.sessionId || h.sessionID || sessionId,
-            connectorId: h.id, 
-            id: h.id || Math.random().toString(36).substr(2, 9)
-          }));
-
-          mappedHistory.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
+          if (mappedHistory.length > 0) {
+            mappedHistory.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          }
+          
           return { ...localAgent, history: mappedHistory };
         });
 

@@ -39,6 +39,8 @@ export interface AgentHistoryItem {
   session_id?: string;
   contextualInsights?: string[];
   situations?: AgentSituation[];
+  db_type?: string;
+  topic?: string;
 }
 
 export interface AgentData {

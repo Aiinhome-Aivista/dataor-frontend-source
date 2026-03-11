@@ -127,9 +127,12 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
         setHasResearched(true);
         setSearchTopic(searchQuery);
 
-        // Store top-level search_id from response as requested
+        // Store top-level search_id and topic from response
         if (response.search_id) {
           localStorage.setItem('last_search_id', response.search_id);
+        }
+        if (response.topic) {
+          localStorage.setItem('last_search_topic', response.topic);
         }
 
         // Default select all - prioritize individual result identifiers
@@ -167,18 +170,19 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
       // Sync with backend on import
       const userId = localStorage.getItem('DAgent_user_id') || '1';
       const lastSearchId = localStorage.getItem('last_search_id') || '';
-      const selectedResults = searchResults.filter(r => selectedResultIds.has(r.search_id || r.id || r.url));
+      const lastSearchTopic = localStorage.getItem('last_search_topic') || searchQuery;
+      const selectedResults = searchResults.filter(r => selectedResultIds.has(r.id || r.url));
 
       try {
-        // We can use Promise.all to save all selected results
         await Promise.all(selectedResults.map(result =>
           connectorService.saveResult({
             user_id: userId,
-            search_id: lastSearchId, // Use the top-level session search_id
-            topic: searchQuery,
+            session_id: localStorage.getItem('DAgent_session_id') || '',
+            search_id: lastSearchId,
+            topic: lastSearchTopic,
+            brief: result.brief,
             title: result.title,
-            url: result.url,
-            brief: result.brief
+            url: result.url
           })
         ));
 

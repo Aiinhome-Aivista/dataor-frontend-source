@@ -106,13 +106,14 @@ export const AgentWorkflow = ({
     setConnectorResults,
     isImporting,
     setIsImporting,
-    searchTopic
+    searchTopic,
+    sessionSources,
+    setSessionSources
   } = useConnectorContext();
   const { userId } = useAuthContext();
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(defaultAgentId);
   const [isLoading, setIsLoading] = useState(true);
-  const isDescribingRef = useRef(false);
 
   useEffect(() => {
     setSelectedAgentId(defaultAgentId);
@@ -128,14 +129,21 @@ export const AgentWorkflow = ({
     fetchAgents();
   }, [userId, defaultAgentId]);
 
-  // Re-fetch agents when switching to ingest tab
+  // Re-fetch agents and session sources when switching to ingest tab
   useEffect(() => {
     if (selectedAgentId === 'ingest' && userId) {
-      const fetchAgents = async () => {
-        const data = await agentService.getAgents(userId);
-        setAgents(data);
+      const fetchData = async () => {
+        const agentsData = await agentService.getAgents(userId);
+        setAgents(agentsData);
+
+        // Fetch session sources
+        const activeSessionId = localStorage.getItem('DAgent_session_id') || (activeConnector as any)?.session_id;
+        if (activeSessionId) {
+          const sources = await connectorService.getSessionSources(activeSessionId);
+          setSessionSources(sources);
+        }
       };
-      fetchAgents();
+      fetchData();
     }
   }, [selectedAgentId, userId]);
 
@@ -218,6 +226,7 @@ export const AgentWorkflow = ({
       }
 
       setAgents(await agentService.getAgents(userId, nextAgentId === 'connect'));
+      setSelectedAgentId(nextAgentId);
 
       // Sync sidebar with stepper
       if (onChangeTab) {
@@ -244,38 +253,55 @@ export const AgentWorkflow = ({
 
   const handleContinueToProcess = async () => {
     const historyItem = selectedAgent?.history[selectedAgent.history.length - 1];
-    if (!selectedAgent || !historyItem) return;
+    if (!selectedAgent) return;
+
+    const sessionId = localStorage.getItem('DAgent_session_id') || (historyItem as any)?.session_id;
+
+    if (!sessionId) {
+      console.error("Missing session_id for session analysis");
+      return;
+    }
 
     try {
-      // Update history item status to processing (this will be picked up by polling)
-      await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
-        status: 'processing',
-        details: 'Data details verified. Moving to process phase.'
-      });
+      // 1. Update history item status to processing if it exists
+      if (historyItem) {
+        await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+          status: 'processing',
+          details: 'Data details verified. Initiating multi-source session analysis...',
+          activities: ['Gathering all session sources...', 'Extracting topics and database schemas...', 'Initializing analysis pipeline...']
+        });
+      }
 
-      const isWebSearch = activeConnector?.name === 'Web Search using LLM' || activeConnector?.name === 'Web Search';
+      // 2. Extract topics and databases from sessionSources
+      const topics = sessionSources?.web_topics?.topics?.map((t: any) => t.topic) || [];
+      const databases = sessionSources?.external_databases?.databases?.map((db: any) => db.external_database) || [];
 
-      if (isWebSearch && userId) {
-        setIsAnalyzing(true);
-        // Forward to analyze tab IMMEDIATELY and wait for it to create history items
-        await forwardToNextAgent(selectedAgent.id, 'Data Verified', historyItem.connectionName);
+      setIsAnalyzing(true);
 
-        // Run describe API
-        try {
-          const response = await connectorService.describeSavedContent(userId.toString());
-          if (response) {
-            setConnectorResults(prev => ({ ...prev, description: response.description || response }));
-            // The polling mechanism will eventually update the history item status
+      // 3. Switch to analyze tab IMMEDIATELY
+      await forwardToNextAgent(selectedAgent.id, 'Session Analysis Started', historyItem?.connectionName);
+
+      // 4. Run Session Analysis API in background
+      try {
+        const response = await connectorService.processSessionAnalysis({
+          session_id: sessionId,
+          topics,
+          databases
+        });
+
+        if (response) {
+          const report = response.report || response.description || response.report_content;
+          if (report) {
+            setConnectorResults(prev => ({
+              ...prev,
+              description: report
+            }));
           }
-        } catch (err) {
-          console.error('Failed to describe content on continue to process:', err);
-          // On failure, the polling mechanism will eventually update the history item status
-        } finally {
-          setIsAnalyzing(false);
         }
-      } else {
-        // Forward to analyze tab normally
-        await forwardToNextAgent(selectedAgent.id, 'Data Verified', historyItem.connectionName);
+      } catch (err) {
+        console.error('Failed session analysis:', err);
+      } finally {
+        setIsAnalyzing(false);
       }
     } catch (error) {
       console.error('Failed to continue to process:', error);
@@ -287,7 +313,7 @@ export const AgentWorkflow = ({
 
     const isWebSearch = activeConnector?.name === 'Web Search using LLM' || activeConnector?.name === 'Web Search';
 
-    if (selectedAgentId === 'ingest' && (option === 'Continue' || !option) && isWebSearch) {
+    if (selectedAgentId === 'ingest' && (option === 'Continue' || !option)) {
       await handleContinueToProcess();
       return;
     }
@@ -300,7 +326,11 @@ export const AgentWorkflow = ({
 
       // 1. Reconstruct connector from history and always update selected connector
       // This ensures that switching between types (e.g. Web Search vs Database) from history works correctly.
-      const isWebSearch = historyItem.connectionName === 'Web Search' || historyItem.action?.startsWith('Saved Research:');
+      const isWebSearch = historyItem.db_type === 'saved_web_result' ||
+        historyItem.db_type === 'web_search' ||
+        historyItem.connectionName === 'Web Search' ||
+        historyItem.action?.startsWith('Saved Research:');
+
       setSelectedConnector({
         id: historyItem.connectorId || '',
         name: isWebSearch ? 'Web Search using LLM' : (historyItem.connectionName || 'Data source'),
@@ -310,9 +340,10 @@ export const AgentWorkflow = ({
         status: 'connected'
       });
 
-      // 2. Set importing state and clear any stale results
+      // 2. Set importing state
       setIsImporting(true);
-      setConnectorResults(null);
+      // We no longer clear results here to prevent blank flashes; 
+      // the loader in IngestDataView/Process tab handles the display state.
 
       // 3. Update history to show processing (this will be picked up by polling)
       const newActivities = historyItem.activities
@@ -332,10 +363,8 @@ export const AgentWorkflow = ({
       (async () => {
         try {
           let response;
-          if (historyItem.connectionName === 'Web Search' || historyItem.action?.startsWith('Saved Research:')) {
-            const topicStr = historyItem.action?.replace('Saved Research: ', '') || '';
-            // For Web Search, we want to fetch the saved results instead of trigger regular import
-            response = await connectorService.getSavedResults(userId.toString(), topicStr);
+          if (historyItem.db_type === 'saved_web_result') {
+            response = await connectorService.getSavedResults(userId.toString(), historyItem.topic || '');
           } else {
             response = await connectorService.continueToImport({
               user_id: userId.toString(),
@@ -346,6 +375,11 @@ export const AgentWorkflow = ({
 
           if (response) {
             setConnectorResults(response);
+            // After successful ingestion, refresh session sources
+            if (historyItem.session_id) {
+              const sources = await connectorService.getSessionSources(historyItem.session_id);
+              setSessionSources(sources);
+            }
           } else {
             setConnectorResults(null);
           }
@@ -502,6 +536,7 @@ export const AgentWorkflow = ({
                 <IngestDataView
                   activeConnector={activeConnector}
                   connectorResults={connectorResults}
+                  sessionSources={sessionSources}
                   isImporting={isImporting}
                   onGoToDataSource={() => handleStepperClick('connect')}
                   onContinue={handleContinueToProcess}
@@ -543,70 +578,92 @@ export const AgentWorkflow = ({
               ) : (
                 (() => {
                   const isIngest = selectedAgent.id === 'ingest';
+                  const isAnalyze = selectedAgent.id === 'analyze';
                   const filteredHistory = isIngest
                     ? selectedAgent.history.filter(item => item.action === 'Session Data Imported')
-                    : selectedAgent.history;
+                    : isAnalyze ? [] : selectedAgent.history;
 
-                  const shouldShowHistory = !isIngest || filteredHistory.length > 0;
-
-                  if (!shouldShowHistory) return null;
+                  const shouldShowHistoryHeader = !isAnalyze && (!isIngest || filteredHistory.length > 0);
 
                   return (
                     <>
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
-                        {selectedAgent.name} History
-                      </h3>
-
-                      {selectedAgent.id === 'analyze' && (isAnalyzing || selectedAgent.history.some(h => h.status === 'processing')) && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="mb-8 p-12 rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-center shadow-sm flex flex-col items-center justify-center gap-4"
-                        >
-                          <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
-                          <div>
-                            <p className="text-sm font-bold text-[var(--text-primary)]">Analyzing your data...</p>
-                            <p className="text-xs text-[var(--text-secondary)] mt-1">Generating insights from the web search results</p>
-                          </div>
-                        </motion.div>
+                      {shouldShowHistoryHeader && (
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
+                          {selectedAgent.name} History
+                        </h3>
                       )}
-
-                      {selectedAgent.id === 'analyze' && !isAnalyzing && connectorResults?.description && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="mb-8 p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
-                        >
-                          <div className="prose prose-sm max-w-none text-[var(--text-primary)] leading-relaxed prose-a:text-[var(--accent)] hover:prose-a:underline">
-                            {typeof connectorResults.description === 'string'
-                              ? <div dangerouslySetInnerHTML={{ __html: formatInsightsText(connectorResults.description) }} />
-                              : JSON.stringify(connectorResults.description, null, 2)}
-                          </div>
-                        </motion.div>
-                      )}
-
-                      <AnimatePresence mode="popLayout">
-                        {filteredHistory.length === 0 ? (
+                      {isAnalyze && (isAnalyzing ||
+                        selectedAgent.history.some(h => h.status === 'processing') ||
+                        !connectorResults?.description ||
+                        connectorResults.description.toLowerCase().includes('analysis complete')) && (
                           <motion.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                            className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-2xl"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mb-8 p-12 rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-center shadow-sm flex flex-col items-center justify-center gap-4"
                           >
-                            <Clock className="w-8 h-8 text-[var(--text-secondary)] mx-auto mb-3 opacity-50" />
-                            <p className="text-[var(--text-secondary)]">No history found for this agent.</p>
+                            <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
+                            <div>
+                              <p className="text-sm font-bold text-[var(--text-primary)]">Analyzing your data...</p>
+                              <p className="text-xs text-[var(--text-secondary)] mt-1">Generating multi-source session analysis reports</p>
+                            </div>
                           </motion.div>
-                        ) : (
-                          filteredHistory.map((item) => (
-                            <HistoryItemCard
-                              key={item.id}
-                              item={item}
-                              agent={selectedAgent}
-                              onAction={handleAction}
-                              onForward={forwardToNextAgent}
-                              onScenarioConfirm={handleScenarioConfirm}
-                            />
-                          ))
                         )}
-                      </AnimatePresence>
+
+                      {isAnalyze && !isAnalyzing && connectorResults?.description &&
+                        !connectorResults.description.toLowerCase().includes('analysis complete') && (
+                          <>
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
+                            >
+                              <div className="prose prose-sm max-w-none text-[var(--text-primary)] leading-relaxed prose-a:text-[var(--accent)] hover:prose-a:underline">
+                                {typeof connectorResults.description === 'string'
+                                  ? <div dangerouslySetInnerHTML={{ __html: formatInsightsText(connectorResults.description) }} />
+                                  : JSON.stringify(connectorResults.description, null, 2)}
+                              </div>
+                            </motion.div>
+
+                            {/* Navigation button to Query section */}
+                            <div className="mt-12 pt-8 border-t border-[var(--border)] flex justify-end">
+                              <Button
+                                onClick={() => setSelectedAgentId('query')}
+                                variant="primary"
+                                size="sm"
+                                className="px-8 shadow-lg shadow-[var(--accent)]/20"
+                              >
+                                Want to know more?
+                              </Button>
+                            </div>
+                          </>
+                        )}
+
+                      {!isAnalyze && (
+                        <AnimatePresence mode="popLayout">
+                          {filteredHistory.length === 0 ? (
+                            isIngest ? null : (
+                              <motion.div
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-2xl"
+                              >
+                                <Clock className="w-8 h-8 text-[var(--text-secondary)] mx-auto mb-3 opacity-50" />
+                                <p className="text-[var(--text-secondary)]">No history found for this agent.</p>
+                              </motion.div>
+                            )
+                          ) : (
+                            filteredHistory.map((item) => (
+                              <HistoryItemCard
+                                key={item.id}
+                                item={item}
+                                agent={selectedAgent}
+                                onAction={handleAction}
+                                onForward={forwardToNextAgent}
+                                onScenarioConfirm={handleScenarioConfirm}
+                              />
+                            ))
+                          )}
+                        </AnimatePresence>
+                      )}
                     </>
                   );
                 })()
