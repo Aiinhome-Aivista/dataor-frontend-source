@@ -277,7 +277,7 @@ export const AgentWorkflow = ({
       const databases = sessionSources?.external_databases?.databases?.map((db: any) => db.external_database) || [];
 
       setIsAnalyzing(true);
-      setConnectorResults(null);
+      // We no longer clear results here to allow the Import tab to keep showing its data
 
       // 3. Switch to analyze tab IMMEDIATELY
       await forwardToNextAgent(selectedAgent.id, 'Session Analysis Started', historyItem?.connectionName);
@@ -341,10 +341,9 @@ export const AgentWorkflow = ({
         status: 'connected'
       });
 
-      // 2. Set importing state
+      // 2. Set importing state and clear previous results
       setIsImporting(true);
-      // We no longer clear results here to prevent blank flashes; 
-      // the loader in IngestDataView/Process tab handles the display state.
+      setConnectorResults(null);
 
       // 3. Update history to show processing (this will be picked up by polling)
       const newActivities = historyItem.activities
@@ -409,7 +408,7 @@ export const AgentWorkflow = ({
         }
 
         setIsAnalyzing(true);
-        setConnectorResults(null);
+        // We no longer clear results here to allow the Import tab to keep showing its data
         await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
           status: 'processing',
           details: 'Initiating session analysis with selected topics and databases...',
@@ -539,7 +538,7 @@ export const AgentWorkflow = ({
             )}
 
             <CardContent className={`flex-1 ${selectedAgent.id === 'query' ? 'flex flex-col p-0 overflow-hidden' : compact ? 'px-0 overflow-visible space-y-4' : 'overflow-y-auto p-4 space-y-4'}`}>
-              {(isAnalyzing && selectedAgent.id !== 'query') ? (
+              {(isAnalyzing && selectedAgent.id === 'analyze') ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-6">
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
@@ -551,9 +550,9 @@ export const AgentWorkflow = ({
                   </motion.div>
                   <div className="text-center z-10">
                     <p className="text-lg font-bold text-[var(--text-primary)] mb-2">Analyzing your data...</p>
-                    <p className="text-sm text-[var(--text-secondary)]">Generating multi-source session analysis reports</p>
+                    <p className="text-sm text-[var(--text-secondary)]">Generating session analysis reports</p>
                     <div className="mt-6 flex flex-wrap justify-center gap-2 max-w-md">
-                      {['Synthesizing topics', 'Correlating databases', 'Generating insights'].map((tag, idx) => (
+                      {['', '', ''].map((tag, idx) => (
                         <span key={idx} className="px-3 py-1 rounded-full bg-[var(--surface-hover)] border border-[var(--border)] text-[10px] text-[var(--text-secondary)] animate-pulse" style={{ animationDelay: `${idx * 200}ms` }}>
                           {tag}
                         </span>
