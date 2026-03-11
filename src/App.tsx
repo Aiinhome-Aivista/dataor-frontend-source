@@ -80,10 +80,16 @@ function AppContent() {
     setIsWorkspaceOpen(false);
   };
   const handleBackToLanding = () => setViewMode('landing');
+  const { logout } = useAuthContext();
+  const { resetConnectorState } = useConnectorContext();
+
   const handleLogout = () => {
-    setUserId(null); // This will clear the localStorage key in AuthContext
+    logout();
+    resetConnectorState();
+    agentService.reset();
     setViewMode('landing');
     setIsWorkspaceOpen(false);
+    localStorage.clear();
   };
 
   const handleNewConnector = () => {

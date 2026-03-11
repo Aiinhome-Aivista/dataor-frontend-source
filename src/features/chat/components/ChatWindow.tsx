@@ -27,6 +27,7 @@ export const ChatWindow = ({
   const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat, followUpQuestions } = useChat(initialMode, initialMessage, sessionId);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [isLoadingConnectors, setIsLoadingConnectors] = useState(true);
+  const [chatInput, setChatInput] = useState('');
 
   useEffect(() => {
     if (mode === 'landing') {
@@ -65,7 +66,7 @@ export const ChatWindow = ({
 
       <CardContent
         ref={scrollRef}
-        className="flex-1 h-full overflow-y-auto p-4 scroll-smooth space-y-4 bg-[var(--bg)]/10 relative"
+        className="flex-1 h-full overflow-y-auto p-1 scroll-smooth space-y-1 bg-[var(--bg)]/10 relative"
       >
         <AnimatePresence mode="wait">
           {mode === 'landing' ? (
@@ -182,7 +183,7 @@ export const ChatWindow = ({
         </AnimatePresence>
       </CardContent>
 
-      <CardFooter className="p-4 bg-[var(--surface)]/80 backdrop-blur-md border-t border-[var(--border)] relative z-30">
+      <CardFooter className="bg-[var(--surface)]/80 backdrop-blur-md border-t border-[var(--border)] relative z-30">
         <div className="w-full">
           {/* Show follow-up questions from API response */}
           {followUpQuestions.length > 0 && !isLoading && (
@@ -193,7 +194,7 @@ export const ChatWindow = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  onClick={() => sendMessage(q)}
+                  onClick={() => setChatInput(q)}
                   className="px-4 py-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/40 transition-all shadow-sm flex items-center gap-2 group"
                 >
                   <Sparkles className="w-3 h-3 group-hover:scale-110 transition-transform" />
@@ -211,7 +212,7 @@ export const ChatWindow = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  onClick={() => sendMessage(q)}
+                  onClick={() => setChatInput(q)}
                   className="px-4 py-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/40 transition-all shadow-sm flex items-center gap-2 group"
                 >
                   <Sparkles className="w-3 h-3 group-hover:scale-110 transition-transform" />
@@ -220,7 +221,13 @@ export const ChatWindow = ({
               ))}
             </div>
           )}
-          <ChatInput onSend={sendMessage} disabled={isLoading || mode !== 'chat'} onOpenDataSource={onOpenDataSource} />
+          <ChatInput 
+            value={chatInput} 
+            onChange={setChatInput} 
+            onSend={sendMessage} 
+            disabled={isLoading || mode !== 'chat'} 
+            onOpenDataSource={onOpenDataSource} 
+          />
           <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-[var(--text-secondary)]/60 uppercase tracking-[0.2em] font-black">
 
             <span className="w-1 h-1 rounded-full bg-[var(--border)]" />

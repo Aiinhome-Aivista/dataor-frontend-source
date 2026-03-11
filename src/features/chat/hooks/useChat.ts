@@ -67,7 +67,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
     /*   console.log('Session Chat Response:', response); */
 
       const answerText = response?.answer || 'No answer received.';
-      const followUps: string[] = response?.follow_up_questions || [];
+      const followUps: string[] = response?.follow_up_questions || response?.suggested_questions || [];
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -93,6 +93,29 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
     }
   }, [sessionId]);
 
+  const fetchSuggestedQuestions = useCallback(async () => {
+    try {
+      const chatSessionId = sessionId || localStorage.getItem('DAgent_session_id');
+      if (!chatSessionId) return;
+
+      const response: any = await connectorService.sendSessionChat({
+        session_id: chatSessionId,
+        question: ""
+      });
+
+      const followUps: string[] = response?.follow_up_questions || response?.suggested_questions || [];
+      setFollowUpQuestions(followUps);
+    } catch (error) {
+      console.error('Failed to fetch suggested questions:', error);
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (mode === 'chat' && messages.length <= 1) {
+      fetchSuggestedQuestions();
+    }
+  }, [mode, messages.length, fetchSuggestedQuestions]);
+
   return {
     messages,
     sendMessage,
@@ -104,5 +127,6 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
     startChat,
     startWorkflow,
     followUpQuestions,
+    fetchSuggestedQuestions
   };
 };

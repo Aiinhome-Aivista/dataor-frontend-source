@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState } from 'react';
 interface AuthContextType {
   userId: number | null;
   setUserId: (id: number | null) => void;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,8 +23,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const logout = () => {
+    setUserId(null);
+    localStorage.removeItem('DAgent_user_id');
+  };
+
   return (
-    <AuthContext.Provider value={{ userId, setUserId: handleSetUserId }}>
+    <AuthContext.Provider value={{ userId, setUserId: handleSetUserId, logout }}>
       {children}
     </AuthContext.Provider>
   );

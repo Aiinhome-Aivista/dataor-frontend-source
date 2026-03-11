@@ -12,6 +12,7 @@ interface ConnectorContextType {
   setSearchTopic: (topic: string) => void;
   sessionSources: any | null;
   setSessionSources: (sources: any | null) => void;
+  resetConnectorState: () => void;
 }
 
 const ConnectorContext = createContext<ConnectorContextType | undefined>(undefined);
@@ -73,6 +74,14 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  const resetConnectorState = () => {
+    setSelectedConnector(null);
+    setConnectorResultsState(null);
+    setIsImporting(false);
+    setSearchTopic('');
+    setSessionSourcesState(null);
+  };
+
   return (
     <ConnectorContext.Provider value={{
       selectedConnector,
@@ -84,7 +93,8 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       searchTopic,
       setSearchTopic,
       sessionSources,
-      setSessionSources
+      setSessionSources,
+      resetConnectorState
     }}>
       {children}
     </ConnectorContext.Provider>
