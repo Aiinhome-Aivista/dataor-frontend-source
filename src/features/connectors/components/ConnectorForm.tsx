@@ -164,7 +164,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   const handleImport = async () => {
     if (selectedResultIds.size > 0) {
       // Sync with backend on import
-      const userId = localStorage.getItem('dataor_user_id') || '1';
+      const userId = localStorage.getItem('DAgent_user_id') || '1';
       const lastSearchId = localStorage.getItem('last_search_id') || '';
       const selectedResults = searchResults.filter(r => selectedResultIds.has(r.search_id || r.id || r.url));
 
@@ -474,7 +474,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Testing...
                     </>
-                  ) : 'Test Data source'}
+                  ) : 'Connect to Data source'}
                 </Button>
               </div>
             )}
@@ -500,7 +500,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
 
                   <div className="flex items-center gap-2 mb-3">
                     <Sparkles className="w-4 h-4 text-[var(--accent)]" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">Dataor Guide</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">DAgent Guide</span>
                   </div>
 
                   <h4 className="font-bold text-lg mb-2">{guide.title}</h4>
@@ -525,7 +525,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 className="bg-[var(--surface)] border border-[var(--border)] p-6 rounded-3xl text-center"
               >
                 <p className="text-sm text-[var(--text-secondary)]">
-                  Hover or click on a field to get guidance from Dataor.
+                  Hover or click on a field to get guidance from DAgent.
                 </p>
               </motion.div>
             )}
@@ -539,7 +539,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
               </div>
             </div>
             <div className="mt-4 text-center">
-              <h5 className="font-bold">Dataor Assistant</h5>
+              <h5 className="font-bold">DAgent Assistant</h5>
               <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest">Always here to help</p>
             </div>
           </div>

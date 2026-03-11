@@ -39,7 +39,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
               <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-white font-bold">
                 D
               </div>
-              <span className="text-xl font-bold tracking-tight text-slate-900">Dataor</span>
+              <span className="text-xl font-bold tracking-tight text-slate-900">DAgent</span>
             </div>
             
             <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
@@ -103,13 +103,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
             transition={{ duration: 0.5 }}
           >
             <Badge variant="outline" className="bg-accent/5 text-accent border-accent/10 mb-6 px-4 py-1 rounded-full">
-              New: Dataor Business Plan →
+              New: DAgent Business Plan →
             </Badge>
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 leading-[1.1]">
              Ask your data anything. Get insights instantly.
             </h1>
             <p className="mt-6 text-xl text-slate-600 max-w-2xl mx-auto">
-              No coding required. Dataor connects to your databases, spreadsheets, and apps to help you find answers faster.
+              No coding required. DAgent connects to your databases, spreadsheets, and apps to help you find answers faster.
             </p>
           </motion.div>
 
@@ -123,7 +123,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
               onClick={onGetStarted}
               className="w-full sm:w-auto h-14 px-10 text-lg bg-accent hover:bg-accent-hover text-white rounded-xl shadow-xl shadow-accent/20"
             >
-              Try Dataor free <ArrowRight className="ml-2 w-5 h-5" />
+              Try DAgent free <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button 
               variant="outline"
@@ -141,7 +141,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
           >
             <img 
               src={image1}
-              alt="Dataor Dashboard" 
+              alt="DAgent Dashboard" 
               className="rounded-xl w-full h-auto shadow-inner"
               referrerPolicy="no-referrer"
             />
@@ -168,7 +168,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-4xl font-bold mb-4">Add data, ask questions</h2>
-            <p className="text-slate-600">Ask for what you want and Dataor analyzes the data for you</p>
+            <p className="text-slate-600">Ask for what you want and DAgent analyzes the data for you</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-12">
@@ -182,7 +182,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
               {
                 step: '2',
                 title: 'Ask for analysis',
-                desc: 'You provide the questions, Dataor handles the analysis.',
+                desc: 'You provide the questions, DAgent handles the analysis.',
                 icon: <MessageSquare className="w-8 h-8 text-accent" />
               },
               {
@@ -251,7 +251,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
       <section className="py-24 px-4">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12">
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm italic text-slate-700">
-            "I'm big on data analysis (spreadsheets DAU!), but often find myself frustrated by errors and slowness in trying to even analyze a basic spreadsheet in ChatGPT. Dataor is good at this, and has only gotten better over time. It's both very reliable, and can generate helpful ideas for extra analysis as well as visualizations."
+            "I'm big on data analysis (spreadsheets DAU!), but often find myself frustrated by errors and slowness in trying to even analyze a basic spreadsheet in ChatGPT. DAgent is good at this, and has only gotten better over time. It's both very reliable, and can generate helpful ideas for extra analysis as well as visualizations."
             <div className="mt-6 flex items-center gap-3 not-italic">
               <div className="w-10 h-10 rounded-full bg-slate-200" >
                 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSaMD1wXeLS4UbiMsMuHrlOL4pPIAlhYZZlYg&s" alt="Person" />
@@ -263,7 +263,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
             </div>
           </div>
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm italic text-slate-700">
-            "Dataor.ai completely changed how I approach growth. I can analyze multiple datasets at once and turn them into insights for customer acquisition, retention, and marketing campaigns, all without waiting on engineering or hiring data analysts. I've used it at two companies now, and it's saved us hours while helping us make smarter decisions every day."
+            "DAgent.ai completely changed how I approach growth. I can analyze multiple datasets at once and turn them into insights for customer acquisition, retention, and marketing campaigns, all without waiting on engineering or hiring data analysts. I've used it at two companies now, and it's saved us hours while helping us make smarter decisions every day."
             <div className="mt-6 flex items-center gap-3 not-italic">
               <div className="w-10 h-10 rounded-full bg-slate-200" >
                 <img src="https://cdn.prod.website-files.com/6411878c9450fd34ae2ad846/66f41ff7bad31e6491271fec_2.png" alt="Person" />
@@ -280,9 +280,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
       {/* Security Section */}
       <section id="security" className="py-24 px-4 bg-slate-900 text-white text-center">
         <div className="max-w-4xl mx-auto space-y-8">
-          <h2 className="text-4xl font-bold">Dataor ensures your data is private and secure.</h2>
+          <h2 className="text-4xl font-bold">DAgent ensures your data is private and secure.</h2>
           <p className="text-slate-400 text-lg">
-            Your data stays private and is never used to train AI. Dataor is compliant with industry-leading standards including SOC 2 Type II, TX-RAMP, and GDPR.
+            Your data stays private and is never used to train AI. DAgent is compliant with industry-leading standards including SOC 2 Type II, TX-RAMP, and GDPR.
           </p>
           <div className="flex justify-center gap-12 pt-8">
             <div className="flex flex-col items-center gap-4">
@@ -308,7 +308,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
       <section id="use-cases" className="py-24 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-slate-900">A Dataor for every job</h2>
+            <h2 className="text-4xl font-bold text-slate-900">A DAgent for every job</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
@@ -335,12 +335,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
       <section className="py-24 px-4 bg-accent/5">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <h2 className="text-5xl font-bold tracking-tight text-slate-900">Get started for free</h2>
-          <p className="text-xl text-slate-600">With Dataor, you can get the most out of your data.</p>
+          <p className="text-xl text-slate-600">With DAgent, you can get the most out of your data.</p>
           <Button 
             onClick={onGetStarted}
             className="h-14 px-10 text-lg bg-accent hover:bg-accent-hover text-white rounded-xl shadow-xl shadow-accent/20"
           >
-            Try Dataor free
+            Try DAgent free
           </Button>
         </div>
       </section>
@@ -353,7 +353,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
               <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-white font-bold">
                 D
               </div>
-              <span className="text-xl font-bold tracking-tight text-slate-900">Dataor</span>
+              <span className="text-xl font-bold tracking-tight text-slate-900">DAgent</span>
             </div>
             <p className="text-slate-500 text-sm max-w-xs">
               Early stage AI lab based in San Francisco with a mission to build the most powerful AI tools for knowledge workers.
@@ -379,7 +379,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
               <li>Pricing</li>
               <li>Connectors</li>
               <li>Slack Agent</li>
-              <li>Dataor for Labs</li>
+              <li>DAgent for Labs</li>
             </ul>
           </div>
           <div>
@@ -393,7 +393,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
           </div>
         </div>
         <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400">
-          <p>© 2025 Dataor Labs, Inc. All rights reserved.</p>
+          <p>© 2025 DAgent Labs, Inc. All rights reserved.</p>
           <div className="flex gap-8">
             <span>Privacy Settings</span>
             <span>Do Not Sell or Share My Personal Information</span>

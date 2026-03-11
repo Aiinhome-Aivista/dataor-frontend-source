@@ -87,7 +87,7 @@ export const LoginPage = ({ onBack, onLoginSuccess }: LoginPageProps) => {
           </CardHeader>
 
           <CardContent className="px-8 space-y-6">
-            <div className="space-y-4">
+            {/* <div className="space-y-4">
               <Button 
                 type="button"
                 variant="outline" 
@@ -99,8 +99,8 @@ export const LoginPage = ({ onBack, onLoginSuccess }: LoginPageProps) => {
                 Continue with Google
               </Button>
               
-            </div>
-
+            </div> */}
+{/* 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-slate-100"></span>
@@ -108,7 +108,7 @@ export const LoginPage = ({ onBack, onLoginSuccess }: LoginPageProps) => {
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-white px-4 text-slate-400 font-bold tracking-widest">Or continue with</span>
               </div>
-            </div>
+            </div> */}
 
             <form className="space-y-4" onSubmit={handleLogin}>
               {errorMsg && (
@@ -168,7 +168,7 @@ export const LoginPage = ({ onBack, onLoginSuccess }: LoginPageProps) => {
                     Signing in...
                   </div>
                 ) : (
-                  'Sign in to Dataor'
+                  'Sign in to DAgent'
                 )}
               </Button>
             </form>
@@ -182,7 +182,7 @@ export const LoginPage = ({ onBack, onLoginSuccess }: LoginPageProps) => {
         </Card>
 {/* 
         <p className="mt-8 text-center text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-          By continuing, you agree to Dataor's <span className="underline cursor-pointer">Terms of Service</span> and <span className="underline cursor-pointer">Privacy Policy</span>.
+          By continuing, you agree to DAgent's <span className="underline cursor-pointer">Terms of Service</span> and <span className="underline cursor-pointer">Privacy Policy</span>.
         </p> */}
       </motion.div>
     </div>

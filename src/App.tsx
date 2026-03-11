@@ -162,7 +162,7 @@ function AppContent() {
               <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white text-sm">
                 D
               </div>
-              <span>Dataor</span>
+              <span>DAgent</span>
             </motion.div>
           )}
           <button
@@ -472,7 +472,7 @@ function AppContent() {
               {activeTab === 'chat'
                 ? 'Ask anything to analyze your data and get insights'
                 : activeTab === 'new-connector'
-                  ? `Set up connection for ${selectedConnector?.name || 'new server'} with Dataor Guide`
+                  ? `Set up connection for ${selectedConnector?.name || 'new server'} with DAgent Guide`
                   : activeTab === 'collection'
                     ? 'Manage data ingestion and synchronization'
                     : activeTab === 'analysis'

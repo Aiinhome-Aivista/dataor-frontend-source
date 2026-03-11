@@ -171,9 +171,9 @@ export const AgentWorkflow = ({
       .reverse()
       .find(h => h.session_id)?.session_id;
     if (latestSessionId) {
-      const stored = localStorage.getItem('dataor_session_id');
+      const stored = localStorage.getItem('DAgent_session_id');
       if (stored !== latestSessionId) {
-        localStorage.setItem('dataor_session_id', latestSessionId);
+        localStorage.setItem('DAgent_session_id', latestSessionId);
       }
     }
   }, [agents]);
@@ -213,7 +213,7 @@ export const AgentWorkflow = ({
       } else if (currentAgentId === 'analyze') {
         nextAction = 'Query Engine Ready';
         nextDetails = `Analysis complete. Embeddings generated (${contextData}).`;
-        nextPrompt = `Dataor is ready to answer your questions!`;
+        nextPrompt = `DAgent is ready to answer your questions!`;
         nextOptions = ["Yes, let's go!"];
         nextActivities = ['Loading embeddings into memory...', 'Warming up query engine...', 'Ready for chat.'];
       }

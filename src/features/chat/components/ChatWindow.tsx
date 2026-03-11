@@ -45,7 +45,7 @@ export const ChatWindow = ({
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-black text-base tracking-tight">Dataor AI Assistant</h3>
+            <h3 className="font-black text-base tracking-tight">DAgent AI Assistant</h3>
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -80,7 +80,7 @@ export const ChatWindow = ({
                 <Database className="w-10 h-10" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold mb-2">Welcome to Dataor AI</h2>
+                <h2 className="text-2xl font-bold mb-2">Welcome to DAgent AI</h2>
                 <p className="text-[var(--text-secondary)]">To get started, select an existing data connector or set up a new one.</p>
               </div>
 

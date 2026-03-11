@@ -67,7 +67,7 @@ class ConnectorService implements IConnectorService {
   }
 
   async searchWeb(query: string): Promise<any> {
-    const userId = localStorage.getItem('dataor_user_id');
+    const userId = localStorage.getItem('DAgent_user_id');
     return this.api.post(API_ENDPOINTS.DATA_SOURCE.WEB_SEARCH, {
       topic: query,
       user_id: userId
