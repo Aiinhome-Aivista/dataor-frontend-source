@@ -35,5 +35,6 @@ export const API_ENDPOINTS = {
   WORKSPACE: {
     CREATE: '/create_workspace',
     GET_WORKSPACES: '/workspaces',
+    SET_ACTIVE_WORKSPACE: '/set-active-workspace',
   },
 };

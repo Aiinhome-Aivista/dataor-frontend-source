@@ -6,9 +6,9 @@ export interface IConnectorService {
   getCollections(connectorId: string): Promise<string[]>;
   addConnector(connector: Omit<Connector, 'id' | 'status'>): Promise<Connector>;
   createConnector(payload: any, userId?: number | null): Promise<any>;
-  getConnectionHistory(userId: number | null): Promise<any>;
+  getConnectionHistory(sessionId: string | null): Promise<any>;
   continueToImport(payload: { user_id: string; connection_id: string; session_id?: string }): Promise<any>;
-  searchWeb(query: string): Promise<any>;
+  searchWeb(query: string, sessionId: string | null): Promise<any>;
   saveResult(payload: any): Promise<any>;
   getSavedResults(userId: string, topic?: string): Promise<any>;
   deleteSavedResult(id: string, userId: string): Promise<any>;
@@ -58,19 +58,19 @@ class ConnectorService implements IConnectorService {
     return this.api.post(API_ENDPOINTS.DATA_SOURCE.CREATE_CONNECTORS, payload);
   }
 
-  async getConnectionHistory(userId: number | null): Promise<any> {
-    return this.api.get(`${API_ENDPOINTS.DATA_SOURCE.CONNECTION_HISTORY}?user_id=${userId}`);
+  async getConnectionHistory(sessionId: string | null): Promise<any> {
+    if (!sessionId) return Promise.resolve({ status: 'success', agents: [] });
+    return this.api.get(`${API_ENDPOINTS.DATA_SOURCE.CONNECTION_HISTORY}?session_id=${sessionId}`);
   }
 
   async continueToImport(payload: { user_id: string; connection_id: string; session_id?: string }): Promise<any> {
     return this.api.post(API_ENDPOINTS.DATA_SOURCE.CONTINUE_TO_IMPORT, payload);
   }
 
-  async searchWeb(query: string): Promise<any> {
-    const userId = localStorage.getItem('DAgent_user_id');
+  async searchWeb(query: string, sessionId: string | null): Promise<any> {
     return this.api.post(API_ENDPOINTS.DATA_SOURCE.WEB_SEARCH, {
       topic: query,
-      user_id: userId
+      session_id: sessionId
     });
   }
 

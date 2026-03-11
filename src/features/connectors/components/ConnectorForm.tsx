@@ -53,7 +53,7 @@ const GUIDES: Record<string, FieldGuide> = {
 
 interface ConnectorFormProps {
   onBack: () => void;
-  onTestSuccess?: (connectionName: string) => void;
+  onTestSuccess?: (connectionName: string, shouldSwitchTab?: boolean) => void;
 }
 
 export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => {
@@ -88,6 +88,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
     try {
       const payload = {
         user_id: userId,
+        session_id: localStorage.getItem('DAgent_session_id'),
         name: formData.name,
         type: connector?.name ? connector.name.toLowerCase() : 'mysql',
         host: formData.host,
@@ -120,7 +121,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
     setViewResults(false);
     setErrorMsg('');
     try {
-      const response = await connectorService.searchWeb(searchQuery);
+      const response = await connectorService.searchWeb(searchQuery, localStorage.getItem('DAgent_session_id'));
       if (response.status === 'success') {
         setSearchResults(response.results);
         setHasResearched(true);
@@ -181,7 +182,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
           })
         ));
 
-        onTestSuccess?.(connector?.name || formData.name || 'Web Search Context');
+        onTestSuccess?.(connector?.name || formData.name || 'Web Search Context', false);
       } catch (err) {
         console.error('Failed to save results:', err);
         setErrorMsg('Failed to save selected results. Please try again.');

@@ -121,21 +121,21 @@ export const AgentWorkflow = ({
   useEffect(() => {
     const fetchAgents = async () => {
       setIsLoading(true);
-      const data = await agentService.getAgents(userId, defaultAgentId === 'connect', selectedAgentId === 'ingest');
+      const data = await agentService.getAgents(userId, defaultAgentId === 'connect');
       setAgents(data);
       setIsLoading(false);
     };
     fetchAgents();
   }, [userId, defaultAgentId]);
 
-  // Re-fetch session sources when switching to ingest tab
+  // Re-fetch agents when switching to ingest tab
   useEffect(() => {
     if (selectedAgentId === 'ingest' && userId) {
-      const fetchSessionSources = async () => {
-        const data = await agentService.getAgents(userId, true, true);
+      const fetchAgents = async () => {
+        const data = await agentService.getAgents(userId);
         setAgents(data);
       };
-      fetchSessionSources();
+      fetchAgents();
     }
   }, [selectedAgentId, userId]);
 
@@ -174,20 +174,6 @@ export const AgentWorkflow = ({
     }
   }, [agents, selectedAgentId, userId]);
 
-  // Persist latest session_id to localStorage whenever agents data updates
-  useEffect(() => {
-    const connectAgent = agents.find(a => a.id === 'connect');
-    const latestSessionId = connectAgent?.history
-      .slice()
-      .reverse()
-      .find(h => h.session_id)?.session_id;
-    if (latestSessionId) {
-      const stored = localStorage.getItem('DAgent_session_id');
-      if (stored !== latestSessionId) {
-        localStorage.setItem('DAgent_session_id', latestSessionId);
-      }
-    }
-  }, [agents]);
 
   const selectedAgent = agents.find(a => a.id === selectedAgentId);
 
@@ -231,14 +217,6 @@ export const AgentWorkflow = ({
         nextActivities = ['Loading embeddings into memory...', 'Warming up query engine...', 'Ready for chat.'];
       }
 
-      const newItem = await agentService.addHistoryItem(nextAgentId, {
-        action: nextAction,
-        details: nextDetails,
-        status: 'processing',
-        activities: nextActivities,
-        connectionName: connectionName
-      });
-
       setAgents(await agentService.getAgents(userId, nextAgentId === 'connect'));
 
       // Sync sidebar with stepper
@@ -256,14 +234,8 @@ export const AgentWorkflow = ({
 
       const processingTime = (nextActivities?.length || 2) * 1000 + 500;
       setTimeout(async () => {
-        await agentService.updateHistoryItem(nextAgentId, newItem.id, {
-          status: 'pending_input',
-          prompt: nextPrompt,
-          options: nextOptions,
-          customInputType: nextCustomInputType,
-          customInputData: nextCustomInputData
-        });
-        setAgents(await agentService.getAgents(userId, nextAgentId === 'connect'));
+        // We no longer update local state; we wait for the API to reflect the change
+        console.log(`Phase transition complete, awaiting server sync for ${nextAgentId}`);
       }, processingTime);
     } else if (currentAgentId === 'query') {
       onComplete();
@@ -275,11 +247,11 @@ export const AgentWorkflow = ({
     if (!selectedAgent || !historyItem) return;
 
     try {
+      // Update history item status to processing (this will be picked up by polling)
       await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
-        status: 'completed',
+        status: 'processing',
         details: 'Data details verified. Moving to process phase.'
       });
-      setAgents(await agentService.getAgents(userId, false));
 
       const isWebSearch = activeConnector?.name === 'Web Search using LLM' || activeConnector?.name === 'Web Search';
 
@@ -293,31 +265,11 @@ export const AgentWorkflow = ({
           const response = await connectorService.describeSavedContent(userId.toString());
           if (response) {
             setConnectorResults(prev => ({ ...prev, description: response.description || response }));
-            // Get latest agents to find the newly created analyze history item
-            const freshAgents = await agentService.getAgents(userId, false);
-            const analyzeAgent = freshAgents.find(a => a.id === 'analyze');
-            const processingItem = analyzeAgent?.history.find(h => h.status === 'processing');
-            if (processingItem) {
-              await agentService.updateHistoryItem('analyze', processingItem.id, {
-                status: 'completed',
-                details: 'Content analysis successfully generated.'
-              });
-              setAgents(await agentService.getAgents(userId, false));
-            }
+            // The polling mechanism will eventually update the history item status
           }
         } catch (err) {
           console.error('Failed to describe content on continue to process:', err);
-          // On failure, update history item to failed if possible
-          const freshAgents = await agentService.getAgents(userId, false);
-          const analyzeAgent = freshAgents.find(a => a.id === 'analyze');
-          const processingItem = analyzeAgent?.history.find(h => h.status === 'processing');
-          if (processingItem) {
-            await agentService.updateHistoryItem('analyze', processingItem.id, {
-              status: 'failed',
-              details: 'Failed to generate content analysis.'
-            });
-            setAgents(await agentService.getAgents(userId, false));
-          }
+          // On failure, the polling mechanism will eventually update the history item status
         } finally {
           setIsAnalyzing(false);
         }
@@ -362,7 +314,7 @@ export const AgentWorkflow = ({
       setIsImporting(true);
       setConnectorResults(null);
 
-      // 3. Update history to show processing
+      // 3. Update history to show processing (this will be picked up by polling)
       const newActivities = historyItem.activities
         ? [...historyItem.activities, 'Initiating import process...']
         : ['Initiating import process...'];
@@ -372,7 +324,6 @@ export const AgentWorkflow = ({
         details: 'Triggering data import from data source...',
         activities: newActivities
       });
-      setAgents(await agentService.getAgents(userId, false));
 
       // 4. Forward IMMEDIATELY to switch tabs
       await forwardToNextAgent(selectedAgent.id, 'Import Triggered', historyItem.connectionName);
@@ -399,24 +350,13 @@ export const AgentWorkflow = ({
             setConnectorResults(null);
           }
 
-          // Also update the agent history so it's reflected in the UI eventually
-          await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
-            status: 'completed',
-            details: 'Import trigger successful.'
-          });
+          // The polling mechanism will eventually update the agent history
         } catch (error) {
           console.error("Import failed:", error);
           setConnectorResults(null); // Clear previous data on failure
-          await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
-            status: 'failed',
-            details: `Failed to start import: ${error instanceof Error ? error.message : 'Unknown error'}`
-          });
+          // The polling mechanism will eventually update the agent history
         } finally {
           setIsImporting(false);
-          // We don't necessarily need to reload agents here as they'll be reloaded on tab entry,
-          // but for safety in case we're still on the same tab:
-          const freshAgents = await agentService.getAgents(userId, false);
-          setAgents(freshAgents);
         }
       })();
 
@@ -439,7 +379,6 @@ export const AgentWorkflow = ({
           details: 'Initiating session analysis with selected topics and databases...',
           activities: ['Gathering selected items...', 'Sending to analysis engine...', 'Awaiting insights...']
         });
-        setAgents(await agentService.getAgents(userId, false));
 
         await forwardToNextAgent(selectedAgent.id, 'Session Analysis Triggered', historyItem.connectionName);
 
@@ -452,31 +391,13 @@ export const AgentWorkflow = ({
 
         if (response) {
           setConnectorResults(prev => ({ ...prev, description: response.report || response.description || response }));
-          const freshAgents = await agentService.getAgents(userId, false);
-          const analyzeAgent = freshAgents.find(a => a.id === 'analyze');
-          const processingItem = analyzeAgent?.history.find(h => h.status === 'processing');
-          if (processingItem) {
-            await agentService.updateHistoryItem('analyze', processingItem.id, {
-              status: 'completed',
-              details: 'Content analysis successfully generated.'
-            });
-            setAgents(await agentService.getAgents(userId, false));
-          }
+          // The polling mechanism will eventually update the history item status
         }
 
-        await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
-          status: 'completed',
-          details: 'Session analysis started successfully.'
-        });
-        setAgents(await agentService.getAgents(userId, false));
-
+        // The polling mechanism will eventually update the agent history
       } catch (error) {
         console.error("Session analysis failed:", error);
-        await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
-          status: 'failed',
-          details: `Failed to start analysis: ${error instanceof Error ? error.message : 'Unknown error'}`
-        });
-        setAgents(await agentService.getAgents(userId, false));
+        // The polling mechanism will eventually update the agent history
       } finally {
         setIsAnalyzing(false);
       }
@@ -494,17 +415,9 @@ export const AgentWorkflow = ({
       activities: newActivities
     });
 
-    // Refresh data
-    setAgents(await agentService.getAgents(userId, selectedAgent.id === 'connect'));
-
     // Simulate completion
     setTimeout(async () => {
-      await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
-        status: 'completed',
-        details: option ? `Completed action: ${option}` : 'Action completed successfully.'
-      });
-      setAgents(await agentService.getAgents(userId, selectedAgent.id === 'connect'));
-
+      // The polling mechanism will eventually update the history item status
       // Automatically forward to next agent
       await forwardToNextAgent(selectedAgent.id, option || historyItem.action, historyItem.connectionName);
     }, 2000);
@@ -514,12 +427,8 @@ export const AgentWorkflow = ({
     if (!selectedAgent) return;
 
     // Add a history item for the scenario selection
-    await agentService.addHistoryItem('ingest', {
-      action: 'Situation Identified',
-      details: scenario,
-      status: 'completed',
-      connectionName: activeConnector?.name
-    });
+    // No-op: awaiting API sync for ingestion status
+    console.log('Ingestion requested, awaiting server sync.');
 
     setAgents(await agentService.getAgents(userId, selectedAgent.id === 'connect'));
 

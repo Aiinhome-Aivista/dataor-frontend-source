@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { agentService } from './services/agent.service';
 import { AgentHistoryItem } from './features/workflow/types';
-import { workspaceService } from './services/workspace.service';
+import { workspaceService, Workspace } from './services/workspace.service';
 
 type Tab = 'chat' | 'connectors' | 'new-connector' | 'collection' | 'analysis';
 type ViewMode = 'landing' | 'login' | 'app';
@@ -33,14 +33,8 @@ function AppContent() {
   // Workspace state
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [workspaceSearch, setWorkspaceSearch] = useState('');
-  const [selectedWorkspace, setSelectedWorkspace] = useState('Default');
-  const [workspaces, setWorkspaces] = useState<string[]>([
-    'Default',
-    'Marketing Project',
-    'Sales Analysis',
-    'Q4 Reports',
-    'Customer Feedback'
-  ]);
+  const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
 
@@ -49,9 +43,15 @@ function AppContent() {
       try {
         const response = await workspaceService.getWorkspaces(userId || 6);
         if (response && response.status === 'success' && response.workspaces) {
-          setWorkspaces(response.workspaces.map((w: any) =>
-            typeof w === 'string' ? w : (w.workspace_name || w.name || JSON.stringify(w))
-          ));
+          const fetchedWorkspaces: Workspace[] = response.workspaces;
+          setWorkspaces(fetchedWorkspaces);
+          
+          // Always sync selection with the active workspace from API
+          const activeWS = fetchedWorkspaces.find(w => w.is_active === 1) || fetchedWorkspaces[0];
+          if (activeWS) {
+            setSelectedWorkspace(activeWS);
+            localStorage.setItem('DAgent_session_id', activeWS.session_id);
+          }
         }
       } catch (err) {
         console.error('Failed to fetch workspaces:', err);
@@ -101,7 +101,7 @@ function AppContent() {
     changeTab('connectors');
   };
 
-  const handleStartWorkflow = async (connectionName?: string) => {
+  const handleStartWorkflow = async (connectionName?: string, shouldSwitchTab: boolean = false) => {
     const name = connectionName || 'New Connection';
 
     // Set as active connector for the session
@@ -114,22 +114,13 @@ function AppContent() {
       status: 'connected'
     });
 
-    // Add the new connection to the agent history
-    await agentService.addHistoryItem('connect', {
-      action: `Connected to ${name}`,
-      details: 'Connection established successfully.',
-      connectionName: name,
-      status: 'completed',
-      activities: [
-        'Verifying credentials...',
-        'Establishing SSL tunnel...',
-        'Handshaking with database...',
-        'Mapping schema structures...'
-      ]
-    });
 
-    // Redirect to connectors tab so user stays in the data source view
-    changeTab('collection');
+    // Redirect to connectors tab so user stays in the data source view if requested
+    if (shouldSwitchTab) {
+      changeTab('collection');
+    } else {
+      changeTab('connectors');
+    }
   };
 
   const handleWorkflowComplete = () => {
@@ -211,7 +202,7 @@ function AppContent() {
                   {isSidebarOpen && (
                     <>
                       <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm flex-1 text-left ">
-                        Workspace - {selectedWorkspace}
+                        Workspace - {selectedWorkspace?.workspace_name || 'Select'}
                       </motion.span>
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
@@ -246,11 +237,17 @@ function AppContent() {
                               onKeyDown={async e => {
                                 if (e.key === 'Enter' && newWorkspaceName.trim()) {
                                   const trimmed = newWorkspaceName.trim();
-                                  if (!workspaces.includes(trimmed)) {
+                                  if (!workspaces.find(w => w.workspace_name === trimmed)) {
                                     try {
-                                      await workspaceService.createWorkspace(userId || 6, trimmed);
-                                      setWorkspaces(prev => [...prev, trimmed]);
-                                      setSelectedWorkspace(trimmed);
+                                      const response = await workspaceService.createWorkspace(userId || 6, trimmed);
+                                      const newWS: Workspace = response.workspace || {
+                                        id: response.id,
+                                        workspace_name: trimmed,
+                                        session_id: response.session_id
+                                      };
+                                      setWorkspaces(prev => [...prev, newWS]);
+                                      setSelectedWorkspace(newWS);
+                                      localStorage.setItem('DAgent_session_id', newWS.session_id);
                                       setWorkspaceSearch('');
                                       setIsCreatingWorkspace(false);
                                       setNewWorkspaceName('');
@@ -269,11 +266,17 @@ function AppContent() {
                               onClick={async () => {
                                 if (newWorkspaceName.trim()) {
                                   const trimmed = newWorkspaceName.trim();
-                                  if (!workspaces.includes(trimmed)) {
+                                  if (!workspaces.find(w => w.workspace_name === trimmed)) {
                                     try {
-                                      await workspaceService.createWorkspace(userId || 6, trimmed);
-                                      setWorkspaces(prev => [...prev, trimmed]);
-                                      setSelectedWorkspace(trimmed);
+                                      const response = await workspaceService.createWorkspace(userId || 6, trimmed);
+                                      const newWS: Workspace = response.workspace || {
+                                        id: response.id,
+                                        workspace_name: trimmed,
+                                        session_id: response.session_id
+                                      };
+                                      setWorkspaces(prev => [...prev, newWS]);
+                                      setSelectedWorkspace(newWS);
+                                      localStorage.setItem('DAgent_session_id', newWS.session_id);
                                       setWorkspaceSearch('');
                                       setIsCreatingWorkspace(false);
                                       setNewWorkspaceName('');
@@ -325,8 +328,7 @@ function AppContent() {
                       <div className="space-y-1.5 overflow-y-auto flex-1">
                         {(() => {
                           const filtered = workspaces.filter(w => {
-                            const workspaceName = typeof w === 'string' ? w : '';
-                            return workspaceName.toLowerCase().includes(workspaceSearch.toLowerCase());
+                            return w.workspace_name.toLowerCase().includes(workspaceSearch.toLowerCase());
                           });
                           return filtered.length === 0 ? (
                             <div className="text-center py-6 border border-dashed border-[var(--border)] rounded-xl">
@@ -335,24 +337,30 @@ function AppContent() {
                           ) : (
                             filtered.map((workspace) => (
                               <button
-                                key={workspace}
-                                onClick={() => {
-                                  setSelectedWorkspace(workspace);
-                                  setIsWorkspaceOpen(false);
+                                key={workspace.id}
+                                onClick={async () => {
+                                  try {
+                                    await workspaceService.setActiveWorkspace(userId || 6, workspace.id);
+                                    setSelectedWorkspace(workspace);
+                                    localStorage.setItem('DAgent_session_id', workspace.session_id);
+                                    setIsWorkspaceOpen(false);
+                                  } catch (err) {
+                                    console.error('Failed to set active workspace:', err);
+                                  }
                                 }}
                                 className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer
-                                ${selectedWorkspace === workspace
+                                ${selectedWorkspace?.id === workspace.id
                                     ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 text-[var(--accent)]'
                                     : 'border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
                               `}
                               >
                                 <div className="flex flex-col gap-0.5 overflow-hidden">
-                                  <span className={`text-[11px] font-bold truncate ${selectedWorkspace === workspace ? 'text-[var(--accent)]' : ''}`}>
-                                    {workspace}
+                                  <span className={`text-[11px] font-bold truncate ${selectedWorkspace?.id === workspace.id ? 'text-[var(--accent)]' : ''}`}>
+                                    {workspace.workspace_name}
                                   </span>
 
                                 </div>
-                                {selectedWorkspace === workspace && (
+                                {selectedWorkspace?.id === workspace.id && (
                                   // <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_8px_var(--accent)]" />
                                   <></>
                                 )}
