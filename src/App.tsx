@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { agentService } from './services/agent.service';
 import { AgentHistoryItem } from './features/workflow/types';
+import { workspaceService } from './services/workspace.service';
 
 type Tab = 'chat' | 'connectors' | 'new-connector' | 'collection' | 'analysis';
 type ViewMode = 'landing' | 'login' | 'app';
@@ -42,6 +43,24 @@ function AppContent() {
   ]);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
+
+  useEffect(() => {
+    const fetchWorkspaces = async () => {
+      try {
+        const response = await workspaceService.getWorkspaces(userId || 6);
+        if (response && response.status === 'success' && response.workspaces) {
+          setWorkspaces(response.workspaces.map((w: any) =>
+            typeof w === 'string' ? w : (w.workspace_name || w.name || JSON.stringify(w))
+          ));
+        }
+      } catch (err) {
+        console.error('Failed to fetch workspaces:', err);
+      }
+    };
+    if (userId || viewMode === 'app') {
+      fetchWorkspaces();
+    }
+  }, [userId, viewMode]);
 
   useEffect(() => {
     const fetchQueryHistory = async () => {
@@ -224,15 +243,20 @@ function AppContent() {
                               placeholder="Workspace name..."
                               value={newWorkspaceName}
                               onChange={e => setNewWorkspaceName(e.target.value)}
-                              onKeyDown={e => {
+                              onKeyDown={async e => {
                                 if (e.key === 'Enter' && newWorkspaceName.trim()) {
                                   const trimmed = newWorkspaceName.trim();
                                   if (!workspaces.includes(trimmed)) {
-                                    setWorkspaces(prev => [...prev, trimmed]);
-                                    setSelectedWorkspace(trimmed);
-                                    setWorkspaceSearch('');
-                                    setIsCreatingWorkspace(false);
-                                    setNewWorkspaceName('');
+                                    try {
+                                      await workspaceService.createWorkspace(userId || 6, trimmed);
+                                      setWorkspaces(prev => [...prev, trimmed]);
+                                      setSelectedWorkspace(trimmed);
+                                      setWorkspaceSearch('');
+                                      setIsCreatingWorkspace(false);
+                                      setNewWorkspaceName('');
+                                    } catch (err) {
+                                      console.error('Failed to create workspace:', err);
+                                    }
                                   }
                                 } else if (e.key === 'Escape') {
                                   setIsCreatingWorkspace(false);
@@ -242,15 +266,20 @@ function AppContent() {
                               className="flex-1 min-w-0 bg-transparent text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none px-1 py-0.5"
                             />
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 if (newWorkspaceName.trim()) {
                                   const trimmed = newWorkspaceName.trim();
                                   if (!workspaces.includes(trimmed)) {
-                                    setWorkspaces(prev => [...prev, trimmed]);
-                                    setSelectedWorkspace(trimmed);
-                                    setWorkspaceSearch('');
-                                    setIsCreatingWorkspace(false);
-                                    setNewWorkspaceName('');
+                                    try {
+                                      await workspaceService.createWorkspace(userId || 6, trimmed);
+                                      setWorkspaces(prev => [...prev, trimmed]);
+                                      setSelectedWorkspace(trimmed);
+                                      setWorkspaceSearch('');
+                                      setIsCreatingWorkspace(false);
+                                      setNewWorkspaceName('');
+                                    } catch (err) {
+                                      console.error('Failed to create workspace:', err);
+                                    }
                                   }
                                 }
                               }}
@@ -295,9 +324,10 @@ function AppContent() {
                       {/* Items */}
                       <div className="space-y-1.5 overflow-y-auto flex-1">
                         {(() => {
-                          const filtered = workspaces.filter(w =>
-                            w.toLowerCase().includes(workspaceSearch.toLowerCase())
-                          );
+                          const filtered = workspaces.filter(w => {
+                            const workspaceName = typeof w === 'string' ? w : '';
+                            return workspaceName.toLowerCase().includes(workspaceSearch.toLowerCase());
+                          });
                           return filtered.length === 0 ? (
                             <div className="text-center py-6 border border-dashed border-[var(--border)] rounded-xl">
                               <p className="text-[10px] text-[var(--text-secondary)]">No matching workspace</p>
