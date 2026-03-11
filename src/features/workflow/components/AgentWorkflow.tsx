@@ -441,9 +441,10 @@ export const AgentWorkflow = ({
         });
         setAgents(await agentService.getAgents(userId, false));
 
+        // 1. Forward IMMEDIATELY to show the loader on the Process page
         await forwardToNextAgent(selectedAgent.id, 'Session Analysis Triggered', historyItem.connectionName);
 
-        // Run API call in background
+        // 2. Run API call in background
         const response = await connectorService.processSessionAnalysis({
           session_id: historyItem.session_id,
           topics: payload.topics,
@@ -481,6 +482,60 @@ export const AgentWorkflow = ({
         setIsAnalyzing(false);
       }
       return;
+    }
+
+    // If we are in the analyze phase, standard options should also trigger the real analysis API
+    if (selectedAgent.id === 'analyze' && option && !option.startsWith('SESSION_ANALYSIS:')) {
+      try {
+        setIsAnalyzing(true);
+        await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+          status: 'processing',
+          details: `Processing analysis for: ${option}...`,
+          activities: ['Initializing analysis for selected focus...', 'Extracting relevant patterns...', 'Awaiting insights...']
+        });
+        setAgents(await agentService.getAgents(userId, false));
+
+        // 1. Forward IMMEDIATELY
+        await forwardToNextAgent(selectedAgent.id, `Selected Focus: ${option}`, historyItem.connectionName);
+
+        // 2. Run API
+        const response = await connectorService.processSessionAnalysis({
+          session_id: historyItem.session_id || localStorage.getItem('DAgent_session_id') || '',
+          topics: [option]
+        });
+
+        if (response) {
+          setConnectorResults(prev => ({ ...prev, description: response.report || response.description || response }));
+          const freshAgents = await agentService.getAgents(userId, false);
+          const analyzeAgent = freshAgents.find(a => a.id === 'analyze');
+          const processingItem = analyzeAgent?.history.find(h => h.status === 'processing');
+          if (processingItem) {
+            await agentService.updateHistoryItem('analyze', processingItem.id, {
+              status: 'completed',
+              details: `Content analysis for ${option} successfully generated.`
+            });
+            setAgents(await agentService.getAgents(userId, false));
+          }
+        }
+
+        await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+          status: 'completed',
+          details: `Session analysis for ${option} started successfully.`
+        });
+        setAgents(await agentService.getAgents(userId, false));
+        return;
+      } catch (error) {
+        console.error("Session analysis failed for option:", error);
+        await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+          status: 'failed',
+          details: `Failed to start analysis for ${option}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        });
+        setAgents(await agentService.getAgents(userId, false));
+        setIsAnalyzing(false);
+        return;
+      } finally {
+        setIsAnalyzing(false);
+      }
     }
 
     const newActivities = historyItem.activities
@@ -650,14 +705,19 @@ export const AgentWorkflow = ({
 
                       {selectedAgent.id === 'analyze' && (isAnalyzing || selectedAgent.history.some(h => h.status === 'processing')) && (
                         <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="mb-8 p-12 rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-center shadow-sm flex flex-col items-center justify-center gap-4"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="mb-8 p-8 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent)]/[0.03] text-center shadow-xl shadow-[var(--accent)]/5 flex flex-col items-center justify-center gap-5"
                         >
-                          <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
+                          <div className="relative">
+                            <Loader2 className="w-12 h-12 animate-spin text-[var(--accent)]" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Sparkles className="w-5 h-5 text-[var(--accent)] opacity-50" />
+                            </div>
+                          </div>
                           <div>
-                            <p className="text-sm font-bold text-[var(--text-primary)]">Analyzing your data...</p>
-                            <p className="text-xs text-[var(--text-secondary)] mt-1">Generating insights from the web search results</p>
+                            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Deep Analysis in Progress</h3>
+                            <p className="text-sm text-[var(--text-secondary)]">Our models are extracting patterns and generating strategic insights...</p>
                           </div>
                         </motion.div>
                       )}

@@ -23,6 +23,13 @@ class WorkspaceService {
     async getWorkspaces(userId: number): Promise<any> {
         return this.api.get(`${API_ENDPOINTS.WORKSPACE.GET_WORKSPACES}?user_id=${userId}`);
     }
+
+    async setActiveWorkspace(userId: number, workspaceId: number): Promise<any> {
+        return this.api.post(API_ENDPOINTS.WORKSPACE.SET_ACTIVE, {
+            user_id: userId,
+            workspace_id: workspaceId
+        });
+    }
 }
 
 export const workspaceService = new WorkspaceService(apiService);

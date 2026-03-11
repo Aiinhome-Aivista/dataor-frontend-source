@@ -34,27 +34,34 @@ function AppContent() {
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [workspaceSearch, setWorkspaceSearch] = useState('');
   const [selectedWorkspace, setSelectedWorkspace] = useState('Default');
-  const [workspaces, setWorkspaces] = useState<string[]>([
-    'Default',
-    'Marketing Project',
-    'Sales Analysis',
-    'Q4 Reports',
-    'Customer Feedback'
-  ]);
+  const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
+  const [isWorkspacesLoading, setIsWorkspacesLoading] = useState(false);
 
   useEffect(() => {
     const fetchWorkspaces = async () => {
+      setIsWorkspacesLoading(true);
       try {
         const response = await workspaceService.getWorkspaces(userId || 6);
         if (response && response.status === 'success' && response.workspaces) {
-          setWorkspaces(response.workspaces.map((w: any) =>
-            typeof w === 'string' ? w : (w.workspace_name || w.name || JSON.stringify(w))
-          ));
+          const workspaceList = response.workspaces;
+          setWorkspaces(workspaceList);
+
+          // Find active workspace
+          const activeWorkspace = workspaceList.find((w: any) => w.is_active === 1);
+          if (activeWorkspace) {
+            const name = activeWorkspace.workspace_name || activeWorkspace.name;
+            setSelectedWorkspace(name);
+            if (activeWorkspace.session_id) {
+              localStorage.setItem('DAgent_session_id', activeWorkspace.session_id);
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to fetch workspaces:', err);
+      } finally {
+        setIsWorkspacesLoading(false);
       }
     };
     if (userId || viewMode === 'app') {
@@ -75,15 +82,32 @@ function AppContent() {
 
   const handleLogin = () => setViewMode('login');
   const handleGetStarted = () => setViewMode('login');
-  const handleLoginSuccess = () => {
-    setViewMode('app');
+
+  const resetAppState = () => {
+    setActiveTab('chat');
+    setSidebarOpen(true);
+    setJustFinishedWorkflow(false);
+    setInitialChatMessage(undefined);
     setIsWorkspaceOpen(false);
+    setIsQueryHistoryOpen(false);
+    setWorkspaceSearch('');
+    setHistorySearch('');
+    setSelectedWorkspace('Default');
+    setIsCreatingWorkspace(false);
+    setNewWorkspaceName('');
+    setSelectedConnector(null);
+    setChatKey(prev => prev + 1);
+  };
+
+  const handleLoginSuccess = () => {
+    resetAppState();
+    setViewMode('app');
   };
   const handleBackToLanding = () => setViewMode('landing');
   const handleLogout = () => {
     setUserId(null); // This will clear the localStorage key in AuthContext
-    setViewMode('landing');
-    setIsWorkspaceOpen(false);
+    resetAppState();
+    setViewMode('login');
   };
 
   const handleNewConnector = () => {
@@ -129,7 +153,7 @@ function AppContent() {
     });
 
     // Redirect to connectors tab so user stays in the data source view
-    changeTab('collection');
+    changeTab('connectors');
   };
 
   const handleWorkflowComplete = () => {
@@ -140,11 +164,29 @@ function AppContent() {
     }, 1500);
   };
 
+  const handleWorkspaceSelect = async (workspace: any) => {
+    const name = workspace.workspace_name || workspace.name;
+    setSelectedWorkspace(name);
+    setIsWorkspaceOpen(false);
+
+    if (workspace.session_id) {
+      localStorage.setItem('DAgent_session_id', workspace.session_id);
+    }
+
+    try {
+      await workspaceService.setActiveWorkspace(userId || 10, workspace.id);
+    } catch (err) {
+      console.error('Failed to set active workspace:', err);
+    }
+  };
+
   const changeTab = (tab: Tab) => {
     if (tab !== 'chat') {
       setJustFinishedWorkflow(false);
       setInitialChatMessage(undefined);
     }
+    setIsWorkspaceOpen(false);
+    setIsQueryHistoryOpen(false);
     setActiveTab(tab);
   };
 
@@ -322,42 +364,49 @@ function AppContent() {
                         />
                       </div>
                       {/* Items */}
-                      <div className="space-y-1.5 overflow-y-auto flex-1">
-                        {(() => {
+                      <div className="space-y-1.5 overflow-y-auto flex-1 min-h-[100px]">
+                        {isWorkspacesLoading ? (
+                          <div className="flex flex-col items-center justify-center py-12 gap-3">
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            >
+                              <Clock className="w-6 h-6 text-[var(--accent)]" />
+                            </motion.div>
+                            <p className="text-[11px] font-medium text-[var(--text-secondary)] animate-pulse">Loading workspaces...</p>
+                          </div>
+                        ) : (() => {
                           const filtered = workspaces.filter(w => {
-                            const workspaceName = typeof w === 'string' ? w : '';
-                            return workspaceName.toLowerCase().includes(workspaceSearch.toLowerCase());
+                            const name = w.workspace_name || w.name || '';
+                            return name.toLowerCase().includes(workspaceSearch.toLowerCase());
                           });
                           return filtered.length === 0 ? (
                             <div className="text-center py-6 border border-dashed border-[var(--border)] rounded-xl">
                               <p className="text-[10px] text-[var(--text-secondary)]">No matching workspace</p>
                             </div>
                           ) : (
-                            filtered.map((workspace) => (
-                              <button
-                                key={workspace}
-                                onClick={() => {
-                                  setSelectedWorkspace(workspace);
-                                  setIsWorkspaceOpen(false);
-                                }}
-                                className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer
-                                ${selectedWorkspace === workspace
-                                    ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 text-[var(--accent)]'
-                                    : 'border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
-                              `}
-                              >
-                                <div className="flex flex-col gap-0.5 overflow-hidden">
-                                  <span className={`text-[11px] font-bold truncate ${selectedWorkspace === workspace ? 'text-[var(--accent)]' : ''}`}>
-                                    {workspace}
-                                  </span>
+                            filtered.map((workspace) => {
+                              const name = workspace.workspace_name || workspace.name;
+                              const isActive = selectedWorkspace === name;
+                              return (
+                                <button
+                                  key={workspace.id}
+                                  onClick={() => handleWorkspaceSelect(workspace)}
+                                  className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer
+                                  ${isActive
+                                      ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 text-[var(--accent)]'
+                                      : 'border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
+                                `}
+                                >
+                                  <div className="flex flex-col gap-0.5 overflow-hidden">
+                                    <span className={`text-[11px] font-bold truncate ${isActive ? 'text-[var(--accent)]' : ''}`}>
+                                      {name}
+                                    </span>
 
-                                </div>
-                                {selectedWorkspace === workspace && (
-                                  // <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_8px_var(--accent)]" />
-                                  <></>
-                                )}
-                              </button>
-                            ))
+                                  </div>
+                                </button>
+                              );
+                            })
                           );
                         })()}
                       </div>

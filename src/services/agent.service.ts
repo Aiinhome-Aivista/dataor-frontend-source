@@ -51,13 +51,16 @@ class AgentService {
     }
 
     try {
-      const response = await connectorService.getConnectionHistory(userId);
+      const sessionId = localStorage.getItem('DAgent_session_id') || userId?.toString() || null;
+      const response = await connectorService.getConnectionHistory(sessionId);
       if (response.status === 'success') {
         const apiAgents = response.agents;
 
         // Fetch session sources if requested
         if (includeSessionSources) {
           const allSessionIds = new Set<string>();
+          const activeSessionId = localStorage.getItem('DAgent_session_id');
+          if (activeSessionId) allSessionIds.add(activeSessionId);
           if (response.session_id) allSessionIds.add(response.session_id);
 
           apiAgents.forEach((a: any) => {

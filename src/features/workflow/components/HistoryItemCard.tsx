@@ -134,7 +134,7 @@ export const HistoryItemCard = ({
           </h4>
           {item.activities.slice(0, displayIndex + 1).map((activity, i) => (
             <motion.div
-              key={activity}
+              key={`${activity}-${i}`}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3"
@@ -149,6 +149,18 @@ export const HistoryItemCard = ({
               </span>
             </motion.div>
           ))}
+          {item.status === 'processing' && displayIndex === (item.activities?.length || 0) - 1 && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-3"
+            >
+              <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />
+              <span className="text-[var(--accent)] font-medium">
+                Generating final insights...
+              </span>
+            </motion.div>
+          )}
         </div>
       )}
 
@@ -195,7 +207,7 @@ export const HistoryItemCard = ({
         </div>
       )}
 
-      {(item.status === 'pending_input' || (item.status === 'processing' && agent.id === 'ingest')) && (
+      {item.status === 'pending_input' && (
         <div className="mt-4 pt-4 border-t border-[var(--border)]">
           {(agent.id === 'ingest' && situations && situations.length > 0) ? (
             <div className="space-y-4">
@@ -422,7 +434,7 @@ export const HistoryItemCard = ({
                   )}
 
                   <div className="flex items-center justify-end pt-4 border-t border-[var(--border)]">
-                  
+
                     <Button
                       variant="primary"
                       size="sm"
