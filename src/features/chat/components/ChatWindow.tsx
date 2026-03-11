@@ -65,7 +65,7 @@ export const ChatWindow = ({
 
       <CardContent
         ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 scroll-smooth space-y-4 bg-[var(--bg)]/10 relative"
+        className="flex-1 h-full overflow-y-auto p-4 scroll-smooth space-y-4 bg-[var(--bg)]/10 relative"
       >
         <AnimatePresence mode="wait">
           {mode === 'landing' ? (
@@ -135,7 +135,7 @@ export const ChatWindow = ({
               key="chat"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="space-y-4 w-full"
+              className="space-y-4"
             >
               {messages.map((msg) => (
                 <ChatMessage key={msg.id} message={msg} />
@@ -187,17 +187,17 @@ export const ChatWindow = ({
           {/* Show follow-up questions from API response */}
           {followUpQuestions.length > 0 && !isLoading && (
             <div className="flex flex-wrap gap-2 mb-4 justify-center">
-              {followUpQuestions.slice(0, 2).map((q, i) => (
+              {followUpQuestions.map((q, i) => (
                 <motion.button
                   key={i}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
                   onClick={() => sendMessage(q)}
-                  className="px-4 py-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/40 transition-all shadow-sm flex items-start gap-2 group text-left"
+                  className="px-4 py-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/40 transition-all shadow-sm flex items-center gap-2 group"
                 >
-                  <Sparkles className="w-3 h-3 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                  <span>{q}</span>
+                  <Sparkles className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                  {q}
                 </motion.button>
               ))}
             </div>
@@ -205,17 +205,17 @@ export const ChatWindow = ({
           {/* Show static suggested questions on first load if no follow-ups yet */}
           {followUpQuestions.length === 0 && mode === 'chat' && messages.length <= 1 && suggestedQuestions.length > 0 && !isLoading && (
             <div className="flex flex-wrap gap-2 mb-4 justify-center">
-              {suggestedQuestions.slice(0, 2).map((q, i) => (
+              {suggestedQuestions.map((q, i) => (
                 <motion.button
                   key={i}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
                   onClick={() => sendMessage(q)}
-                  className="px-4 py-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/40 transition-all shadow-sm flex items-start gap-2 group text-left"
+                  className="px-4 py-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/40 transition-all shadow-sm flex items-center gap-2 group"
                 >
-                  <Sparkles className="w-3 h-3 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                  <span>{q}</span>
+                  <Sparkles className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                  {q}
                 </motion.button>
               ))}
             </div>
