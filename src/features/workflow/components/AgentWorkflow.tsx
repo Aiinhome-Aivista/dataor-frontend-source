@@ -610,53 +610,10 @@ export const AgentWorkflow = ({
                 <div className="flex-1 h-full flex flex-col">
                   <div className="h-full overflow-hidden">
                     {(() => {
-                      const getSuggestedQuestions = () => {
-                        if (!activeConnector) return [
-                          "How can I help you with your data today?",
-                          "What insights are you looking for?",
-                          "Can you summarize my recent activities?"
-                        ];
-
-                        const name = activeConnector.name;
-                        const nameLower = name.toLowerCase();
-                        const type = activeConnector.type;
-
-                        if (type === 'Database' || type === 'Data Warehouse') {
-                          return [
-                            `Show me a summary of the tables in ${name}`,
-                            `What are the most active users in ${name}?`,
-                            `Find any anomalies in the last 24 hours of ${name}`
-                          ];
-                        }
-
-                        if (nameLower.includes('stripe')) {
-                          return [
-                            "What is my total revenue this month?",
-                            "Show me the churn rate for the last 30 days",
-                            "List the top 5 customers by lifetime value"
-                          ];
-                        }
-
-                        if (nameLower.includes('analytics') || nameLower.includes('ga4')) {
-                          return [
-                            "What are my top performing pages?",
-                            "Show me the user acquisition breakdown",
-                            "How has my bounce rate changed this week?"
-                          ];
-                        }
-
-                        return [
-                          `Analyze the data from ${name}`,
-                          `What are the key trends in ${name}?`,
-                          `Summarize the ${type} connection status`
-                        ];
-                      };
-
                       return (
                         <ChatWindow
                           initialMode="chat"
                           initialMessage={initialChatMessage}
-                          suggestedQuestions={getSuggestedQuestions()}
                           onOpenDataSource={onChangeTab ? () => onChangeTab('connectors') : undefined}
                         />
                       );
