@@ -10,6 +10,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
   const [isLoading, setIsLoading] = useState(false);
   const [processingSteps, setProcessingSteps] = useState<string[]>([]);
   const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -64,7 +65,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
         question: content
       });
 
-    /*   console.log('Session Chat Response:', response); */
+      /*   console.log('Session Chat Response:', response); */
 
       const answerText = response?.answer || 'No answer received.';
       const followUps: string[] = response?.follow_up_questions || response?.suggested_questions || [];
@@ -98,6 +99,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
       const chatSessionId = sessionId || localStorage.getItem('DAgent_session_id');
       if (!chatSessionId) return;
 
+      setIsFetchingSuggestions(true);
       const response: any = await connectorService.sendSessionChat({
         session_id: chatSessionId,
         question: ""
@@ -107,6 +109,8 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
       setFollowUpQuestions(followUps);
     } catch (error) {
       console.error('Failed to fetch suggested questions:', error);
+    } finally {
+      setIsFetchingSuggestions(false);
     }
   }, [sessionId]);
 
@@ -127,6 +131,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
     startChat,
     startWorkflow,
     followUpQuestions,
-    fetchSuggestedQuestions
+    fetchSuggestedQuestions,
+    isFetchingSuggestions
   };
 };

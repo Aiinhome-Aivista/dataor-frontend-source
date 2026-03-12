@@ -24,7 +24,7 @@ export const ChatWindow = ({
   onOpenDataSource,
   sessionId
 }: ChatWindowProps) => {
-  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat, followUpQuestions } = useChat(initialMode, initialMessage, sessionId);
+  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat, followUpQuestions, isFetchingSuggestions } = useChat(initialMode, initialMessage, sessionId);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [isLoadingConnectors, setIsLoadingConnectors] = useState(true);
   const [chatInput, setChatInput] = useState('');
@@ -185,8 +185,15 @@ export const ChatWindow = ({
 
       <CardFooter className="bg-[var(--surface)]/80 backdrop-blur-md border-t border-[var(--border)] relative z-30">
         <div className="w-full">
+          {/* Show loader while fetching suggested questions */}
+          {isFetchingSuggestions && !isLoading && (
+            <div className="flex items-center justify-center gap-2 mb-4 text-base text-[var(--text-secondary)]">
+              <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
+              <span>Fetching suggested questions…</span>
+            </div>
+          )}
           {/* Show follow-up questions from API response */}
-          {followUpQuestions.length > 0 && !isLoading && (
+          {followUpQuestions.length > 0 && !isLoading && !isFetchingSuggestions && (
             <div className="flex flex-wrap gap-2 mb-4 justify-center">
               {followUpQuestions.map((q, i) => (
                 <motion.button
@@ -204,7 +211,7 @@ export const ChatWindow = ({
             </div>
           )}
           {/* Show static suggested questions on first load if no follow-ups yet */}
-          {followUpQuestions.length === 0 && mode === 'chat' && messages.length <= 1 && suggestedQuestions.length > 0 && !isLoading && (
+          {followUpQuestions.length === 0 && mode === 'chat' && messages.length <= 1 && suggestedQuestions.length > 0 && !isLoading && !isFetchingSuggestions && (
             <div className="flex flex-wrap gap-2 mb-4 justify-center">
               {suggestedQuestions.map((q, i) => (
                 <motion.button
@@ -221,12 +228,12 @@ export const ChatWindow = ({
               ))}
             </div>
           )}
-          <ChatInput 
-            value={chatInput} 
-            onChange={setChatInput} 
-            onSend={sendMessage} 
-            disabled={isLoading || mode !== 'chat'} 
-            onOpenDataSource={onOpenDataSource} 
+          <ChatInput
+            value={chatInput}
+            onChange={setChatInput}
+            onSend={sendMessage}
+            disabled={isLoading || mode !== 'chat'}
+            onOpenDataSource={onOpenDataSource}
           />
           <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-[var(--text-secondary)]/60 uppercase tracking-[0.2em] font-black">
 
