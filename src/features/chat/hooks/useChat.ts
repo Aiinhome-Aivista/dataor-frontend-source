@@ -67,7 +67,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
 
       /*   console.log('Session Chat Response:', response); */
 
-      const answerText = response?.answer || 'No answer received.';
+      const answerText = response?.answer || '';
       const followUps: string[] = response?.follow_up_questions || response?.suggested_questions || [];
 
       const assistantMessage: Message = {
@@ -75,6 +75,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
         role: 'assistant',
         content: answerText,
         timestamp: new Date(),
+        visualizations: response?.visualizations || []
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
