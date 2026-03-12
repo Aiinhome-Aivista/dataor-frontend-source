@@ -37,7 +37,7 @@ export const CardHeader = ({ className = '', children, ...props }: HTMLAttribute
 
 export const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className = '', children, ...props }, ref) => (
-    <div ref={ref} className={`px-6 ${className}`} {...props}>
+    <div ref={ref} className={`px-2 ${className}`} {...props}>
       {children}
     </div>
   )
