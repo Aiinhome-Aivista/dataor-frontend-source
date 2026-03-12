@@ -647,7 +647,7 @@ export const AgentWorkflow = ({
                               {/* Navigation button to Query section */}
                               <div className="mt-12 pt-8 border-t border-[var(--border)] flex justify-end">
                                 <Button
-                                  onClick={() => setSelectedAgentId('query')}
+                                  onClick={() => handleStepperClick('query')}
                                   variant="primary"
                                   size="sm"
                                   className="px-8 shadow-lg shadow-[var(--accent)]/20"
