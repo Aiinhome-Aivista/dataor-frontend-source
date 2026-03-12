@@ -35,6 +35,7 @@ const formatInsightsText = (text: string) => {
   );
 
   processed = processed.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-[var(--text-primary)]">$1</strong>');
+  processed = processed.replace(/^TITLE:\s*(.*)$/gim, '<h2 class="text-base font-bold text-[var(--text-primary)] mt-2 mb-4 pb-2 border-b border-[var(--border)]">$1</h2>');
   processed = processed.replace(/^### (.*$)/gim, '<h4 class="text-md font-bold text-[var(--text-primary)] mt-4 mb-2">$1</h4>');
   processed = processed.replace(/^## (.*$)/gim, '<h3 class="text-lg font-bold text-[var(--text-primary)] mt-5 mb-3">$1</h3>');
 
@@ -427,9 +428,9 @@ export const AgentWorkflow = ({
         if (response) {
           const report = response.report || response.description || response.report_content || (typeof response === 'string' ? response : null);
           if (report) {
-            setConnectorResults(prev => ({ 
-              ...prev, 
-              description: report 
+            setConnectorResults(prev => ({
+              ...prev,
+              description: report
             }));
           }
         }
@@ -647,7 +648,7 @@ export const AgentWorkflow = ({
                               {/* Navigation button to Query section */}
                               <div className="mt-12 pt-8 border-t border-[var(--border)] flex justify-end">
                                 <Button
-                                  onClick={() => setSelectedAgentId('query')}
+                                  onClick={() => handleStepperClick('query')}
                                   variant="primary"
                                   size="sm"
                                   className="px-8 shadow-lg shadow-[var(--accent)]/20"

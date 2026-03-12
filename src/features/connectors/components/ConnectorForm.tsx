@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button, Input, Card, CardContent, CardHeader } from '@/src/ui-kit';
 import { motion, AnimatePresence } from 'motion/react';
-import { Server, Shield, Globe, Info, ChevronLeft, Sparkles, Loader2, Search, Check, ListFilter } from 'lucide-react';
+import { Server, Shield, Globe, Info, ChevronLeft, Sparkles, Loader2, Search, Check, FileSpreadsheet, FileCode2, Upload, X, File } from 'lucide-react';
 import { ThreeAvatar } from '../../chat/components/ThreeAvatar';
 import { connectorService } from '@/src/services/connector.service';
 import { useConnectorContext } from '../../../context/ConnectorContext';
@@ -76,6 +76,11 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   const [hasResearched, setHasResearched] = useState(false);
   const [viewResults, setViewResults] = useState(false);
   const [selectedResultIds, setSelectedResultIds] = useState<Set<string>>(new Set());
+
+  // File upload state
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -195,6 +200,46 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   };
 
   const isWebSearch = connector?.name === 'Web Search using LLM';
+  const isCsvUpload = connector?.name === 'Upload CSV File';
+  const isSqlUpload = connector?.name === 'Upload SQL File';
+  const isFileUpload = isCsvUpload || isSqlUpload;
+
+  const acceptedFileTypes = isCsvUpload ? '.csv' : isSqlUpload ? '.sql' : '';
+
+  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files).filter(f =>
+      isCsvUpload ? f.name.endsWith('.csv') : f.name.endsWith('.sql')
+    );
+    if (files.length === 0) {
+      setErrorMsg(`Only ${isCsvUpload ? 'CSV' : 'SQL'} files are allowed.`);
+      return;
+    }
+    setErrorMsg('');
+    setUploadedFiles(prev => [...prev, ...files]);
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setErrorMsg('');
+    setUploadedFiles(prev => [...prev, ...files]);
+    // Reset input so same file can be re-added after removal
+    e.target.value = '';
+  };
+
+  const removeFile = (idx: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleFileUploadConnect = () => {
+    if (uploadedFiles.length === 0) {
+      setErrorMsg('Please upload at least one file.');
+      return;
+    }
+    // Pass the connector name / files upward; actual API call can be wired by the consumer
+    onTestSuccess?.(connector?.name || 'File Upload', false);
+  };
 
   const guide = activeField ? GUIDES[activeField] : null;
 
@@ -218,6 +263,10 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                     <Globe className="w-6 h-6" />
                     <Search className="w-3.5 h-3.5 absolute -bottom-1 -right-1" />
                   </div>
+                ) : isCsvUpload ? (
+                  <FileSpreadsheet className="w-6 h-6" />
+                ) : isSqlUpload ? (
+                  <FileCode2 className="w-6 h-6" />
                 ) : (
                   <Server className="w-6 h-6" />
                 )}
@@ -227,7 +276,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                   {connector ? `Connect to ${connector.name}` : 'New Data source'}
                 </h2>
                 <p className="text-sm text-[var(--text-secondary)]">
-                  {isWebSearch ? 'Identify live data for AI analysis' : 'Configure your data source settings'}
+                  {isWebSearch ? 'Identify live data for AI analysis' : isFileUpload ? `Upload ${isCsvUpload ? 'CSV' : 'SQL'} files for AI analysis` : 'Configure your data source settings'}
                 </p>
               </div>
             </div>
@@ -252,7 +301,110 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 />
               </div>
 
-              {isWebSearch ? (
+              {isFileUpload ? (
+                <div className="space-y-4">
+                  {/* Label */}
+                  <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-secondary)]">
+                    Upload Files
+                  </p>
+
+                  {/* Drop Zone */}
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleFileDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`relative flex flex-col items-center justify-center gap-3 p-10 rounded-2xl border-2 border-dashed cursor-pointer transition-all
+                      ${isDragging
+                        ? 'border-[var(--accent)] bg-[var(--accent)]/20 scale-[1.01]'
+                        : 'border-[var(--accent)]/60 bg-[var(--accent)]/5'
+                      }`}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept={acceptedFileTypes}
+                      className="hidden"
+                      onChange={handleFileInput}
+                    />
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-colors bg-[var(--accent)]/20 text-[var(--accent)]">
+                      {isCsvUpload ? <FileSpreadsheet className="w-7 h-7" /> : <FileCode2 className="w-7 h-7" />}
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">
+                        {isDragging ? 'Drop files here' : 'Drag & drop files here'}
+                      </p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">
+                        or <span className="text-[var(--accent)] font-medium">browse</span> to choose files
+                      </p>
+                      {/* <p className="text-[10px] text-[var(--text-secondary)]/60 mt-2 uppercase tracking-widest font-medium">
+                        {isCsvUpload ? 'Only .csv files accepted' : 'Only .sql files accepted'}
+                      </p> */}
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold">
+                      <Upload className="w-3 h-3" />
+                      Upload Multiple Files
+                    </div>
+                  </div>
+
+                  {/* File list */}
+                  {uploadedFiles.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">
+                          {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} selected
+                        </p>
+                        <button
+                          onClick={() => setUploadedFiles([])}
+                          className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                      {uploadedFiles.map((file, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-3 p-3 rounded-xl border border-[var(--border)] bg-[var(--surface-hover)]/40 group"
+                        >
+                          <div className="p-1.5 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
+                            {isCsvUpload ? <FileSpreadsheet className="w-4 h-4" /> : <FileCode2 className="w-4 h-4" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{file.name}</p>
+                            <p className="text-[10px] text-[var(--text-secondary)]">
+                              {(file.size / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => removeFile(idx)}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 text-[var(--text-secondary)] transition-all"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+
+                  {/* Connect button */}
+                  <div className="pt-4 flex justify-end gap-4">
+                    <Button variant="outline" onClick={onBack}>Cancel</Button>
+                    <Button
+                      className="px-8"
+                      onClick={handleFileUploadConnect}
+                      disabled={uploadedFiles.length === 0}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload & Connect
+                    </Button>
+                  </div>
+                </div>
+              ) : isWebSearch ? (
                 <div className="space-y-6">
                   <div onMouseEnter={() => handleMouseEnter('search')}>
                     <div className="flex gap-2 items-end">
@@ -466,7 +618,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
               )}
             </div>
 
-            {!isWebSearch && (
+            {!isWebSearch && !isFileUpload && (
               <div className="pt-6 flex justify-end gap-4">
                 <Button variant="outline" onClick={onBack} disabled={isTesting}>Cancel</Button>
                 <Button

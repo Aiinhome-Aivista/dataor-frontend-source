@@ -1,6 +1,6 @@
 import { Connector } from '../types';
 import { Card, CardContent, Badge, Button } from '@/src/ui-kit';
-import { Database, Server, Share2, ArrowUpRight, Globe, Search } from 'lucide-react';
+import { Database, Server, Share2, ArrowUpRight, Globe, Search, FileSpreadsheet, FileCode2, Upload } from 'lucide-react';
 
 const getBrandIcon = (name: string) => {
   const lower = name.toLowerCase();
@@ -8,7 +8,7 @@ const getBrandIcon = (name: string) => {
   if (lower.includes('mysql')) return 'https://cdn.simpleicons.org/mysql';
   if (lower.includes('snowflake')) return 'https://cdn.simpleicons.org/snowflake';
   if (lower.includes('google sheets')) return 'https://cdn.simpleicons.org/googlesheets';
-  
+
   return null;
 };
 
@@ -19,14 +19,15 @@ interface ConnectorCardProps {
 }
 
 export const ConnectorCard = ({ connector, onClick }: ConnectorCardProps) => {
-  const Icon = connector.type === 'Database' ? Database : 
-               connector.type === 'Data Warehouse' ? Server : Share2;
+  const Icon = connector.type === 'Database' ? Database :
+    connector.type === 'Data Warehouse' ? Server :
+      connector.type === 'File Upload' ? Upload : Share2;
   const brandIcon = getBrandIcon(connector.name);
 
   return (
-    <Card 
-      hoverable 
-      className="group cursor-pointer" 
+    <Card
+      hoverable
+      className="group cursor-pointer"
       onClick={() => onClick?.(connector)}
     >
       <CardContent className="flex flex-col h-full p-4">
@@ -39,13 +40,17 @@ export const ConnectorCard = ({ connector, onClick }: ConnectorCardProps) => {
                   <Search className="w-2.5 h-2.5" />
                 </div>
               </div>
+            ) : connector.name === 'Upload CSV File' ? (
+              <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
+            ) : connector.name === 'Upload SQL File' ? (
+              <FileCode2 className="w-5 h-5 text-blue-500" />
             ) : brandIcon ? (
               <img src={brandIcon} alt={connector.name} className="w-5 h-5 object-contain" />
             ) : (
               <Icon className="w-5 h-5 text-[var(--accent)]" />
             )}
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start mb-1">
               <h3 className="text-base font-bold group-hover:text-[var(--accent)] transition-colors">
