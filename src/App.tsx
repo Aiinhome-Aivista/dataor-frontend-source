@@ -6,7 +6,7 @@ import { ChatWindow } from './features/chat';
 import { AgentWorkflow } from './features/workflow';
 import { LandingPage } from './features/marketing/components/LandingPage';
 import { LoginPage } from './features/auth/components/LoginPage';
-import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles, BarChart3, Clock, Search, ChevronDown, User, Check, X } from 'lucide-react';
+import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles, BarChart3, Clock, Search, ChevronDown, User, Check, X, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { agentService } from './services/agent.service';
@@ -350,7 +350,7 @@ function AppContent() {
                             filtered.map((workspace) => (
                               <button
                                 key={workspace.id}
-                                 onClick={async () => {
+                                onClick={async () => {
                                   try {
                                     // 1. Set active workspace in API
                                     await workspaceService.setActiveWorkspace(userId || 6, workspace.id);
@@ -371,7 +371,7 @@ function AppContent() {
                                     console.error('Failed to set active workspace:', err);
                                   }
                                 }}
-                                className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer
+                                className={`relative w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer
                                 ${selectedWorkspace?.id === workspace.id
                                     ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 text-[var(--accent)]'
                                     : 'border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
@@ -384,8 +384,7 @@ function AppContent() {
 
                                 </div>
                                 {selectedWorkspace?.id === workspace.id && (
-                                  // <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_8px_var(--accent)]" />
-                                  <></>
+                                  <span className="absolute top-3 right-2 text-[var(--accent)] text-lg leading-none ">*</span>
                                 )}
                               </button>
                             ))
