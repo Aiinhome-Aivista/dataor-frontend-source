@@ -254,7 +254,7 @@ function AppContent() {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden flex flex-col shrink-0"
                   >
-                    <div className="px-3 pt-1 pb-3 flex flex-col shrink-0 max-h-[300px]">
+                    <div className="px-3 pt-1 pb-3 flex flex-col shrink-0">
                       {/* Create Workspace */}
                       <div className="mb-2 shrink-0">
                         {isCreatingWorkspace ? (
@@ -376,42 +376,49 @@ function AppContent() {
                                   : 'border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)]'
                                   } ${expandedWorkspaceId === workspace.id ? 'rounded-2xl' : 'rounded-xl'}`}
                               >
-                                <button
-                                  onClick={async () => {
-                                    // 1. Switch to this workspace
-                                    try {
-                                      if (selectedWorkspace?.id !== workspace.id) {
-                                        await workspaceService.setActiveWorkspace(userId || 6, workspace.id);
-                                        resetConnectorState();
-                                        agentService.reset();
-                                        setSelectedWorkspace(workspace);
-                                        localStorage.setItem('DAgent_session_id', workspace.session_id);
-                                        setWorkflowKey(prev => prev + 1);
+                                <div className="w-full flex items-center overflow-hidden">
+                                  {/* Workspace Selection Area */}
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      try {
+                                        if (selectedWorkspace?.id !== workspace.id) {
+                                          await workspaceService.setActiveWorkspace(userId || 6, workspace.id);
+                                          resetConnectorState();
+                                          agentService.reset();
+                                          setSelectedWorkspace(workspace);
+                                          localStorage.setItem('DAgent_session_id', workspace.session_id);
+                                          setWorkflowKey(prev => prev + 1);
+                                        }
+                                      } catch (err) {
+                                        console.error('Failed to set active workspace:', err);
                                       }
-
-                                      // 2. Toggle history expansion
-                                      fetchWorkspaceHistory(workspace.id, workspace.session_id);
-                                    } catch (err) {
-                                      console.error('Failed to set active workspace:', err);
-                                    }
-                                  }}
-                                  className={`w-full text-left p-3 flex items-center justify-between cursor-pointer transition-colors
-                                  ${selectedWorkspace?.id === workspace.id ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
-                                `}
-                                >
-                                  <div className="flex flex-col gap-0.5 overflow-hidden flex-1">
+                                    }}
+                                    className={`flex-1 text-left p-3 flex items-center gap-2 cursor-pointer transition-colors
+                                      ${selectedWorkspace?.id === workspace.id ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
+                                    `}
+                                  >
                                     <span className={`text-[11px] font-bold truncate ${selectedWorkspace?.id === workspace.id ? 'text-[var(--accent)]' : ''}`}>
                                       {workspace.workspace_name}
                                     </span>
-                                  </div>
+                                  </button>
 
-                                  <div className="flex items-center gap-2">
-                                    {/* {selectedWorkspace?.id === workspace.id && (
-                                      <span className="text-[var(--accent)] text-lg leading-none">*</span>
-                                    )} */}
+                                  {/* Vertical Divider */}
+                                  <div className="h-4 w-px bg-[var(--border)] opacity-30 shrink-0" />
+
+                                  {/* History Expansion Toggle */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      fetchWorkspaceHistory(workspace.id, workspace.session_id);
+                                    }}
+                                    className={`p-3 flex items-center justify-center transition-colors
+                                      ${expandedWorkspaceId === workspace.id ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
+                                    `}
+                                  >
                                     <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${expandedWorkspaceId === workspace.id ? 'rotate-180 text-[var(--accent)]' : 'opacity-40'}`} />
-                                  </div>
-                                </button>
+                                  </button>
+                                </div>
 
                                 {/* Workspace History Items */}
                                 <AnimatePresence>
@@ -422,19 +429,43 @@ function AppContent() {
                                       exit={{ opacity: 0, height: 0 }}
                                       className="px-1 pt-1 pb-3 overflow-hidden flex flex-col min-h-0"
                                     >
+                                          <div className="px-1 mb-3">
+                                        <button
+                                          onClick={() => {
+                                            setInitialChatMessage(undefined);
+                                            setActiveTab('chat');
+                                            setChatKey(prev => prev + 1);
+                                          }}
+                                          className="w-full flex items-center gap-2 p-2 rounded-lg  text-[var(--text-secondary)]  transition-all text-[11px] font-bold bg-[var(--accent)]/10 cursor-pointer"
+                                        >
+                                         
+                                          New Query
+                                        </button>
+                                      </div>
+                                      {/* Query History Label */}
+                                      <div className="px-2 mb-2 flex items-center justify-between">
+                                        <span className="text-[10px] font-bold tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                                        
+                                          Query History
+                                        </span>
+                                      </div>
+
                                       {/* Search - Replicating original design */}
-                                      <div className="relative mb-2 shrink-0">
-                                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-secondary)]" />
+                                      <div className="relative mb-2 shrink-0 px-1">
+                                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-secondary)]" />
                                         <input
                                           type="text"
-                                          placeholder="Search chats..."
+                                          placeholder="Search queries..."
                                           value={historySearch}
                                           onChange={e => setHistorySearch(e.target.value)}
-                                          className="w-full pl-7 pr-3 py-1.5 text-[11px] rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/40"
+                                          className="w-full pl-8 pr-3 py-1.5 text-[11px] rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/40"
                                         />
                                       </div>
 
-                                      <div className="space-y-1.5 overflow-y-auto max-h-[300px] custom-scrollbar">
+                                      {/* New Query Button */}
+                                  
+
+                                      <div className="space-y-1.5 overflow-y-auto max-h-[300px] custom-scrollbar px-1">
                                         {isHistoryLoading[workspace.id] ? (
                                           <div className="py-2 text-center">
                                             <div className="w-4 h-4 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto opacity-50"></div>
@@ -448,7 +479,7 @@ function AppContent() {
 
                                           return filteredData.length === 0 ? (
                                             <div className="text-center py-6 border border-dashed border-[var(--border)] rounded-xl">
-                                              <p className="text-[10px] text-[var(--text-secondary)]">No previous chats</p>
+                                              <p className="text-[10px] text-[var(--text-secondary)]">No history</p>
                                             </div>
                                           ) : (
                                             filteredData.map((item) => (
