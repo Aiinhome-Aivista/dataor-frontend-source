@@ -40,9 +40,9 @@ export const ConnectorCard = ({ connector, onClick }: ConnectorCardProps) => {
                   <Search className="w-2.5 h-2.5" />
                 </div>
               </div>
-            ) : connector.name === 'CSV File Upload' ? (
+            ) : connector.name === 'Upload CSV File' ? (
               <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
-            ) : connector.name === 'SQL File Upload' ? (
+            ) : connector.name === 'Upload SQL File' ? (
               <FileCode2 className="w-5 h-5 text-blue-500" />
             ) : brandIcon ? (
               <img src={brandIcon} alt={connector.name} className="w-5 h-5 object-contain" />

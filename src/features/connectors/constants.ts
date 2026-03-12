@@ -49,7 +49,7 @@ export const SUPPORTED_CONNECTORS = [
   },
   {
     id: '7',
-    name: 'Upload CSV File ',
+    name: 'Upload CSV File',
     description: 'Upload one or more CSV files to instantly analyze and query your tabular data with AI',
     type: 'File Upload',
     icon: 'csv',

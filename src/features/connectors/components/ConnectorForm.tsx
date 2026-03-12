@@ -200,8 +200,8 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   };
 
   const isWebSearch = connector?.name === 'Web Search using LLM';
-  const isCsvUpload = connector?.name === 'CSV File Upload';
-  const isSqlUpload = connector?.name === 'SQL File Upload';
+  const isCsvUpload = connector?.name === 'Upload CSV File';
+  const isSqlUpload = connector?.name === 'Upload SQL File';
   const isFileUpload = isCsvUpload || isSqlUpload;
 
   const acceptedFileTypes = isCsvUpload ? '.csv' : isSqlUpload ? '.sql' : '';
