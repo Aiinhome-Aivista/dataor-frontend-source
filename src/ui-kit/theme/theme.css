@@ -45,7 +45,9 @@
 }
 
 @layer base {
-  :root, .theme-default {
+
+  :root,
+  .theme-default {
     --bg: var(--color-bg-default);
     --surface: var(--color-surface-default);
     --surface-hover: var(--color-surface-hover-default);
@@ -92,5 +94,24 @@
     color: var(--text-primary);
     font-family: var(--font-sans);
     transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    opacity: 0.2;
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+    opacity: 0.4;
   }
 }

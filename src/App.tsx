@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { agentService } from './services/agent.service';
 import { AgentHistoryItem } from './features/workflow/types';
 import { workspaceService, Workspace } from './services/workspace.service';
+import { connectorService } from './services/connector.service';
 
 type Tab = 'chat' | 'connectors' | 'new-connector' | 'collection' | 'analysis';
 type ViewMode = 'landing' | 'login' | 'app';
@@ -26,8 +27,6 @@ function AppContent() {
   const [justFinishedWorkflow, setJustFinishedWorkflow] = useState(false);
   const [initialChatMessage, setInitialChatMessage] = useState<string | undefined>(undefined);
   const [chatKey, setChatKey] = useState(0);
-  const [queryHistory, setQueryHistory] = useState<AgentHistoryItem[]>([]);
-  const [isQueryHistoryOpen, setIsQueryHistoryOpen] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
 
   // Workspace state
@@ -38,6 +37,11 @@ function AppContent() {
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [workflowKey, setWorkflowKey] = useState(0);
+
+  // Per-workspace history state
+  const [expandedWorkspaceId, setExpandedWorkspaceId] = useState<number | null>(null);
+  const [workspaceHistories, setWorkspaceHistories] = useState<Record<number, AgentHistoryItem[]>>({});
+  const [isHistoryLoading, setIsHistoryLoading] = useState<Record<number, boolean>>({});
 
   const fetchWorkspaces = async () => {
     try {
@@ -58,22 +62,39 @@ function AppContent() {
     }
   };
 
+  const fetchWorkspaceHistory = async (workspaceId: number, sessionId: string) => {
+    if (workspaceHistories[workspaceId] && expandedWorkspaceId === workspaceId) {
+      setExpandedWorkspaceId(null);
+      return;
+    }
+
+    setIsHistoryLoading(prev => ({ ...prev, [workspaceId]: true }));
+    try {
+      const response = await agentService.getAgents(userId, true); // We might need to ensure agents are fetched for the session
+      // However, getAgents uses localstorage DAgent_session_id. 
+      // For background fetching of other workspaces, we should use connectorService directly or update agentService.
+      const historyResponse = await (connectorService as any).getConnectionHistory(sessionId);
+      if (historyResponse && historyResponse.status === 'success' && historyResponse.history) {
+        const history = historyResponse.history.filter((h: any) => h.db_type === 'session_analysis_result' || h.action === 'Session Data Imported' || h.action.includes('Query') || h.details?.includes('query'));
+        // The above filter is a bit broad, let's refine based on what's usually in queryHistory
+        const queryOnly = historyResponse.history.filter((h: any) => h.action.toLowerCase().includes('query') || h.details?.toLowerCase().includes('query') || !h.db_type);
+
+        setWorkspaceHistories(prev => ({ ...prev, [workspaceId]: queryOnly }));
+      }
+      setExpandedWorkspaceId(workspaceId);
+    } catch (err) {
+      console.error('Failed to fetch workspace history:', err);
+    } finally {
+      setIsHistoryLoading(prev => ({ ...prev, [workspaceId]: false }));
+    }
+  };
+
   useEffect(() => {
     if (userId || viewMode === 'app') {
       fetchWorkspaces();
     }
   }, [userId, viewMode]);
 
-  useEffect(() => {
-    const fetchQueryHistory = async () => {
-      const history = await agentService.getAgentHistory('query');
-      setQueryHistory(history);
-    };
-    fetchQueryHistory();
-    // Poll for updates when on chat tab
-    const interval = setInterval(fetchQueryHistory, 3000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleLogin = () => setViewMode('login');
   const handleGetStarted = () => setViewMode('login');
@@ -348,143 +369,126 @@ function AppContent() {
                             </div>
                           ) : (
                             filtered.map((workspace) => (
-                              <button
+                              <div
                                 key={workspace.id}
-                                onClick={async () => {
-                                  try {
-                                    // 1. Set active workspace in API
-                                    await workspaceService.setActiveWorkspace(userId || 6, workspace.id);
-
-                                    // 2. Clear all session contexts and local storage for current session
-                                    resetConnectorState();
-                                    agentService.reset();
-
-                                    // 3. Update to new session
-                                    setSelectedWorkspace(workspace);
-                                    localStorage.setItem('DAgent_session_id', workspace.session_id);
-
-                                    // 4. Force re-render of current view to trigger fresh history loading
-                                    setWorkflowKey(prev => prev + 1);
-
-                                    setIsWorkspaceOpen(false);
-                                  } catch (err) {
-                                    console.error('Failed to set active workspace:', err);
-                                  }
-                                }}
-                                className={`relative w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer
-                                ${selectedWorkspace?.id === workspace.id
-                                    ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 text-[var(--accent)]'
-                                    : 'border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
-                              `}
+                                className={`flex flex-col transition-all duration-300 overflow-hidden border ${selectedWorkspace?.id === workspace.id
+                                  ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 shadow-sm'
+                                  : 'border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)]'
+                                  } ${expandedWorkspaceId === workspace.id ? 'rounded-2xl' : 'rounded-xl'}`}
                               >
-                                <div className="flex flex-col gap-0.5 overflow-hidden">
-                                  <span className={`text-[11px] font-bold truncate ${selectedWorkspace?.id === workspace.id ? 'text-[var(--accent)]' : ''}`}>
-                                    {workspace.workspace_name}
-                                  </span>
+                                <button
+                                  onClick={async () => {
+                                    // 1. Switch to this workspace
+                                    try {
+                                      if (selectedWorkspace?.id !== workspace.id) {
+                                        await workspaceService.setActiveWorkspace(userId || 6, workspace.id);
+                                        resetConnectorState();
+                                        agentService.reset();
+                                        setSelectedWorkspace(workspace);
+                                        localStorage.setItem('DAgent_session_id', workspace.session_id);
+                                        setWorkflowKey(prev => prev + 1);
+                                      }
 
-                                </div>
-                                {selectedWorkspace?.id === workspace.id && (
-                                  <span className="absolute top-3 right-2 text-[var(--accent)] text-lg leading-none ">*</span>
-                                )}
-                              </button>
+                                      // 2. Toggle history expansion
+                                      fetchWorkspaceHistory(workspace.id, workspace.session_id);
+                                    } catch (err) {
+                                      console.error('Failed to set active workspace:', err);
+                                    }
+                                  }}
+                                  className={`w-full text-left p-3 flex items-center justify-between cursor-pointer transition-colors
+                                  ${selectedWorkspace?.id === workspace.id ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
+                                `}
+                                >
+                                  <div className="flex flex-col gap-0.5 overflow-hidden flex-1">
+                                    <span className={`text-[11px] font-bold truncate ${selectedWorkspace?.id === workspace.id ? 'text-[var(--accent)]' : ''}`}>
+                                      {workspace.workspace_name}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    {/* {selectedWorkspace?.id === workspace.id && (
+                                      <span className="text-[var(--accent)] text-lg leading-none">*</span>
+                                    )} */}
+                                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${expandedWorkspaceId === workspace.id ? 'rotate-180 text-[var(--accent)]' : 'opacity-40'}`} />
+                                  </div>
+                                </button>
+
+                                {/* Workspace History Items */}
+                                <AnimatePresence>
+                                  {expandedWorkspaceId === workspace.id && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: 'auto' }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      className="px-1 pt-1 pb-3 overflow-hidden flex flex-col min-h-0"
+                                    >
+                                      {/* Search - Replicating original design */}
+                                      <div className="relative mb-2 shrink-0">
+                                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-secondary)]" />
+                                        <input
+                                          type="text"
+                                          placeholder="Search chats..."
+                                          value={historySearch}
+                                          onChange={e => setHistorySearch(e.target.value)}
+                                          className="w-full pl-7 pr-3 py-1.5 text-[11px] rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/40"
+                                        />
+                                      </div>
+
+                                      <div className="space-y-1.5 overflow-y-auto max-h-[300px] custom-scrollbar">
+                                        {isHistoryLoading[workspace.id] ? (
+                                          <div className="py-2 text-center">
+                                            <div className="w-4 h-4 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto opacity-50"></div>
+                                          </div>
+                                        ) : (() => {
+                                          const filteredData = (workspaceHistories[workspace.id] || []).filter(item =>
+                                            !historySearch ||
+                                            item.action.toLowerCase().includes(historySearch.toLowerCase()) ||
+                                            item.details.toLowerCase().includes(historySearch.toLowerCase())
+                                          );
+
+                                          return filteredData.length === 0 ? (
+                                            <div className="text-center py-6 border border-dashed border-[var(--border)] rounded-xl">
+                                              <p className="text-[10px] text-[var(--text-secondary)]">No previous chats</p>
+                                            </div>
+                                          ) : (
+                                            filteredData.map((item) => (
+                                              <div
+                                                key={item.id}
+                                                className="w-full text-left p-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] transition-all cursor-pointer group"
+                                              >
+                                                <div className="flex items-center justify-between mb-0.5">
+                                                  <span className="text-[9px] font-mono text-[var(--text-secondary)]">
+                                                    {new Date(item.date).toLocaleDateString()}
+                                                  </span>
+                                                  {item.connectionName && (
+                                                    <span className="text-[8px] text-[var(--text-secondary)] bg-[var(--surface-hover)] px-1.5 py-0.5 rounded-full font-bold truncate max-w-[80px] border border-[var(--border)]">
+                                                      {item.connectionName}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <div className="text-[11px] font-bold truncate text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
+                                                  {item.action}
+                                                </div>
+                                                <div className="text-[10px] text-[var(--text-secondary)] truncate opacity-70">
+                                                  {item.details}
+                                                </div>
+                                              </div>
+                                            ))
+                                          );
+                                        })()}
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
                             ))
                           );
                         })()}
                       </div>
                     </div>
 
-                    {/* Divider - Subtle divider inside the dropdown between workspace list and query */}
-                    <div className="mx-4 my-2 h-px bg-[var(--border)] opacity-50 shrink-0" />
-
-                    {/* Query nav item - Now nested under Workspace condition */}
-                    {/* <div className="px-3 pb-1 shrink-0">
-                      <button
-                        onClick={() => {
-                          changeTab('chat');
-                          setIsQueryHistoryOpen(o => !o);
-                        }}
-                        className={`
-                          w-full flex items-center gap-2.5 p-2.5 rounded-xl transition-all duration-200 hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]`}>
-                        <MessageSquare className="w-4 h-4 shrink-0" />
-                        {isSidebarOpen && (
-                          <>
-                            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm flex-1 text-left">
-                              Chat History
-                            </motion.span>
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isQueryHistoryOpen ? 'rotate-180' : ''}`} />
-                            </motion.div>
-                          </>
-                        )}
-                      </button>
-                    </div> */}
-
-                    {/* Query History — collapsible, nested under Query */}
-                    <AnimatePresence>
-                      {isSidebarOpen && isQueryHistoryOpen && (
-                        <motion.div
-                          key="query-history"
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="px-3 pt-1 pb-3 overflow-hidden flex flex-col min-h-0"
-                        >
-                          {/* Search */}
-                          <div className="relative mb-2 shrink-0">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-secondary)]" />
-                            <input
-                              type="text"
-                              placeholder="Search chats..."
-                              value={historySearch}
-                              onChange={e => setHistorySearch(e.target.value)}
-                              className="w-full pl-7 pr-3 py-1.5 text-[11px] rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/40"
-                            />
-                          </div>
-                          {/* Items */}
-                          <div className="space-y-1.5 overflow-y-auto max-h-[400px]">
-                            {(() => {
-                              const filtered = queryHistory.filter(item =>
-                                !historySearch ||
-                                item.action.toLowerCase().includes(historySearch.toLowerCase()) ||
-                                item.details.toLowerCase().includes(historySearch.toLowerCase())
-                              );
-                              return filtered.length === 0 ? (
-                                <div className="text-center py-6 border border-dashed border-[var(--border)] rounded-xl">
-                                  <p className="text-[10px] text-[var(--text-secondary)]">
-                                    {historySearch ? 'No matching chats' : 'No previous chats'}
-                                  </p>
-                                </div>
-                              ) : (
-                                filtered.map((item) => (
-                                  <div
-                                    key={item.id}
-                                    className="w-full text-left p-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] transition-all cursor-pointer"
-                                  >
-                                    <div className="flex items-center justify-between mb-0.5">
-                                      <span className="text-[9px] font-mono text-[var(--text-secondary)]">
-                                        {new Date(item.date).toLocaleDateString()}
-                                      </span>
-                                      {item.connectionName && (
-                                        <span className="text-[8px] text-[var(--text-secondary)] bg-[var(--surface-hover)] px-1.5 py-0.5 rounded-full font-bold truncate max-w-[80px] border border-[var(--border)]">
-                                          {item.connectionName}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="text-[11px] font-bold truncate text-[var(--text-primary)]">
-                                      {item.action}
-                                    </div>
-                                    <div className="text-[10px] text-[var(--text-secondary)] truncate">
-                                      {item.details}
-                                    </div>
-                                  </div>
-                                ))
-                              );
-                            })()}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {/* Divider - Subtle divider inside the dropdown */}
+                    <div className="mx-4 my-2 h-px bg-[var(--border)] opacity-30 shrink-0" />
                   </motion.div>
                 )}
               </AnimatePresence>
