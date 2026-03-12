@@ -111,7 +111,8 @@ export const AgentWorkflow = ({
     sessionSources,
     setSessionSources,
     isAnalyzing,
-    setIsAnalyzing
+    setIsAnalyzing,
+    clearAnalysisResults
   } = useConnectorContext();
   const { userId } = useAuthContext();
   const [agents, setAgents] = useState<AgentData[]>([]);
@@ -486,6 +487,11 @@ export const AgentWorkflow = ({
   }
 
   const handleStepperClick = (agentId: string) => {
+    // Clear transient results when moving away from the intake/process flow
+    if (agentId === 'connect' || agentId === 'query') {
+      clearAnalysisResults();
+    }
+
     setSelectedAgentId(agentId);
     if (onChangeTab) {
       const tabMap: Record<string, string> = {

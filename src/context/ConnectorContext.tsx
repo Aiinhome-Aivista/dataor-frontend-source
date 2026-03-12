@@ -15,6 +15,7 @@ interface ConnectorContextType {
   isAnalyzing: boolean;
   setIsAnalyzing: (isAnalyzing: boolean) => void;
   resetConnectorState: () => void;
+  clearAnalysisResults: () => void;
 }
 
 const ConnectorContext = createContext<ConnectorContextType | undefined>(undefined);
@@ -77,6 +78,18 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  const clearAnalysisResults = () => {
+    try {
+      const sessionId = localStorage.getItem('DAgent_session_id');
+      if (sessionId) {
+        localStorage.removeItem(`connector_results_${sessionId}`);
+      }
+    } catch (e) {
+      console.error('Failed to clear analysis results from storage', e);
+    }
+    setConnectorResultsState(null);
+  };
+
   const resetConnectorState = () => {
     try {
       const sessionId = localStorage.getItem('DAgent_session_id');
@@ -110,7 +123,8 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSessionSources,
       isAnalyzing,
       setIsAnalyzing,
-      resetConnectorState
+      resetConnectorState,
+      clearAnalysisResults
     }}>
       {children}
     </ConnectorContext.Provider>
