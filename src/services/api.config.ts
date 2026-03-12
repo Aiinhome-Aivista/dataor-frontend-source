@@ -32,5 +32,9 @@ export const API_ENDPOINTS = {
   CHAT: {
     CHAT: '/session-chat',
   },
-
+  WORKSPACE: {
+    CREATE: '/create_workspace',
+    GET_WORKSPACES: '/workspaces',
+    SET_ACTIVE_WORKSPACE: '/set-active-workspace',
+  },
 };

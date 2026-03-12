@@ -6,10 +6,11 @@ interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
   onOpenDataSource?: () => void;
+  value: string;
+  onChange: (value: string) => void;
 }
 
-export const ChatInput = ({ onSend, disabled, onOpenDataSource }: ChatInputProps) => {
-  const [value, setValue] = useState('');
+export const ChatInput = ({ onSend, disabled, onOpenDataSource, value, onChange }: ChatInputProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -17,7 +18,7 @@ export const ChatInput = ({ onSend, disabled, onOpenDataSource }: ChatInputProps
     e.preventDefault();
     if (value.trim() && !disabled) {
       onSend(value.trim());
-      setValue('');
+      onChange('');
     }
   };
 
@@ -31,12 +32,12 @@ export const ChatInput = ({ onSend, disabled, onOpenDataSource }: ChatInputProps
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 items-center bg-[var(--surface)] p-1.5 rounded-xl border border-[var(--border)] shadow-inner focus-within:ring-2 focus-within:ring-[var(--accent)]/20 transition-all">
+    <form onSubmit={handleSubmit} className="flex gap-2 items-center bg-[var(--surface)] p-1 rounded-xl border border-[var(--border)] shadow-inner focus-within:ring-2 focus-within:ring-[var(--accent)]/20 transition-all">
       <div className="flex-1">
         <Input
           placeholder="Ask anything about your data..."
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           className="border-none bg-transparent shadow-none focus-visible:ring-0 text-sm py-4 px-3"
         />

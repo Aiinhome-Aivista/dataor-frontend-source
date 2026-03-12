@@ -53,7 +53,7 @@ const GUIDES: Record<string, FieldGuide> = {
 
 interface ConnectorFormProps {
   onBack: () => void;
-  onTestSuccess?: (connectionName: string) => void;
+  onTestSuccess?: (connectionName: string, shouldSwitchTab?: boolean) => void;
 }
 
 export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => {
@@ -88,6 +88,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
     try {
       const payload = {
         user_id: userId,
+        session_id: localStorage.getItem('DAgent_session_id'),
         name: formData.name,
         type: connector?.name ? connector.name.toLowerCase() : 'mysql',
         host: formData.host,
@@ -120,15 +121,18 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
     setViewResults(false);
     setErrorMsg('');
     try {
-      const response = await connectorService.searchWeb(searchQuery);
+      const response = await connectorService.searchWeb(searchQuery, localStorage.getItem('DAgent_session_id'));
       if (response.status === 'success') {
         setSearchResults(response.results);
         setHasResearched(true);
         setSearchTopic(searchQuery);
 
-        // Store top-level search_id from response as requested
+        // Store top-level search_id and topic from response
         if (response.search_id) {
           localStorage.setItem('last_search_id', response.search_id);
+        }
+        if (response.topic) {
+          localStorage.setItem('last_search_topic', response.topic);
         }
 
         // Default select all - prioritize individual result identifiers
@@ -164,24 +168,25 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   const handleImport = async () => {
     if (selectedResultIds.size > 0) {
       // Sync with backend on import
-      const userId = localStorage.getItem('dataor_user_id') || '1';
+      const userId = localStorage.getItem('DAgent_user_id') || '1';
       const lastSearchId = localStorage.getItem('last_search_id') || '';
-      const selectedResults = searchResults.filter(r => selectedResultIds.has(r.search_id || r.id || r.url));
+      const lastSearchTopic = localStorage.getItem('last_search_topic') || searchQuery;
+      const selectedResults = searchResults.filter(r => selectedResultIds.has(r.id || r.url));
 
       try {
-        // We can use Promise.all to save all selected results
         await Promise.all(selectedResults.map(result =>
           connectorService.saveResult({
             user_id: userId,
-            search_id: lastSearchId, // Use the top-level session search_id
-            topic: searchQuery,
+            session_id: localStorage.getItem('DAgent_session_id') || '',
+            search_id: lastSearchId,
+            topic: lastSearchTopic,
+            brief: result.brief,
             title: result.title,
-            url: result.url,
-            brief: result.brief
+            url: result.url
           })
         ));
 
-        onTestSuccess?.(connector?.name || formData.name || 'Web Search Context');
+        onTestSuccess?.(connector?.name || formData.name || 'Web Search Context', false);
       } catch (err) {
         console.error('Failed to save results:', err);
         setErrorMsg('Failed to save selected results. Please try again.');
@@ -474,7 +479,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Testing...
                     </>
-                  ) : 'Test Data source'}
+                  ) : 'Connect to Data source'}
                 </Button>
               </div>
             )}
@@ -500,7 +505,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
 
                   <div className="flex items-center gap-2 mb-3">
                     <Sparkles className="w-4 h-4 text-[var(--accent)]" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">Dataor Guide</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">DAgent Guide</span>
                   </div>
 
                   <h4 className="font-bold text-lg mb-2">{guide.title}</h4>
@@ -525,7 +530,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 className="bg-[var(--surface)] border border-[var(--border)] p-6 rounded-3xl text-center"
               >
                 <p className="text-sm text-[var(--text-secondary)]">
-                  Hover or click on a field to get guidance from Dataor.
+                  Hover or click on a field to get guidance from DAgent.
                 </p>
               </motion.div>
             )}
@@ -539,7 +544,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
               </div>
             </div>
             <div className="mt-4 text-center">
-              <h5 className="font-bold">Dataor Assistant</h5>
+              <h5 className="font-bold">DAgent Assistant</h5>
               <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest">Always here to help</p>
             </div>
           </div>

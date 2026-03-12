@@ -10,6 +10,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
   const [isLoading, setIsLoading] = useState(false);
   const [processingSteps, setProcessingSteps] = useState<string[]>([]);
   const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -57,17 +58,17 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
 
     try {
       const chatSessionId = sessionId
-        || localStorage.getItem('dataor_session_id')
+        || localStorage.getItem('DAgent_session_id')
 
       const response: any = await connectorService.sendSessionChat({
         session_id: chatSessionId,
         question: content
       });
 
-    /*   console.log('Session Chat Response:', response); */
+      /*   console.log('Session Chat Response:', response); */
 
       const answerText = response?.answer || 'No answer received.';
-      const followUps: string[] = response?.follow_up_questions || [];
+      const followUps: string[] = response?.follow_up_questions || response?.suggested_questions || [];
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -93,6 +94,32 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
     }
   }, [sessionId]);
 
+  const fetchSuggestedQuestions = useCallback(async () => {
+    try {
+      const chatSessionId = sessionId || localStorage.getItem('DAgent_session_id');
+      if (!chatSessionId) return;
+
+      setIsFetchingSuggestions(true);
+      const response: any = await connectorService.sendSessionChat({
+        session_id: chatSessionId,
+        question: ""
+      });
+
+      const followUps: string[] = response?.follow_up_questions || response?.suggested_questions || [];
+      setFollowUpQuestions(followUps);
+    } catch (error) {
+      console.error('Failed to fetch suggested questions:', error);
+    } finally {
+      setIsFetchingSuggestions(false);
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (mode === 'chat' && messages.length <= 1) {
+      fetchSuggestedQuestions();
+    }
+  }, [mode, messages.length, fetchSuggestedQuestions]);
+
   return {
     messages,
     sendMessage,
@@ -104,5 +131,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
     startChat,
     startWorkflow,
     followUpQuestions,
+    fetchSuggestedQuestions,
+    isFetchingSuggestions
   };
 };

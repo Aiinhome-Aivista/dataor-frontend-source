@@ -1,5 +1,5 @@
 import { AgentData } from '../types';
-import { Database, Server, BarChart3, MessageSquare, Sparkles } from 'lucide-react';
+import { Database, Server, BarChart3, MessageSquare, Sparkles, Loader2 } from 'lucide-react';
 
 export const getAgentIcon = (iconName: string) => {
   switch (iconName) {
@@ -35,7 +35,11 @@ export const AgentStepper = ({ agents, selectedAgentId, onSelectAgent }: AgentSt
               w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105
               ${selectedAgentId === agent.id ? 'bg-white/20' : 'bg-[var(--accent)]/10 text-[var(--accent)]'}
             `}>
-              {getAgentIcon(agent.icon)}
+              {agent.history.some(h => h.status === 'processing') ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                getAgentIcon(agent.icon)
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-black text-base tracking-tight truncate">{agent.name}</div>

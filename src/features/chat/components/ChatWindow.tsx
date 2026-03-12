@@ -24,9 +24,10 @@ export const ChatWindow = ({
   onOpenDataSource,
   sessionId
 }: ChatWindowProps) => {
-  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat, followUpQuestions } = useChat(initialMode, initialMessage, sessionId);
+  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat, followUpQuestions, isFetchingSuggestions } = useChat(initialMode, initialMessage, sessionId);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [isLoadingConnectors, setIsLoadingConnectors] = useState(true);
+  const [chatInput, setChatInput] = useState('');
 
   useEffect(() => {
     if (mode === 'landing') {
@@ -45,7 +46,7 @@ export const ChatWindow = ({
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-black text-base tracking-tight">Dataor AI Assistant</h3>
+            <h3 className="font-black text-base tracking-tight">DAgent AI Assistant</h3>
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -65,7 +66,7 @@ export const ChatWindow = ({
 
       <CardContent
         ref={scrollRef}
-        className="flex-1 h-full overflow-y-auto p-4 scroll-smooth space-y-4 bg-[var(--bg)]/10 relative"
+        className="flex-1 h-full overflow-y-auto p-1 scroll-smooth space-y-1 bg-[var(--bg)]/10 relative"
       >
         <AnimatePresence mode="wait">
           {mode === 'landing' ? (
@@ -80,7 +81,7 @@ export const ChatWindow = ({
                 <Database className="w-10 h-10" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold mb-2">Welcome to Dataor AI</h2>
+                <h2 className="text-2xl font-bold mb-2">Welcome to DAgent AI</h2>
                 <p className="text-[var(--text-secondary)]">To get started, select an existing data connector or set up a new one.</p>
               </div>
 
@@ -182,10 +183,17 @@ export const ChatWindow = ({
         </AnimatePresence>
       </CardContent>
 
-      <CardFooter className="p-4 bg-[var(--surface)]/80 backdrop-blur-md border-t border-[var(--border)] relative z-30">
+      <CardFooter className="bg-[var(--surface)]/80 backdrop-blur-md border-t border-[var(--border)] relative z-30">
         <div className="w-full">
+          {/* Show loader while fetching suggested questions */}
+          {isFetchingSuggestions && !isLoading && (
+            <div className="flex items-center justify-center gap-2 mb-4 text-base text-[var(--text-secondary)]">
+              <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
+              <span>Fetching suggested questions…</span>
+            </div>
+          )}
           {/* Show follow-up questions from API response */}
-          {followUpQuestions.length > 0 && !isLoading && (
+          {followUpQuestions.length > 0 && !isLoading && !isFetchingSuggestions && (
             <div className="flex flex-wrap gap-2 mb-4 justify-center">
               {followUpQuestions.map((q, i) => (
                 <motion.button
@@ -193,7 +201,7 @@ export const ChatWindow = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  onClick={() => sendMessage(q)}
+                  onClick={() => setChatInput(q)}
                   className="px-4 py-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/40 transition-all shadow-sm flex items-center gap-2 group"
                 >
                   <Sparkles className="w-3 h-3 group-hover:scale-110 transition-transform" />
@@ -203,7 +211,7 @@ export const ChatWindow = ({
             </div>
           )}
           {/* Show static suggested questions on first load if no follow-ups yet */}
-          {followUpQuestions.length === 0 && mode === 'chat' && messages.length <= 1 && suggestedQuestions.length > 0 && !isLoading && (
+          {followUpQuestions.length === 0 && mode === 'chat' && messages.length <= 1 && suggestedQuestions.length > 0 && !isLoading && !isFetchingSuggestions && (
             <div className="flex flex-wrap gap-2 mb-4 justify-center">
               {suggestedQuestions.map((q, i) => (
                 <motion.button
@@ -211,7 +219,7 @@ export const ChatWindow = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  onClick={() => sendMessage(q)}
+                  onClick={() => setChatInput(q)}
                   className="px-4 py-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/40 transition-all shadow-sm flex items-center gap-2 group"
                 >
                   <Sparkles className="w-3 h-3 group-hover:scale-110 transition-transform" />
@@ -220,7 +228,13 @@ export const ChatWindow = ({
               ))}
             </div>
           )}
-          <ChatInput onSend={sendMessage} disabled={isLoading || mode !== 'chat'} onOpenDataSource={onOpenDataSource} />
+          <ChatInput
+            value={chatInput}
+            onChange={setChatInput}
+            onSend={sendMessage}
+            disabled={isLoading || mode !== 'chat'}
+            onOpenDataSource={onOpenDataSource}
+          />
           <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-[var(--text-secondary)]/60 uppercase tracking-[0.2em] font-black">
 
             <span className="w-1 h-1 rounded-full bg-[var(--border)]" />

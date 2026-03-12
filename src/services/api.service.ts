@@ -34,7 +34,7 @@ class ApiService implements IApiService {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    const userId = localStorage.getItem('dataor_user_id');
+    const userId = localStorage.getItem('DAgent_user_id');
     if (userId) {
       headers['user_id'] = userId;
       headers['user-id'] = userId; // Fallback in case backend expects kebab-case
