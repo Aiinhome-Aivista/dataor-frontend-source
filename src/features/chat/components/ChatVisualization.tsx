@@ -103,10 +103,11 @@ export const ChatVisualization: React.FC<ChatVisualizationProps> = ({ visualizat
             variant="outline"
             size="sm"
             onClick={handleDownload}
-            className="h-8 w-8 p-0 flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all"
+            className="h-8 w-8 p-0  text-xs flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all"
             title="Download CSV"
           >
             <Download className="w-4 h-4" />
+            Download
           </Button>
         </div>
         <div className="overflow-x-auto max-h-64 custom-scrollbar">
@@ -148,10 +149,11 @@ export const ChatVisualization: React.FC<ChatVisualizationProps> = ({ visualizat
           variant="outline"
           size="sm"
           onClick={handleDownloadPng}
-          className="h-8 w-8 p-0 flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all"
+          className="h-8 w-8 p-0  text-xs flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all"
           title="Download PNG"
         >
           <Download className="w-4 h-4" />
+          Download
         </Button>
       </div>
       <div className="h-64 w-full" ref={chartRef}>
@@ -201,10 +203,11 @@ export const ChatVisualization: React.FC<ChatVisualizationProps> = ({ visualizat
           variant="outline"
           size="sm"
           onClick={handleDownloadPng}
-          className="h-8 w-8 p-0 flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all"
+          className="h-8 w-8 p-0 flex text-xs items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all"
           title="Download PNG"
         >
           <Download className="w-4 h-4" />
+          Download
         </Button>
       </div>
       <div className="h-64 w-full" ref={chartRef}>
