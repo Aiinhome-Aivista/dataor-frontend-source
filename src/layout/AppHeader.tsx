@@ -1,12 +1,7 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import { Button } from '../ui-kit';
-import { Connector } from '../features/connectors';
-
-interface AppHeaderProps {
-  activeTab: 'chat' | 'connectors' | 'new-connector' | 'collection' | 'analysis';
-  selectedConnector: Connector | null;
-}
+import { AppHeaderProps } from '../types/layout';
 
 export const AppHeader: React.FC<AppHeaderProps> = ({ activeTab, selectedConnector }) => {
   const getTabTitle = () => {

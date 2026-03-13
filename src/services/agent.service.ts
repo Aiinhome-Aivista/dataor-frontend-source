@@ -1,114 +1,13 @@
 import { AgentData, AgentHistoryItem } from '../features/workflow/types';
-import { connectorService } from './connector.service';
+import { AgentBaseService } from './agent/agent-base.service';
 
-class AgentService {
-  private agents: AgentData[] = [
-    {
-      id: 'connect',
-      name: 'Data source',
-      historyName: 'Data source',
-      icon: 'database',
-      description: 'Establishing secure link to database',
-      history: []
-    },
-    {
-      id: 'ingest',
-      name: 'Import',
-      historyName: 'Import',
-      icon: 'server',
-      description: 'Fetching and storing remote data',
-      history: [
-
-      ]
-    },
-    {
-      id: 'analyze',
-      name: 'Process',
-      historyName: 'Process',
-      icon: 'bar-chart',
-      description: 'Generating insights and visuals',
-      history: []
-    },
-    {
-      id: 'query',
-      name: 'Query',
-      historyName: 'Query',
-      icon: 'message-square',
-      description: 'Ready to answer your questions',
-      history: []
-    }
-  ];
-
-  private sessionSourcesCache: Record<string, any> = {};
-
+class AgentService extends AgentBaseService {
   async getAgents(userId: number | null, fetchFromApi: boolean = true): Promise<AgentData[]> {
-    const sessionId = localStorage.getItem('DAgent_session_id');
-    
-    if (!sessionId) {
-      return this.agents.map(agent => ({ ...agent, history: [...agent.history] }));
-    }
-
-    if (!fetchFromApi) {
-      return this.agents.map(agent => ({ ...agent, history: [...agent.history] }));
-    }
-
-    try {
-      const response = await connectorService.getConnectionHistory(sessionId);
-      if (response && response.status === 'success' && response.history) {
-        const fullHistory = response.history as any[];
-
-        this.agents = this.agents.map(localAgent => {
-          let mappedHistory: any[] = [];
-
-          if (localAgent.id === 'connect') {
-            // "connect" history is for connector-level actions
-            mappedHistory = fullHistory
-              .filter(h => h.action !== 'Session Data Imported' && h.status !== 'processing')
-              .map((h: any) => ({
-                ...h,
-                session_id: h.session_id || h.sessionId || h.sessionID || sessionId,
-                connectorId: h.id,
-                id: h.id || Math.random().toString(36).substr(2, 9)
-              }));
-          } else if (localAgent.id === 'ingest') {
-            // "ingest" history focuses on the imported state
-            mappedHistory = fullHistory
-              .filter(h => h.action === 'Session Data Imported' || h.status === 'completed')
-              .map((h: any) => ({
-                ...h,
-                session_id: h.session_id || h.sessionId || h.sessionID || sessionId,
-                connectorId: h.id,
-                id: h.id || Math.random().toString(36).substr(2, 9)
-              }));
-          } else if (localAgent.id === 'analyze') {
-            // "analyze" history for reports and insights
-            mappedHistory = fullHistory
-              .filter(h => h.db_type === 'session_analysis_result')
-              .map((h: any) => ({
-                ...h,
-                session_id: h.session_id || h.sessionId || h.sessionID || sessionId,
-                id: h.id || Math.random().toString(36).substr(2, 9)
-              }));
-          }
-
-          if (mappedHistory.length > 0) {
-            mappedHistory.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-          }
-          
-          return { ...localAgent, history: mappedHistory };
-        });
-
-        return this.agents;
-      }
-      return this.agents;
-    } catch (error) {
-      console.error('Failed to fetch agents:', error);
-      return this.agents;
-    }
+    return this.fetchAgentsFromApi(userId, fetchFromApi);
   }
 
   async getAgentHistory(agentId: string): Promise<AgentHistoryItem[]> {
-    const agent = this.agents.find(a => a.id === agentId);
+    const agent = this.getAgentById(agentId);
     return agent?.history || [];
   }
 
@@ -128,41 +27,7 @@ class AgentService {
   }
 
   reset(): void {
-    this.agents = [
-      {
-        id: 'connect',
-        name: 'Data source',
-        historyName: 'Data source',
-        icon: 'database',
-        description: 'Establishing secure link to database',
-        history: []
-      },
-      {
-        id: 'ingest',
-        name: 'Import',
-        historyName: 'Import',
-        icon: 'server',
-        description: 'Fetching and storing remote data',
-        history: []
-      },
-      {
-        id: 'analyze',
-        name: 'Process',
-        historyName: 'Process',
-        icon: 'bar-chart',
-        description: 'Generating insights and visuals',
-        history: []
-      },
-      {
-        id: 'query',
-        name: 'Query',
-        historyName: 'Query',
-        icon: 'message-square',
-        description: 'Ready to answer your questions',
-        history: []
-      }
-    ];
-    this.sessionSourcesCache = {};
+    this.clearState();
   }
 }
 
