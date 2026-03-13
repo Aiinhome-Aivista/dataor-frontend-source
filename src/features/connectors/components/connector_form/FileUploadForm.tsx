@@ -117,10 +117,10 @@ export const FileUploadForm = ({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{file.name}</p>
                     <p className="text-[10px] text-[var(--text-secondary)]">
-                      {(file.size / 1024).toFixed(1)} KB • {progress}%
+                      {(file.size / (1024 * 1024)).toFixed(2)} MB • {progress}% {progress > 0 && progress < 100 ? '(Uploading...)' : progress === 0 ? '(Queued)' : '(Completed)'}
                     </p>
                   </div>
-                  {!isUploading && (
+                  {progress === 0 && (
                     <button
                       onClick={() => removeFile(idx)}
                       className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 text-[var(--text-secondary)] transition-all"

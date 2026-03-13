@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Connector } from '../features/connectors/types';
 import { uploadCsvFile } from '../services/fileUpload/chunkUploadService';
 
@@ -59,6 +59,20 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return {};
     }
   });
+
+  // Worker Refs for background queuing
+  const filesRef = useRef<File[]>([]);
+  const progressRef = useRef<Record<string, number>>({});
+  const isWorkerRunning = useRef(false);
+
+  // Sync refs with state
+  useEffect(() => {
+    filesRef.current = uploadedFiles;
+  }, [uploadedFiles]);
+
+  useEffect(() => {
+    progressRef.current = uploadProgress;
+  }, [uploadProgress]);
 
   const [sessionSources, setSessionSourcesState] = useState<any | null>(() => {
     try {
@@ -154,26 +168,45 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const sessionId = localStorage.getItem("DAgent_session_id") || "";
     if (!userId || !sessionId) return;
 
+    if (isWorkerRunning.current) return;
+    isWorkerRunning.current = true;
     setIsUploading(true);
 
-    for (const file of uploadedFiles) {
-      if (uploadProgress[file.name] === 100) continue;
+    try {
+      let currentIndex = 0;
+      
+      // Keep processing while there are pending files in the queue
+      while (currentIndex < filesRef.current.length) {
+        const file = filesRef.current[currentIndex];
+        const status = progressRef.current[file.name] || 0;
 
-      await uploadCsvFile(
-        file,
-        userId,
-        sessionId,
-        (progress) => {
-          setUploadProgressState(prev => {
-            const next = { ...prev, [file.name]: progress };
-            localStorage.setItem("uploadProgress", JSON.stringify(next));
-            return next;
-          });
+        if (status < 100) {
+          try {
+            await uploadCsvFile(
+              file,
+              userId,
+              sessionId,
+              (progress) => {
+                setUploadProgress(prev => ({
+                  ...prev,
+                  [file.name]: progress
+                }));
+              }
+            );
+          } catch (err) {
+            console.error(`Failed to upload file ${file.name}:`, err);
+            // We keep going to the next file
+          }
         }
-      );
+        
+        currentIndex++;
+        // The loop will automatically pick up any files added to filesRef.current
+        // while the previous file was uploading.
+      }
+    } finally {
+      setIsUploading(false);
+      isWorkerRunning.current = false;
     }
-
-    setIsUploading(false);
   };
 
   const setUploadedFiles = (files: File[] | ((prev: File[]) => File[])) => {

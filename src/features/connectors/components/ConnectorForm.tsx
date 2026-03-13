@@ -212,15 +212,43 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
       setErrorMsg(`Only ${isCsvUpload ? 'CSV' : 'SQL'} files are allowed.`);
       return;
     }
-    setErrorMsg('');
-    setUploadedFiles(prev => [...prev, ...files]);
+    const existingNames = new Set(uploadedFiles.map(f => `${f.name}-${f.size}`));
+    const newFiles = files.filter(f => !existingNames.has(`${f.name}-${f.size}`));
+    
+    if (newFiles.length < files.length) {
+      setErrorMsg('Some duplicate files were skipped.');
+      setTimeout(() => setErrorMsg(prev => prev === 'Some duplicate files were skipped.' ? '' : prev), 2000);
+    } else {
+      setErrorMsg('');
+    }
+
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+    
+    // Automatically start/restart upload worker ONLY if already in uploading state
+    if (userId && isUploading && newFiles.length > 0) {
+      setTimeout(() => handleContextUpload(userId as number), 0);
+    }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setErrorMsg('');
-    setUploadedFiles(prev => [...prev, ...files]);
+    const existingNames = new Set(uploadedFiles.map(f => `${f.name}-${f.size}`));
+    const newFiles = files.filter(f => !existingNames.has(`${f.name}-${f.size}`));
+    
+    if (newFiles.length < files.length) {
+      setErrorMsg('Some duplicate files were skipped.');
+      setTimeout(() => setErrorMsg(prev => prev === 'Some duplicate files were skipped.' ? '' : prev), 2000);
+    } else {
+      setErrorMsg('');
+    }
+
+    setUploadedFiles(prev => [...prev, ...newFiles]);
     e.target.value = '';
+    
+    // Automatically start/restart upload worker ONLY if already in uploading state
+    if (userId && isUploading && newFiles.length > 0) {
+      setTimeout(() => handleContextUpload(userId as number), 0);
+    }
   };
 
   const removeFile = (idx: number) => {
@@ -232,25 +260,29 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
       setErrorMsg('Authentication error. Please log in again.');
       return;
     }
-    setErrorMsg('');
     try {
       await handleContextUpload(userId as number);
-      const connName = connector?.name || 'File Upload';
-      // Wait a moment so user can see completion
-      setTimeout(() => {
-        resetConnectorState();
-        onTestSuccess?.(connName, false);
-      }, 1000);
     } catch (err: any) {
       console.error('Upload Error:', err);
       setErrorMsg(err.message || 'An error occurred during upload.');
-      // After a short delay, go back even on failure as requested
-      setTimeout(() => {
-        resetConnectorState();
-        onBack();
-      }, 2000);
     }
   };
+
+  // Reactive Navigation after upload completion
+  useEffect(() => {
+    if (isFileUpload && !isUploading && uploadedFiles.length > 0) {
+      const allDone = uploadedFiles.every(file => (uploadProgress[file.name] || 0) === 100);
+      
+      if (allDone) {
+        const connName = connector?.name || 'File Upload';
+        const timer = setTimeout(() => {
+          resetConnectorState();
+          onTestSuccess?.(connName, false);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isUploading, uploadedFiles, uploadProgress, isFileUpload, onTestSuccess, connector?.name, resetConnectorState]);
 
 
   const guide = activeField ? GUIDES[activeField] : null;
@@ -312,9 +344,9 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 />
               </div>
             )}
-            
+
             {isWebSearch ? (
-              <WebSearchForm 
+              <WebSearchForm
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 handleFocus={handleFocus}
@@ -331,7 +363,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 handleImport={handleImport}
               />
             ) : isFileUpload ? (
-              <FileUploadForm 
+              <FileUploadForm
                 isCsvUpload={isCsvUpload}
                 isDragging={isDragging}
                 setIsDragging={setIsDragging}
@@ -341,13 +373,13 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 uploadedFiles={uploadedFiles}
                 setUploadedFiles={setUploadedFiles}
                 removeFile={removeFile}
-                uploadProgress={uploadProgress} 
+                uploadProgress={uploadProgress}
                 handleFileUploadConnect={handleFileUploadConnect}
                 isUploading={isUploading}
                 onBack={onBack}
               />
             ) : (
-              <DatabaseForm 
+              <DatabaseForm
                 formData={formData}
                 setFormData={setFormData}
                 handleFocus={handleFocus}
