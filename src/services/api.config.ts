@@ -1,3 +1,4 @@
+import { FILE } from "dns";
 import { connect } from "http2";
 
 export interface ApiConfig {
@@ -36,5 +37,8 @@ export const API_ENDPOINTS = {
     CREATE: '/create_workspace',
     GET_WORKSPACES: '/workspaces',
     SET_ACTIVE_WORKSPACE: '/set-active-workspace',
+  },
+  FILE_UPLOAD: {
+    CSV_UPLOAD: '/upload_csv',
   },
 };

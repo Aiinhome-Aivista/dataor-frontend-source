@@ -57,10 +57,18 @@ class ApiService implements IApiService {
 
   async post<T>(endpoint: string, data: any): Promise<T> {
     try {
+      const isFormData = data instanceof FormData;
+      const headers = this.getHeaders();
+      
+      // If it's FormData, we must let the browser set the Content-Type with the boundary
+      if (isFormData) {
+        delete headers['Content-Type'];
+      }
+
       const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
         method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(data),
+        headers: headers,
+        body: isFormData ? data : JSON.stringify(data),
       });
       return this.handleResponse<T>(response);
     } catch (error) {

@@ -80,6 +80,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   // File upload state
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [errorMsg, setErrorMsg] = useState('');
@@ -232,13 +233,36 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
     setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const handleFileUploadConnect = () => {
+  const handleFileUploadConnect = async () => {
     if (uploadedFiles.length === 0) {
       setErrorMsg('Please upload at least one file.');
       return;
     }
-    // Pass the connector name / files upward; actual API call can be wired by the consumer
-    onTestSuccess?.(connector?.name || 'File Upload', false);
+    const sessionId = localStorage.getItem('DAgent_session_id');
+    if (!userId || !sessionId) {
+      setErrorMsg('User ID and Session ID are required for file upload.');
+      return;
+    }
+
+    setIsUploading(true);
+    setErrorMsg('');
+    try {
+      const response: any = await connectorService.uploadCsv({
+        user_id: String(userId),
+        session_id: sessionId,
+        files: uploadedFiles,
+      });
+      if (response?.status === 'success') {
+        onTestSuccess?.(connector?.name || 'File Upload', false);
+      } else {
+        setErrorMsg(response?.message || 'Upload failed. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Upload Error:', error);
+      setErrorMsg(error.message || 'An error occurred during upload.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const guide = activeField ? GUIDES[activeField] : null;
@@ -393,14 +417,23 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
 
                   {/* Connect button */}
                   <div className="pt-4 flex justify-end gap-4">
-                    <Button variant="outline" onClick={onBack}>Cancel</Button>
+                    <Button variant="outline" onClick={onBack} disabled={isUploading}>Cancel</Button>
                     <Button
                       className="px-8"
                       onClick={handleFileUploadConnect}
-                      disabled={uploadedFiles.length === 0}
+                      disabled={uploadedFiles.length === 0 || isUploading}
                     >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload & Connect
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload & Connect
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
