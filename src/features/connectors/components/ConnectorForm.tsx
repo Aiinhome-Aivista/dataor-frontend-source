@@ -1,17 +1,16 @@
 import { useState, useRef } from 'react';
-import { Button, Input, Card, CardContent, CardHeader } from '@/src/ui-kit';
-import { motion, AnimatePresence } from 'motion/react';
-import { Server, Shield, Globe, Info, ChevronLeft, Sparkles, Loader2, Search, Check, FileSpreadsheet, FileCode2, Upload, X, File } from 'lucide-react';
-import { ThreeAvatar } from '../../chat/components/ThreeAvatar';
+import { Card, CardContent, CardHeader } from '@/src/ui-kit';
+import { Server, Globe, ChevronLeft, Search, FileSpreadsheet, FileCode2 } from 'lucide-react';
 import { connectorService } from '@/src/services/connector.service';
 import { useConnectorContext } from '../../../context/ConnectorContext';
 import { useAuthContext } from '../../../context/AuthContext';
 
-interface FieldGuide {
-  title: string;
-  description: string;
-  tip: string;
-}
+// Import Child Components
+import { WebSearchForm } from './connector_form/WebSearchForm';
+import { FileUploadForm } from './connector_form/FileUploadForm';
+import { DatabaseForm } from './connector_form/DatabaseForm';
+import { DAgentAssistant } from './connector_form/DAgentAssistant';
+import { FieldGuide } from '@/src/types/connector';
 
 const GUIDES: Record<string, FieldGuide> = {
   name: {
@@ -81,7 +80,6 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -133,7 +131,6 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
         setHasResearched(true);
         setSearchTopic(searchQuery);
 
-        // Store top-level search_id and topic from response
         if (response.search_id) {
           localStorage.setItem('last_search_id', response.search_id);
         }
@@ -141,7 +138,6 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
           localStorage.setItem('last_search_topic', response.topic);
         }
 
-        // Default select all - prioritize individual result identifiers
         const ids = response.results.map((r: any) => r.search_id || r.id || r.url);
         setSelectedResultIds(new Set(ids));
 
@@ -156,14 +152,6 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
     }
   };
 
-  const toggleSelectAll = () => {
-    if (selectedResultIds.size === searchResults.length) {
-      setSelectedResultIds(new Set());
-    } else {
-      setSelectedResultIds(new Set(searchResults.map(r => r.search_id || r.id || r.url)));
-    }
-  };
-
   const toggleSelect = (id: string) => {
     const next = new Set(selectedResultIds);
     if (next.has(id)) next.delete(id);
@@ -173,7 +161,6 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
 
   const handleImport = async () => {
     if (selectedResultIds.size > 0) {
-      // Sync with backend on import
       const userId = localStorage.getItem('DAgent_user_id') || '1';
       const lastSearchId = localStorage.getItem('last_search_id') || '';
       const lastSearchTopic = localStorage.getItem('last_search_topic') || searchQuery;
@@ -225,7 +212,6 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
     const files = Array.from(e.target.files || []);
     setErrorMsg('');
     setUploadedFiles(prev => [...prev, ...files]);
-    // Reset input so same file can be re-added after removal
     e.target.value = '';
   };
 
@@ -311,441 +297,55 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 {errorMsg}
               </div>
             )}
-            <div className="space-y-6">
-              <div
-                onMouseEnter={() => handleMouseEnter('name')}
-              >
-                <Input
-                  label="Data source Name"
-                  placeholder="e.g. Production Database"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  onFocus={() => handleFocus('name')}
-                  required
-                />
-              </div>
-
-              {isFileUpload ? (
-                <div className="space-y-4">
-                  {/* Label */}
-                  <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-secondary)]">
-                    Upload Files
-                  </p>
-
-                  {/* Drop Zone */}
-                  <div
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={handleFileDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`relative flex flex-col items-center justify-center gap-3 p-10 rounded-2xl border-2 border-dashed cursor-pointer transition-all
-                      ${isDragging
-                        ? 'border-[var(--accent)] bg-[var(--accent)]/20 scale-[1.01]'
-                        : 'border-[var(--accent)]/60 bg-[var(--accent)]/5'
-                      }`}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept={acceptedFileTypes}
-                      className="hidden"
-                      onChange={handleFileInput}
-                    />
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-colors bg-[var(--accent)]/20 text-[var(--accent)]">
-                      {isCsvUpload ? <FileSpreadsheet className="w-7 h-7" /> : <FileCode2 className="w-7 h-7" />}
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">
-                        {isDragging ? 'Drop files here' : 'Drag & drop files here'}
-                      </p>
-                      <p className="text-xs text-[var(--text-secondary)] mt-1">
-                        or <span className="text-[var(--accent)] font-medium">browse</span> to choose files
-                      </p>
-                      {/* <p className="text-[10px] text-[var(--text-secondary)]/60 mt-2 uppercase tracking-widest font-medium">
-                        {isCsvUpload ? 'Only .csv files accepted' : 'Only .sql files accepted'}
-                      </p> */}
-                    </div>
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold">
-                      <Upload className="w-3 h-3" />
-                      Upload Multiple Files
-                    </div>
-                  </div>
-
-                  {/* File list */}
-                  {uploadedFiles.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">
-                          {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} selected
-                        </p>
-                        <button
-                          onClick={() => setUploadedFiles([])}
-                          className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
-                        >
-                          Clear all
-                        </button>
-                      </div>
-                      {uploadedFiles.map((file, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-3 p-3 rounded-xl border border-[var(--border)] bg-[var(--surface-hover)]/40 group"
-                        >
-                          <div className="p-1.5 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
-                            {isCsvUpload ? <FileSpreadsheet className="w-4 h-4" /> : <FileCode2 className="w-4 h-4" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{file.name}</p>
-                            <p className="text-[10px] text-[var(--text-secondary)]">
-                              {(file.size / 1024).toFixed(1)} KB
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => removeFile(idx)}
-                            className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 text-[var(--text-secondary)] transition-all"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-
-                  {/* Connect button */}
-                  <div className="pt-4 flex justify-end gap-4">
-                    <Button variant="outline" onClick={onBack} disabled={isUploading}>Cancel</Button>
-                    <Button
-                      className="px-8"
-                      onClick={handleFileUploadConnect}
-                      disabled={uploadedFiles.length === 0 || isUploading}
-                    >
-                      {isUploading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4 mr-2" />
-                          Upload & Connect
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ) : isWebSearch ? (
-                <div className="space-y-6">
-                  <div onMouseEnter={() => handleMouseEnter('search')}>
-                    <div className="flex gap-2 items-end">
-                      <div className="flex-1">
-                        <Input
-                          label="search"
-                          placeholder="e.g. Latest stock market trends"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          onFocus={() => handleFocus('search')}
-                        />
-                      </div>
-                      <Button
-                        onClick={handleWebSearch}
-                        disabled={isSearching}
-                        className="px-6 h-11"
-                      >
-                        <Search className="w-4 h-4 mr-2" />
-                        Search
-                      </Button>
-                    </div>
-                  </div>
-
-                  <AnimatePresence mode="wait">
-                    {isSearching && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--accent)]/5 flex items-center gap-4"
-                      >
-                        <div className="relative">
-                          <div className="w-10 h-10 rounded-full border-2 border-[var(--accent)]/20 flex items-center justify-center">
-                            <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
-                          </div>
-                          <div className="absolute inset-0 rounded-full border-2 border-[var(--accent)] animate-ping opacity-20" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-sm">Researching Websites...</h4>
-                          <p className="text-xs text-[var(--text-secondary)]">Analyzing live web data and extracting insights</p>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {hasResearched && !isSearching && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="space-y-4"
-                      >
-                        {!viewResults && (
-                          <div className="flex items-center gap-2 text-[var(--accent)] text-xs font-bold mb-2">
-                            <Check className="w-3.5 h-3.5" />
-                            Fast Research completed!
-                          </div>
-                        )}
-
-                        <div className="space-y-4">
-                          <div className="grid gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                            {(viewResults ? searchResults : searchResults.slice(0, 3)).map((result) => {
-                              const resultId = result.id || result.url;
-                              return (
-                                <div
-                                  key={resultId}
-                                  onClick={() => toggleSelect(resultId)}
-                                  className={`
-                                    p-4 rounded-xl border transition-all cursor-pointer group flex items-start gap-4
-                                    ${selectedResultIds.has(resultId)
-                                      ? 'border-[var(--accent)] bg-[var(--accent)]/5'
-                                      : 'border-[var(--border)] bg-[var(--surface-hover)]/30 hover:border-[var(--accent)]/40'}
-                                  `}
-                                >
-                                  <div className="flex-1">
-                                    <div className="flex justify-between items-start mb-1">
-                                      <h4 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
-                                        {result.title}
-                                      </h4>
-                                    </div>
-                                    <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed mb-2">
-                                      {result.brief}
-                                    </p>
-                                    <a
-                                      href={result.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="text-[10px] text-[var(--accent)] hover:underline flex items-center gap-1"
-                                    >
-                                      {result.url}
-                                    </a>
-                                  </div>
-                                  <div className="pt-1">
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedResultIds.has(resultId)}
-                                      onChange={() => { }} // Controlled via parent div click
-                                      className="w-4 h-4 rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          {!viewResults && searchResults.length > 3 && (
-                            <div className="flex items-center justify-between pt-2">
-                              <div className="flex items-center gap-2">
-                                <div className="flex -space-x-2">
-                                  <div className="w-3 h-3 rounded-full bg-[var(--accent)] border border-white" />
-                                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]/60 border border-white" />
-                                </div>
-                                <button
-                                  onClick={() => setViewResults(true)}
-                                  className="text-xs font-bold text-[var(--accent)] hover:underline flex items-center gap-1"
-                                >
-                                  {searchResults.length - 3} more sources
-                                  <span className="text-[var(--text-secondary)] font-medium">View</span>
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
-                            <p className="text-xs font-medium text-[var(--text-secondary)]">
-                              {selectedResultIds.size} sources selected
-                            </p>
-                            <div className="flex gap-3">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => { setViewResults(false); setHasResearched(false); }}
-                              >
-                                Delete
-                              </Button>
-                              <Button
-                                size="sm"
-                                disabled={selectedResultIds.size === 0}
-                                onClick={handleImport}
-                                className="px-6 rounded-full"
-                              >
-                                Import
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div onMouseEnter={() => handleMouseEnter('host')}>
-                    <Input
-                      label="Host / IP Address"
-                      placeholder="db.example.com"
-                      value={formData.host}
-                      onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                      onFocus={() => handleFocus('host')}
-                      required
-                    />
-                  </div>
-
-                  <div onMouseEnter={() => handleMouseEnter('port')}>
-                    <Input
-                      label="Port"
-                      placeholder="5432"
-                      value={formData.port}
-                      onChange={(e) => setFormData({ ...formData, port: e.target.value })}
-                      onFocus={() => handleFocus('port')}
-                      required
-                    />
-                  </div>
-
-                  <div onMouseEnter={() => handleMouseEnter('database')}>
-                    <Input
-                      label="Database Name"
-                      placeholder="main_db"
-                      value={formData.database}
-                      onChange={(e) => setFormData({ ...formData, database: e.target.value })}
-                      onFocus={() => handleFocus('database')}
-                      required
-                    />
-                  </div>
-
-                  <div onMouseEnter={() => handleMouseEnter('username')}>
-                    <Input
-                      label="Username"
-                      placeholder="readonly_user"
-                      value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      onFocus={() => handleFocus('username')}
-                      required
-                    />
-                  </div>
-
-                  <div
-                    onMouseEnter={() => handleMouseEnter('password')}
-                    className="md:col-span-2"
-                  >
-                    <Input
-                      label="Password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      onFocus={() => handleFocus('password')}
-                      required
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {!isWebSearch && !isFileUpload && (
-              <div className="pt-6 flex justify-end gap-4">
-                <Button variant="outline" onClick={onBack} disabled={isTesting}>Cancel</Button>
-                <Button
-                  className="px-8"
-                  onClick={handleTestConnection}
-                  disabled={isTesting}
-                >
-                  {isTesting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Testing...
-                    </>
-                  ) : 'Connect to Data source'}
-                </Button>
-              </div>
+            
+            {isWebSearch ? (
+              <WebSearchForm 
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                handleFocus={handleFocus}
+                handleMouseEnter={handleMouseEnter}
+                handleWebSearch={handleWebSearch}
+                isSearching={isSearching}
+                hasResearched={hasResearched}
+                viewResults={viewResults}
+                setViewResults={setViewResults}
+                setHasResearched={setHasResearched}
+                searchResults={searchResults}
+                selectedResultIds={selectedResultIds}
+                toggleSelect={toggleSelect}
+                handleImport={handleImport}
+              />
+            ) : isFileUpload ? (
+              <FileUploadForm 
+                isCsvUpload={isCsvUpload}
+                isDragging={isDragging}
+                setIsDragging={setIsDragging}
+                handleFileDrop={handleFileDrop}
+                handleFileInput={handleFileInput}
+                acceptedFileTypes={acceptedFileTypes}
+                uploadedFiles={uploadedFiles}
+                setUploadedFiles={setUploadedFiles}
+                removeFile={removeFile}
+                handleFileUploadConnect={handleFileUploadConnect}
+                isUploading={isUploading}
+                onBack={onBack}
+              />
+            ) : (
+              <DatabaseForm 
+                formData={formData}
+                setFormData={setFormData}
+                handleFocus={handleFocus}
+                handleMouseEnter={handleMouseEnter}
+                handleTestConnection={handleTestConnection}
+                isTesting={isTesting}
+                onBack={onBack}
+              />
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Avatar Guide */}
-      <div className="lg:sticky lg:top-28 space-y-6">
-        <div className="relative">
-          <AnimatePresence mode="wait">
-            {guide ? (
-              <motion.div
-                key={activeField}
-                initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                className="relative z-10"
-              >
-                <div className="bg-[var(--surface)] border border-[var(--border)] p-6 rounded-3xl shadow-2xl relative">
-                  {/* Speech Bubble Arrow */}
-                  <div className="absolute -left-2 top-10 w-4 h-4 bg-[var(--surface)] border-l border-b border-[var(--border)] rotate-45 hidden lg:block" />
-
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="w-4 h-4 text-[var(--accent)]" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">DAgent Guide</span>
-                  </div>
-
-                  <h4 className="font-bold text-lg mb-2">{guide.title}</h4>
-                  <p className="text-sm text-[var(--text-secondary)] mb-4 leading-relaxed">
-                    {guide.description}
-                  </p>
-
-                  <div className="p-3 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10">
-                    <div className="flex items-start gap-2">
-                      <Info className="w-4 h-4 text-[var(--accent)] shrink-0 mt-0.5" />
-                      <p className="text-xs italic text-[var(--text-primary)]/80">
-                        {guide.tip}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-[var(--surface)] border border-[var(--border)] p-6 rounded-3xl text-center"
-              >
-                <p className="text-sm text-[var(--text-secondary)]">
-                  Hover or click on a field to get guidance from DAgent.
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="mt-8 flex flex-col items-center">
-            <div className="relative">
-              <ThreeAvatar />
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-[var(--bg)] flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-white animate-ping" />
-              </div>
-            </div>
-            <div className="mt-4 text-center">
-              <h5 className="font-bold">DAgent Assistant</h5>
-              <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest">Always here to help</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/30 space-y-4">
-          <div className="flex items-center gap-3">
-            <Shield className="w-5 h-5 text-emerald-500" />
-            <span className="text-sm font-medium">Secure Data source</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Globe className="w-5 h-5 text-blue-500" />
-            <span className="text-sm font-medium">SSL/TLS Encryption</span>
-          </div>
-        </div>
-      </div>
+      <DAgentAssistant guide={guide} activeField={activeField} />
     </div>
   );
 };
