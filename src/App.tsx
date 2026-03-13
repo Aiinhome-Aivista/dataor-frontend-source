@@ -65,23 +65,27 @@ function AppContent() {
   };
 
   const fetchWorkspaceHistory = async (workspaceId: number, sessionId: string) => {
-    if (workspaceHistories[workspaceId] && expandedWorkspaceId === workspaceId) {
+    // If clicking the already expanded one, close it immediately
+    if (expandedWorkspaceId === workspaceId) {
       setExpandedWorkspaceId(null);
+      return;
+    }
+
+    // Toggle expansion state IMMEDIATELY for zero-delay UX
+    setExpandedWorkspaceId(workspaceId);
+
+    // If we already have history, we might not need to fetch again (or can fetch in background)
+    if (workspaceHistories[workspaceId]) {
       return;
     }
 
     setIsHistoryLoading(prev => ({ ...prev, [workspaceId]: true }));
     try {
-      await agentService.getAgents(userId, true); // We might need to ensure agents are fetched for the session
-      // However, getAgents uses localstorage DAgent_session_id. 
-      // For background fetching of other workspaces, we should use connectorService directly or update agentService.
       const historyResponse = await (connectorService as any).getConnectionHistory(sessionId);
       if (historyResponse && historyResponse.status === 'success' && historyResponse.history) {
         const queryOnly = historyResponse.history.filter((h: any) => h.action.toLowerCase().includes('query') || h.details?.toLowerCase().includes('query') || !h.db_type);
-
         setWorkspaceHistories(prev => ({ ...prev, [workspaceId]: queryOnly }));
       }
-      setExpandedWorkspaceId(workspaceId);
     } catch (err) {
       console.error('Failed to fetch workspace history:', err);
     } finally {

@@ -75,49 +75,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex flex-col shrink-0">
             {/* Workspace nav item */}
             <div className="px-3 mb-1">
-              <div 
+              <button 
+                onClick={() => isSidebarOpen && setIsWorkspaceOpen(o => !o)}
                 className={`
-                  w-full flex items-center overflow-hidden gap-1 p-0.5 rounded-xl border border-[var(--border)]/20 bg-[var(--bg)]/50
+                  w-full flex items-center justify-between overflow-hidden p-1.5 px-3 rounded-xl border border-[var(--border)]/20 bg-[var(--bg)]/50
+                  hover:bg-[var(--surface-hover)] transition-all duration-200 group cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)]
+                  ${!isSidebarOpen ? 'justify-center px-2' : ''}
                 `}
+                title={isSidebarOpen ? (isWorkspaceOpen ? "Collapse List" : "Expand List") : undefined}
               >
-                {/* Selection/Label Part (85%) */}
-                <div
-                  className={`
-                    ${isSidebarOpen ? 'w-[85%]' : 'w-full px-2'} flex items-center gap-2.5 py-1.5 px-3 transition-colors rounded-l-xl
-                    text-[var(--text-secondary)]
-                  `}
-                >
-                  <Layout className="w-4 h-4 shrink-0" />
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Layout className="w-4 h-4 shrink-0 transition-colors" />
                   {isSidebarOpen && (
-                    <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm flex-1 text-left truncate">
+                    <motion.span 
+                      initial={{ opacity: 0 }} 
+                      animate={{ opacity: 1 }} 
+                      className="text-sm flex-1 text-left truncate font-medium"
+                    >
                       Workspace - {selectedWorkspace?.workspace_name || 'Select'}
                     </motion.span>
                   )}
                 </div>
 
                 {isSidebarOpen && (
-                  <>
-                    <div className="h-6 w-px bg-[var(--border)] shrink-0" />
-                    
-                    {/* Expansion Toggle Part (15% Width) */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsWorkspaceOpen(o => !o);
-                      }}
-                      className={`
-                        w-[15%] py-1.5 flex items-center justify-center transition-colors shrink-0 rounded-r-xl cursor-pointer
-                        hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]
-                      `}
-                      title={isWorkspaceOpen ? "Collapse List" : "Expand List"}
-                    >
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
-                      </motion.div>
-                    </button>
-                  </>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="shrink-0 ml-1">
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
+                  </motion.div>
                 )}
-              </div>
+              </button>
             </div>
 
             {/* Workspace Dropdown & Query Section */}
@@ -289,13 +274,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     e.stopPropagation();
                                     fetchWorkspaceHistory(workspace.id, workspace.session_id);
                                   }}
-                                  className={`w-[15%] py-1.5 px-3 flex items-center justify-center transition-colors shrink-0 rounded-r-xl cursor-pointer
+                                  className={`w-[15%] py-1.5 px-3 flex items-center justify-center transition-all duration-200 shrink-0 rounded-r-xl cursor-pointer
                                      ${expandedWorkspaceId === workspace.id ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
                                      hover:bg-[var(--surface-hover)]
                                    `}
                                   title={expandedWorkspaceId === workspace.id ? "Collapse History" : "Expand History"}
                                 >
-                                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${expandedWorkspaceId === workspace.id ? 'rotate-180 text-[var(--accent)]' : 'opacity-40'}`} />
+                                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${expandedWorkspaceId === workspace.id ? 'rotate-180 text-[var(--accent)]' : ''}`} />
                                 </button>
                               </div>
 
