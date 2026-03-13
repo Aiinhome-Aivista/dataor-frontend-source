@@ -8,7 +8,7 @@ import { LandingPage } from './features/marketing/components/LandingPage';
 import { LoginPage } from './features/auth/components/LoginPage';
 import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles, BarChart3, Clock, Search, ChevronDown, User, Check, X, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { agentService } from './services/agent.service';
 import { AgentHistoryItem } from './features/workflow/types';
 import { workspaceService, Workspace } from './services/workspace.service';
@@ -185,8 +185,96 @@ function AppContent() {
     return <LoginPage onBack={handleBackToLanding} onLoginSuccess={handleLoginSuccess} />;
   }
 
+  const memoizedMainContent = useMemo(() => (
+    <div className={`p-4 w-full ${activeTab === 'chat' ? 'max-w-none' : 'max-w-6xl mx-auto'}`}>
+      <AnimatePresence mode="wait">
+        {activeTab === 'chat' ? (
+          <motion.div
+            key="chat"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="h-[calc(100vh-8rem)]"
+          >
+            <AgentWorkflow
+              key={`chat-${workflowKey}-${chatKey}`}
+              onComplete={handleWorkflowComplete}
+              defaultAgentId="query"
+              onChangeTab={changeTab}
+              initialChatMessage={initialChatMessage}
+            />
+          </motion.div>
+        ) : activeTab === 'new-connector' ? (
+          <motion.div
+            key="new-connector"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ConnectorForm
+              onBack={handleBackToConnectors}
+              onTestSuccess={handleStartWorkflow}
+            />
+          </motion.div>
+        ) : activeTab === 'collection' ? (
+          <motion.div
+            key="collection"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="h-[calc(100vh-8rem)]"
+          >
+            <AgentWorkflow
+              key={`ingest-${workflowKey}`}
+              onComplete={handleWorkflowComplete}
+              defaultAgentId="ingest"
+              onChangeTab={changeTab}
+            />
+          </motion.div>
+        ) : activeTab === 'analysis' ? (
+          <motion.div
+            key="analysis"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="h-[calc(100vh-8rem)]"
+          >
+            <AgentWorkflow
+              key={`analysis-${workflowKey}`}
+              onComplete={handleWorkflowComplete}
+              defaultAgentId="analyze"
+              onChangeTab={changeTab}
+              onForwardWithContext={handleForwardWithContext}
+            />
+          </motion.div>
+        ) : activeTab === 'connectors' ? (
+          <motion.div
+            key="connectors"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="h-[calc(100vh-8rem)]"
+          >
+            <AgentWorkflow
+              key={`connectors-${workflowKey}`}
+              onComplete={handleWorkflowComplete}
+              defaultAgentId="connect"
+              onChangeTab={changeTab}
+              onNewConnector={handleNewConnector}
+            />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  ), [activeTab, workflowKey, chatKey, initialChatMessage, selectedConnector]);
+
   return (
-    <div className="min-h-screen flex text-[var(--text-primary)] transition-colors duration-300">
+    <div className="min-h-screen flex text-[var(--text-primary)]">
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -222,25 +310,49 @@ function AppContent() {
             <div className="flex flex-col shrink-0">
               {/* Workspace nav item */}
               <div className="px-3 mb-1">
-                <button
-                  onClick={() => setIsWorkspaceOpen(o => !o)}
+                <div 
                   className={`
-                    w-full flex items-center gap-2.5 p-2.5 rounded-xl transition-all duration-200
-                    hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]
+                    w-full flex items-center overflow-hidden gap-1 p-0.5 rounded-xl border border-[var(--border)]/20 bg-[var(--bg)]/50
                   `}
                 >
-                  <Layout className="w-4 h-4 shrink-0" />
-                  {isSidebarOpen && (
-                    <>
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm flex-1 text-left ">
+                  {/* Selection/Label Part (85%) */}
+                  <div
+                    className={`
+                      ${isSidebarOpen ? 'w-[85%]' : 'w-full px-2'} flex items-center gap-2.5 py-1.5 px-3 transition-colors rounded-l-xl
+                      text-[var(--text-secondary)]
+                    `}
+                  >
+                    <Layout className="w-4 h-4 shrink-0" />
+                    {isSidebarOpen && (
+                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm flex-1 text-left truncate">
                         Workspace - {selectedWorkspace?.workspace_name || 'Select'}
                       </motion.span>
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
-                      </motion.div>
+                    )}
+                  </div>
+
+                  {isSidebarOpen && (
+                    <>
+                      <div className="h-6 w-px bg-[var(--border)] shrink-0" />
+                      
+                      {/* Expansion Toggle Part (15% Width) */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsWorkspaceOpen(o => !o);
+                        }}
+                        className={`
+                          w-[15%] py-1.5 flex items-center justify-center transition-colors shrink-0 rounded-r-xl cursor-pointer
+                          hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]
+                        `}
+                        title={isWorkspaceOpen ? "Collapse List" : "Expand List"}
+                      >
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
+                        </motion.div>
+                      </button>
                     </>
                   )}
-                </button>
+                </div>
               </div>
 
               {/* Workspace Dropdown & Query Section */}
@@ -372,12 +484,12 @@ function AppContent() {
                               <div
                                 key={workspace.id}
                                 className={`flex flex-col transition-all duration-300 overflow-hidden border ${selectedWorkspace?.id === workspace.id
-                                  ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 shadow-sm'
-                                  : 'border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)]'
+                                  ? 'border-[var(--accent)]/20 bg-[var(--accent)]/5 shadow-sm'
+                                  : 'border-[var(--border)]/20 bg-[var(--bg)]/50'
                                   } ${expandedWorkspaceId === workspace.id ? 'rounded-2xl' : 'rounded-xl'}`}
                               >
-                                <div className="w-full flex items-center overflow-hidden">
-                                  {/* Workspace Selection Area */}
+                                <div className="w-full flex items-center overflow-hidden gap-1 p-0.5">
+                                  {/* Workspace Selection Part (85% Width) */}
                                   <button
                                     onClick={async (e) => {
                                       e.stopPropagation();
@@ -394,27 +506,29 @@ function AppContent() {
                                         console.error('Failed to set active workspace:', err);
                                       }
                                     }}
-                                    className={`flex-1 text-left p-3 flex items-center gap-2 cursor-pointer transition-colors
-                                      ${selectedWorkspace?.id === workspace.id ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
-                                    `}
+                                    className={`w-[85%] text-left py-1.5 px-3 flex items-center gap-2 cursor-pointer transition-colors rounded-l-xl
+                                       ${selectedWorkspace?.id === workspace.id ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
+                                       hover:bg-[var(--surface-hover)]
+                                     `}
                                   >
                                     <span className={`text-[11px] font-bold truncate ${selectedWorkspace?.id === workspace.id ? 'text-[var(--accent)]' : ''}`}>
                                       {workspace.workspace_name}
                                     </span>
                                   </button>
 
-                                  {/* Vertical Divider */}
-                                  <div className="h-4 w-px bg-[var(--border)] opacity-30 shrink-0" />
+                                  <div className="h-6 w-px bg-[var(--border)] shrink-0" />
 
-                                  {/* History Expansion Toggle */}
+                                  {/* Expansion Toggle Part (15% Width) */}
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       fetchWorkspaceHistory(workspace.id, workspace.session_id);
                                     }}
-                                    className={`p-3 flex items-center justify-center transition-colors
-                                      ${expandedWorkspaceId === workspace.id ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
-                                    `}
+                                    className={`w-[15%] py-1.5 px-3 flex items-center justify-center transition-colors shrink-0 rounded-r-xl cursor-pointer
+                                       ${expandedWorkspaceId === workspace.id ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
+                                       hover:bg-[var(--surface-hover)]
+                                     `}
+                                    title={expandedWorkspaceId === workspace.id ? "Collapse History" : "Expand History"}
                                   >
                                     <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${expandedWorkspaceId === workspace.id ? 'rotate-180 text-[var(--accent)]' : 'opacity-40'}`} />
                                   </button>
@@ -429,7 +543,7 @@ function AppContent() {
                                       exit={{ opacity: 0, height: 0 }}
                                       className="px-1 pt-1 pb-3 overflow-hidden flex flex-col min-h-0"
                                     >
-                                          <div className="px-1 mb-3">
+                                      <div className="px-1 mb-3">
                                         <button
                                           onClick={() => {
                                             setInitialChatMessage(undefined);
@@ -438,14 +552,13 @@ function AppContent() {
                                           }}
                                           className="w-full flex items-center gap-2 p-2 rounded-lg  text-[var(--text-secondary)]  transition-all text-[11px] font-bold bg-[var(--accent)]/10 cursor-pointer"
                                         >
-                                         
                                           New Query
                                         </button>
                                       </div>
                                       {/* Query History Label */}
                                       <div className="px-2 mb-2 flex items-center justify-between">
                                         <span className="text-[10px] font-bold tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-                                        
+
                                           Query History
                                         </span>
                                       </div>
@@ -463,7 +576,7 @@ function AppContent() {
                                       </div>
 
                                       {/* New Query Button */}
-                                  
+
 
                                       <div className="space-y-1.5 overflow-y-auto max-h-[300px] custom-scrollbar px-1">
                                         {isHistoryLoading[workspace.id] ? (
@@ -529,7 +642,7 @@ function AppContent() {
           {/* Settings + Logout — fixed at the bottom */}
           <div className="px-3 pb-3 space-y-1 shrink-0 mt-auto border-t border-[var(--border)] pt-3">
             <button
-              className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-200"
+              className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-200"
             >
               <Settings className="w-4 h-4 shrink-0" />
               {isSidebarOpen && (
@@ -540,7 +653,7 @@ function AppContent() {
             </button>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-rose-500/10 text-[var(--text-secondary)] hover:text-rose-500 transition-all duration-200"
+              className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-rose-500/10 text-[var(--text-secondary)] hover:text-rose-500 transition-colors duration-200"
             >
               <LogOut className="w-4 h-4 shrink-0" />
               {isSidebarOpen && (
@@ -555,7 +668,7 @@ function AppContent() {
 
       {/* Main Content */}
       <main
-        className="flex-1 transition-all duration-300"
+        className="flex-1"
         style={{ marginLeft: isSidebarOpen ? 280 : 80 }}
       >
         <header className="h-14 border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-md sticky top-0 z-40 px-6 flex items-center justify-between">
@@ -588,91 +701,7 @@ function AppContent() {
           </div>
         </header>
 
-        <div className={`p-4 w-full ${activeTab === 'chat' ? 'max-w-none' : 'max-w-6xl mx-auto'}`}>
-          <AnimatePresence mode="wait">
-            {activeTab === 'chat' ? (
-              <motion.div
-                key="chat"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="h-[calc(100vh-8rem)]"
-              >
-                <AgentWorkflow
-                  key={`chat-${workflowKey}-${chatKey}`}
-                  onComplete={handleWorkflowComplete}
-                  defaultAgentId="query"
-                  onChangeTab={changeTab}
-                  initialChatMessage={initialChatMessage}
-                />
-              </motion.div>
-            ) : activeTab === 'new-connector' ? (
-              <motion.div
-                key="new-connector"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ConnectorForm
-                  onBack={handleBackToConnectors}
-                  onTestSuccess={handleStartWorkflow}
-                />
-              </motion.div>
-            ) : activeTab === 'collection' ? (
-              <motion.div
-                key="collection"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="h-[calc(100vh-8rem)]"
-              >
-                <AgentWorkflow
-                  key={`ingest-${workflowKey}`}
-                  onComplete={handleWorkflowComplete}
-                  defaultAgentId="ingest"
-                  onChangeTab={changeTab}
-                />
-              </motion.div>
-            ) : activeTab === 'analysis' ? (
-              <motion.div
-                key="analysis"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="h-[calc(100vh-8rem)]"
-              >
-                <AgentWorkflow
-                  key={`analysis-${workflowKey}`}
-                  onComplete={handleWorkflowComplete}
-                  defaultAgentId="analyze"
-                  onChangeTab={changeTab}
-                  onForwardWithContext={handleForwardWithContext}
-                />
-              </motion.div>
-            ) : activeTab === 'connectors' ? (
-              <motion.div
-                key="connectors"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="h-[calc(100vh-8rem)]"
-              >
-                <AgentWorkflow
-                  key={`connectors-${workflowKey}`}
-                  onComplete={handleWorkflowComplete}
-                  defaultAgentId="connect"
-                  onChangeTab={changeTab}
-                  onNewConnector={handleNewConnector}
-                />
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </div>
+        {memoizedMainContent}
       </main>
     </div>
   );
