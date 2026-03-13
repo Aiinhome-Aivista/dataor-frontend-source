@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect  } from 'react';
 import { Card, CardContent, CardHeader } from '@/src/ui-kit';
 import { Server, Globe, ChevronLeft, Search, FileSpreadsheet, FileCode2 } from 'lucide-react';
 import { connectorService } from '@/src/services/connector.service';
 import { useConnectorContext } from '../../../context/ConnectorContext';
 import { useAuthContext } from '../../../context/AuthContext';
+
 
 // Import Child Components
 import { WebSearchForm } from './connector_form/WebSearchForm';
@@ -11,6 +12,7 @@ import { FileUploadForm } from './connector_form/FileUploadForm';
 import { DatabaseForm } from './connector_form/DatabaseForm';
 import { DAgentAssistant } from './connector_form/DAgentAssistant';
 import { FieldGuide } from '@/src/types/connector';
+import { uploadCsvFile  } from '@/src/services/fileUpload/chunkUploadService';
 
 const GUIDES: Record<string, FieldGuide> = {
   name: {
@@ -57,6 +59,7 @@ interface ConnectorFormProps {
 
 export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => {
   const { selectedConnector: connector, setSearchTopic } = useConnectorContext();
+  
   const { userId } = useAuthContext();
   const [activeField, setActiveField] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
@@ -80,6 +83,8 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -218,38 +223,43 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   const removeFile = (idx: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
   };
+const handleFileUploadConnect = async () => {
 
-  const handleFileUploadConnect = async () => {
-    if (uploadedFiles.length === 0) {
-      setErrorMsg('Please upload at least one file.');
-      return;
-    }
-    const sessionId = localStorage.getItem('DAgent_session_id');
-    if (!userId || !sessionId) {
-      setErrorMsg('User ID and Session ID are required for file upload.');
-      return;
-    }
+  setIsUploading(true);
 
-    setIsUploading(true);
-    setErrorMsg('');
-    try {
-      const response: any = await connectorService.uploadCsv({
-        user_id: String(userId),
-        session_id: sessionId,
-        files: uploadedFiles,
-      });
-      if (response?.status === 'success') {
-        onTestSuccess?.(connector?.name || 'File Upload', false);
-      } else {
-        setErrorMsg(response?.message || 'Upload failed. Please try again.');
-      }
-    } catch (error: any) {
-      console.error('Upload Error:', error);
-      setErrorMsg(error.message || 'An error occurred during upload.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  const sessionId = localStorage.getItem("DAgent_session_id") || "";
+
+  for (const file of uploadedFiles) {
+
+   await uploadCsvFile(
+  file,
+  userId,
+  sessionId,
+  (progress) => {
+
+    setUploadProgress((prev) => ({
+      ...prev,
+      [file.name]: progress
+    }));
+
+  }
+);
+
+  }
+
+  setIsUploading(false);
+};
+
+useEffect(() => {
+
+  const storedProgress = localStorage.getItem("uploadProgress");
+
+  if (storedProgress) {
+    setUploadProgress(JSON.parse(storedProgress));
+  }
+
+}, []);
+
 
   const guide = activeField ? GUIDES[activeField] : null;
 
@@ -326,6 +336,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 uploadedFiles={uploadedFiles}
                 setUploadedFiles={setUploadedFiles}
                 removeFile={removeFile}
+                uploadProgress={uploadProgress} 
                 handleFileUploadConnect={handleFileUploadConnect}
                 isUploading={isUploading}
                 onBack={onBack}

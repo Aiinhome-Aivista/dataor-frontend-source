@@ -14,6 +14,8 @@ interface FileUploadFormProps {
   setUploadedFiles: React.Dispatch<React.SetStateAction<File[]>>;
   removeFile: (idx: number) => void;
   handleFileUploadConnect: () => void;
+  uploadProgress: Record<string, number>;
+  
   isUploading: boolean;
   onBack: () => void;
 }
@@ -29,6 +31,7 @@ export const FileUploadForm = ({
   setUploadedFiles,
   removeFile,
   handleFileUploadConnect,
+  uploadProgress,
   isUploading,
   onBack
 }: FileUploadFormProps) => {
