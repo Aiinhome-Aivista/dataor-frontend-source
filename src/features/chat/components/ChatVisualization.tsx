@@ -23,28 +23,39 @@ export const ChatVisualization: React.FC<ChatVisualizationProps> = ({ visualizat
     if (!data || data.length === 0) return { x: xKey, y: yKey };
     const firstItem = data[0];
     const itemKeys = Object.keys(firstItem);
-    
+
     let x = xKey;
     let y = yKey;
-    
+
     // If xKey doesn't exist, try common field names or first key
     if (!(xKey in firstItem)) {
       x = itemKeys.find(k => ['category', 'label', 'name', 'brand', 'date', 'type', 'group', 'id'].includes(k.toLowerCase())) || itemKeys[0];
     }
-    
+
     // If yKey doesn't exist, try common field names (preferring numbers)
     if (!(yKey in firstItem)) {
-      y = itemKeys.find(k => k !== x && typeof firstItem[k] === 'number') 
-          || itemKeys.find(k => k !== x && !isNaN(parseFloat(firstItem[k])))
-          || itemKeys.find(k => k !== x && (['value', 'count', 'amount', 'price', 'total', 'quantity'].includes(k.toLowerCase()))) 
-          || itemKeys.find(k => k !== x) 
-          || itemKeys[1];
+      y = itemKeys.find(k => k !== x && typeof firstItem[k] === 'number')
+        || itemKeys.find(k => k !== x && !isNaN(parseFloat(firstItem[k])))
+        || itemKeys.find(k => k !== x && (['value', 'count', 'amount', 'price', 'total', 'quantity'].includes(k.toLowerCase())))
+        || itemKeys.find(k => k !== x)
+        || itemKeys[1];
     }
-    
+
     return { x, y };
   };
 
   const { x: resolvedXKey, y: resolvedYKey } = resolveKeys();
+
+  const getLabel = (key: string) => {
+    if (columns) {
+      const col = columns.find(c => c.key === key);
+      if (col) return col.label;
+    }
+    return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const xLabel = getLabel(resolvedXKey);
+  const yLabel = getLabel(resolvedYKey);
 
   const formatValue = (value: any) => {
     if (typeof value !== 'number') return value;
@@ -59,7 +70,15 @@ export const ChatVisualization: React.FC<ChatVisualizationProps> = ({ visualizat
     if (!chartRef.current) return;
 
     try {
-      const dataUrl = await toPng(chartRef.current, { backgroundColor: 'var(--bg)' });
+      const dataUrl = await toPng(chartRef.current, { 
+        backgroundColor: 'var(--bg)',
+        pixelRatio: 3,
+        cacheBust: true,
+        filter: (node: HTMLElement) => {
+          const exclusionClass = 'download-button-exclude';
+          return !(node.classList && node.classList.contains(exclusionClass));
+        }
+      });
       const link = document.createElement('a');
       link.download = `${title || 'chart'}.png`;
       link.href = dataUrl;
@@ -76,6 +95,7 @@ export const ChatVisualization: React.FC<ChatVisualizationProps> = ({ visualizat
     const keys = columns ? columns.map(c => c.key) : Object.keys(data[0]);
 
     const csvContent = "data:text/csv;charset=utf-8,"
+      + (title ? `"${title}"\n\n` : "")
       + headers.join(",") + "\n"
       + data.map(row => keys.map(key => `"${row[key] || ''}"`).join(",")).join("\n");
 
@@ -94,19 +114,18 @@ export const ChatVisualization: React.FC<ChatVisualizationProps> = ({ visualizat
 
     return (
       <div className="bg-[var(--bg)] rounded-xl border border-[var(--border)] overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
-        <div className="flex justify-between items-center p-3 border-b border-[var(--border)] bg-[var(--surface)]/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            <TableIcon className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">{title || 'Data Table'}</span>
+        <div className="flex justify-between items-center p-3 border-b border-[var(--border)] bg-[var(--surface)]/50 backdrop-blur-sm gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <TableIcon className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
+            <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] truncate" title={title || 'Data Table'}>{title || 'Data Table'}</span>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={handleDownload}
-            className="h-8 w-8 p-0 flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all"
-            title="Download CSV"
+            className="h-10 w-10 p-0 text-xs flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all shrink-0"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-6 h-6" />
           </Button>
         </div>
         <div className="overflow-x-auto max-h-64 custom-scrollbar">
@@ -138,43 +157,42 @@ export const ChatVisualization: React.FC<ChatVisualizationProps> = ({ visualizat
   };
 
   const renderBarChart = () => (
-    <div className="bg-[var(--bg)] rounded-xl border border-[var(--border)] p-4 transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-3.5 h-3.5 text-[var(--accent)]" />
-          <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">{title || 'Bar Chart'}</span>
+    <div ref={chartRef} className="bg-[var(--bg)] rounded-xl border border-[var(--border)] p-4 transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
+      <div className="flex justify-between items-center mb-4 gap-4">
+        <div className="flex items-center gap-2 min-w-0">
+          <BarChart3 className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
+          <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] truncate" title={title || 'Bar Chart'}>{title || 'Bar Chart'}</span>
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={handleDownloadPng}
-          className="h-8 w-8 p-0 flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all"
-          title="Download PNG"
+          className="h-10 w-10 p-0 text-xs flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all shrink-0 download-button-exclude"
         >
-          <Download className="w-4 h-4" />
+          <Download className="w-6 h-6" />
         </Button>
       </div>
-      <div className="h-64 w-full" ref={chartRef}>
+      <div className="h-64 w-full" >
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <BarChart data={data} margin={{ top: 10, right: 10, left: 15, bottom: 45 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.5} />
             <XAxis
               dataKey={resolvedXKey}
               stroke="var(--text-secondary)"
-              fontSize={10}
+              fontSize={12}
               tickLine={false}
               axisLine={false}
               tick={{ fill: 'var(--text-secondary)' }}
-              label={{ value: xKey, position: 'insideBottom', offset: -5, fill: 'var(--text-secondary)', fontSize: 10, fontWeight: 'bold' }}
+              label={{ value: xLabel, position: 'insideBottom', offset: -25, fill: 'var(--text-secondary)', fontSize: 12, fontWeight: 'bold' }}
             />
             <YAxis
               stroke="var(--text-secondary)"
-              fontSize={10}
+              fontSize={12}
               tickLine={false}
               axisLine={false}
               tick={{ fill: 'var(--text-secondary)' }}
               tickFormatter={formatValue}
-              label={{ value: yKey, angle: -90, position: 'insideLeft', offset: 10, fill: 'var(--text-secondary)', fontSize: 10, fontWeight: 'bold' }}
+              label={{ value: yLabel, angle: -90, position: 'insideLeft', offset: -10, fill: 'var(--text-secondary)', fontSize: 12, fontWeight: 'bold' }}
             />
             <Tooltip
               cursor={{ fill: 'var(--accent)', opacity: 0.05 }}
@@ -183,7 +201,7 @@ export const ChatVisualization: React.FC<ChatVisualizationProps> = ({ visualizat
               labelStyle={{ color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 'bold' }}
               formatter={(value: any) => [typeof value === 'number' ? value.toLocaleString() : value, yKey]}
             />
-            <Bar dataKey={resolvedYKey} fill="var(--accent)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey={resolvedYKey} fill="var(--accent)" radius={[4, 4, 0, 0]} barSize={32} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -191,23 +209,22 @@ export const ChatVisualization: React.FC<ChatVisualizationProps> = ({ visualizat
   );
 
   const renderPieChart = () => (
-    <div className="bg-[var(--bg)] rounded-xl border border-[var(--border)] p-4 transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <PieIcon className="w-3.5 h-3.5 text-[var(--accent)]" />
-          <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">{title || 'Pie Chart'}</span>
+    <div ref={chartRef} className="bg-[var(--bg)] rounded-xl border border-[var(--border)] p-4 transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
+      <div className="flex justify-between items-center mb-4 gap-4">
+        <div className="flex items-center gap-2 min-w-0">
+          <PieIcon className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
+          <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] truncate" title={title || 'Pie Chart'}>{title || 'Pie Chart'}</span>
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={handleDownloadPng}
-          className="h-8 w-8 p-0 flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all"
-          title="Download PNG"
+          className="h-10 w-10 p-0 text-xs flex items-center justify-center rounded-lg border-[var(--border)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all shrink-0 download-button-exclude"
         >
-          <Download className="w-4 h-4" />
+          <Download className="w-6 h-6" />
         </Button>
       </div>
-      <div className="h-64 w-full" ref={chartRef}>
+      <div className="h-64 w-full" >
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
