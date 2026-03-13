@@ -1,3 +1,5 @@
+import { API_ENDPOINTS, defaultConfig } from '../api.config';
+
 const CHUNK_SIZE = 20 * 1024 * 1024; // 5MB
 
 export const uploadCsvFile = async (
@@ -24,7 +26,7 @@ export const uploadCsvFile = async (
     formData.append("filename", file.name);
     formData.append("user_id", userId.toString());
 
-    await fetch(`http://122.163.121.176:3004/upload_chunk?chunk`, {
+    await fetch(`${defaultConfig.baseUrl}${API_ENDPOINTS.FILE_UPLOAD.CHUNK_UPLOAD}?chunk`, {
       method: "POST",
       body: formData
     });

@@ -40,5 +40,6 @@ export const API_ENDPOINTS = {
   },
   FILE_UPLOAD: {
     CSV_UPLOAD: '/upload_csv',
+    CHUNK_UPLOAD: '/upload_chunk',
   },
 };
