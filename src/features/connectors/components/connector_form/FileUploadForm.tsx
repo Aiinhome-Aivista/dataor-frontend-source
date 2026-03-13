@@ -10,6 +10,16 @@ interface FileUploadFormProps {
   isDragging: boolean;
   setIsDragging: (dragging: boolean) => void;
   acceptedFileTypes: string;
+<<<<<<< HEAD
+=======
+  uploadedFiles: File[];
+  setUploadedFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  removeFile: (idx: number) => void;
+  handleFileUploadConnect: () => void;
+  uploadProgress: Record<string, number>;
+  
+  isUploading: boolean;
+>>>>>>> ae306c3cf744c9e2abd43fae4606fb60fd67ac4c
   onBack: () => void;
   userId: string;
   sessionId: string;
@@ -21,10 +31,20 @@ export const FileUploadForm = ({
   isDragging,
   setIsDragging,
   acceptedFileTypes,
+<<<<<<< HEAD
   onBack,
   userId,
   sessionId,
   onSuccess
+=======
+  uploadedFiles,
+  setUploadedFiles,
+  removeFile,
+  handleFileUploadConnect,
+  uploadProgress,
+  isUploading,
+  onBack
+>>>>>>> ae306c3cf744c9e2abd43fae4606fb60fd67ac4c
 }: FileUploadFormProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uppy = useMemo(() => uploadService.getUppy(), []);

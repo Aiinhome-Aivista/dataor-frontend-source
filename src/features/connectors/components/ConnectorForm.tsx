@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect  } from 'react';
 import { Card, CardContent, CardHeader } from '@/src/ui-kit';
 import { Server, Globe, ChevronLeft, Search, FileSpreadsheet, FileCode2 } from 'lucide-react';
 import { connectorService } from '@/src/services/connector.service';
 import { useConnectorContext } from '@/src/context/ConnectorContext';
 import { useAuthContext } from '@/src/context/AuthContext';
+
 
 // Import Child Components
 import { WebSearchForm } from './connector_form/WebSearchForm';
@@ -11,6 +12,7 @@ import { FileUploadForm } from './connector_form/FileUploadForm';
 import { DatabaseForm } from './connector_form/DatabaseForm';
 import { DAgentAssistant } from './connector_form/DAgentAssistant';
 import { FieldGuide } from '@/src/types/connector';
+import { uploadCsvFile  } from '@/src/services/fileUpload/chunkUploadService';
 
 const GUIDES: Record<string, FieldGuide> = {
   name: {
@@ -57,6 +59,7 @@ interface ConnectorFormProps {
 
 export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => {
   const { selectedConnector: connector, setSearchTopic } = useConnectorContext();
+  
   const { userId } = useAuthContext();
   const [isTesting, setIsTesting] = useState(false);
   const [formData, setFormData] = useState({
@@ -77,6 +80,10 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
 
   const [activeField, setActiveField] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleFocus = (field: string) => setActiveField(field);
@@ -190,6 +197,68 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
 
   const acceptedFileTypes = isCsvUpload ? '.csv' : isSqlUpload ? '.sql' : '';
 
+  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files).filter(f =>
+      isCsvUpload ? f.name.endsWith('.csv') : f.name.endsWith('.sql')
+    );
+    if (files.length === 0) {
+      setErrorMsg(`Only ${isCsvUpload ? 'CSV' : 'SQL'} files are allowed.`);
+      return;
+    }
+    setErrorMsg('');
+    setUploadedFiles(prev => [...prev, ...files]);
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setErrorMsg('');
+    setUploadedFiles(prev => [...prev, ...files]);
+    e.target.value = '';
+  };
+
+  const removeFile = (idx: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
+  };
+const handleFileUploadConnect = async () => {
+
+  setIsUploading(true);
+
+  const sessionId = localStorage.getItem("DAgent_session_id") || "";
+
+  for (const file of uploadedFiles) {
+
+   await uploadCsvFile(
+  file,
+  userId,
+  sessionId,
+  (progress) => {
+
+    setUploadProgress((prev) => ({
+      ...prev,
+      [file.name]: progress
+    }));
+
+  }
+);
+
+  }
+
+  setIsUploading(false);
+};
+
+useEffect(() => {
+
+  const storedProgress = localStorage.getItem("uploadProgress");
+
+  if (storedProgress) {
+    setUploadProgress(JSON.parse(storedProgress));
+  }
+
+}, []);
+
+
   const guide = activeField ? GUIDES[activeField] : null;
 
   return (
@@ -260,6 +329,12 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 isDragging={isDragging}
                 setIsDragging={setIsDragging}
                 acceptedFileTypes={acceptedFileTypes}
+                uploadedFiles={uploadedFiles}
+                setUploadedFiles={setUploadedFiles}
+                removeFile={removeFile}
+                uploadProgress={uploadProgress} 
+                handleFileUploadConnect={handleFileUploadConnect}
+                isUploading={isUploading}
                 onBack={onBack}
                 userId={userId?.toString() || ''}
                 sessionId={localStorage.getItem('DAgent_session_id') || ''}
