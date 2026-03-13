@@ -92,36 +92,87 @@ export const FileUploadForm = ({
             <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">
               {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} selected
             </p>
-            <button
-              onClick={() => setUploadedFiles([])}
-              className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
-            >
-              Clear all
-            </button>
-          </div>
-          {uploadedFiles.map((file, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-3 p-3 rounded-xl border border-[var(--border)] bg-[var(--surface-hover)]/40 group"
-            >
-              <div className="p-1.5 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
-                {isCsvUpload ? <FileSpreadsheet className="w-4 h-4" /> : <FileCode2 className="w-4 h-4" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{file.name}</p>
-                <p className="text-[10px] text-[var(--text-secondary)]">
-                  {(file.size / 1024).toFixed(1)} KB
-                </p>
-              </div>
+            {!isUploading && (
               <button
-                onClick={() => removeFile(idx)}
-                className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 text-[var(--text-secondary)] transition-all"
+                onClick={() => setUploadedFiles([])}
+                className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
               >
-                <X className="w-3.5 h-3.5" />
+                Clear all
               </button>
-            </div>
-          ))}
+            )}
+          </div>
+          {uploadedFiles.map((file, idx) => {
+            const progress = uploadProgress[file.name] || 0;
+            const isComplete = progress === 100;
+            
+            return (
+              <div
+                key={`${file.name}-${idx}`}
+                className="flex flex-col gap-2 p-3 rounded-xl border border-[var(--border)] bg-[var(--surface-hover)]/40 group relative overflow-hidden"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
+                    {isCsvUpload ? <FileSpreadsheet className="w-4 h-4" /> : <FileCode2 className="w-4 h-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{file.name}</p>
+                    <p className="text-[10px] text-[var(--text-secondary)]">
+                      {(file.size / 1024).toFixed(1)} KB • {progress}%
+                    </p>
+                  </div>
+                  {!isUploading && (
+                    <button
+                      onClick={() => removeFile(idx)}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 text-[var(--text-secondary)] transition-all"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {isComplete && (
+                    <div className="text-emerald-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </div>
+                  )}
+                </div>
+                {/* Individual progress bar */}
+                <div className="h-1 w-full bg-[var(--border)]/30 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    className="h-full bg-[var(--accent)]"
+                  />
+                </div>
+              </div>
+            );
+          })}
         </motion.div>
+      )}
+
+      {/* Overall Progress */}
+      {isUploading && (
+        <div className="space-y-2">
+          {(() => {
+            const values = Object.values(uploadProgress);
+            const overallProgress = values.length > 0 
+              ? Math.round(values.reduce((a, b) => a + b, 0) / uploadedFiles.length)
+              : 0;
+            return (
+              <>
+                <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+                  <span>Overall Progress</span>
+                  <span>{overallProgress}%</span>
+                </div>
+                <div className="h-2 w-full bg-[var(--border)]/30 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${overallProgress}%` }}
+                    className="h-full bg-[var(--accent)]"
+                  />
+                </div>
+              </>
+            );
+          })()}
+        </div>
       )}
 
       {/* Connect button */}

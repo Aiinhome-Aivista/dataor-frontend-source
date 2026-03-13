@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect  } from 'react';
-import { Card, CardContent, CardHeader } from '@/src/ui-kit';
+import { Card, CardContent, CardHeader, Input, Button } from '@/src/ui-kit';
 import { Server, Globe, ChevronLeft, Search, FileSpreadsheet, FileCode2 } from 'lucide-react';
 import { connectorService } from '@/src/services/connector.service';
 import { useConnectorContext } from '../../../context/ConnectorContext';
@@ -224,6 +224,10 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
     setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
   };
 const handleFileUploadConnect = async () => {
+  if (!userId || !localStorage.getItem("DAgent_session_id")) {
+    setErrorMsg('Authentication error. Please log in again.');
+    return;
+  }
 
   setIsUploading(true);
 
@@ -233,7 +237,7 @@ const handleFileUploadConnect = async () => {
 
    await uploadCsvFile(
   file,
-  userId,
+  userId as number,
   sessionId,
   (progress) => {
 
@@ -305,6 +309,19 @@ useEffect(() => {
             {errorMsg && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium text-center">
                 {errorMsg}
+              </div>
+            )}
+
+            {!isFileUpload && (
+              <div onMouseEnter={() => handleMouseEnter('name')} className="mb-6">
+                <Input
+                  label="Data source Name"
+                  placeholder="e.g. Production Postgres"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onFocus={() => handleFocus('name')}
+                  required
+                />
               </div>
             )}
             
