@@ -2,8 +2,8 @@ import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader } from '@/src/ui-kit';
 import { Server, Globe, ChevronLeft, Search, FileSpreadsheet, FileCode2 } from 'lucide-react';
 import { connectorService } from '@/src/services/connector.service';
-import { useConnectorContext } from '../../../context/ConnectorContext';
-import { useAuthContext } from '../../../context/AuthContext';
+import { useConnectorContext } from '@/src/context/ConnectorContext';
+import { useAuthContext } from '@/src/context/AuthContext';
 
 // Import Child Components
 import { WebSearchForm } from './connector_form/WebSearchForm';
@@ -58,7 +58,6 @@ interface ConnectorFormProps {
 export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => {
   const { selectedConnector: connector, setSearchTopic } = useConnectorContext();
   const { userId } = useAuthContext();
-  const [activeField, setActiveField] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [formData, setFormData] = useState({
     name: connector?.name || '',
@@ -76,11 +75,8 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   const [viewResults, setViewResults] = useState(false);
   const [selectedResultIds, setSelectedResultIds] = useState<Set<string>>(new Set());
 
-  // File upload state
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [activeField, setActiveField] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleFocus = (field: string) => setActiveField(field);
@@ -194,63 +190,6 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
 
   const acceptedFileTypes = isCsvUpload ? '.csv' : isSqlUpload ? '.sql' : '';
 
-  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files).filter(f =>
-      isCsvUpload ? f.name.endsWith('.csv') : f.name.endsWith('.sql')
-    );
-    if (files.length === 0) {
-      setErrorMsg(`Only ${isCsvUpload ? 'CSV' : 'SQL'} files are allowed.`);
-      return;
-    }
-    setErrorMsg('');
-    setUploadedFiles(prev => [...prev, ...files]);
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setErrorMsg('');
-    setUploadedFiles(prev => [...prev, ...files]);
-    e.target.value = '';
-  };
-
-  const removeFile = (idx: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const handleFileUploadConnect = async () => {
-    if (uploadedFiles.length === 0) {
-      setErrorMsg('Please upload at least one file.');
-      return;
-    }
-    const sessionId = localStorage.getItem('DAgent_session_id');
-    if (!userId || !sessionId) {
-      setErrorMsg('User ID and Session ID are required for file upload.');
-      return;
-    }
-
-    setIsUploading(true);
-    setErrorMsg('');
-    try {
-      const response: any = await connectorService.uploadCsv({
-        user_id: String(userId),
-        session_id: sessionId,
-        files: uploadedFiles,
-      });
-      if (response?.status === 'success') {
-        onTestSuccess?.(connector?.name || 'File Upload', false);
-      } else {
-        setErrorMsg(response?.message || 'Upload failed. Please try again.');
-      }
-    } catch (error: any) {
-      console.error('Upload Error:', error);
-      setErrorMsg(error.message || 'An error occurred during upload.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const guide = activeField ? GUIDES[activeField] : null;
 
   return (
@@ -320,15 +259,11 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
                 isCsvUpload={isCsvUpload}
                 isDragging={isDragging}
                 setIsDragging={setIsDragging}
-                handleFileDrop={handleFileDrop}
-                handleFileInput={handleFileInput}
                 acceptedFileTypes={acceptedFileTypes}
-                uploadedFiles={uploadedFiles}
-                setUploadedFiles={setUploadedFiles}
-                removeFile={removeFile}
-                handleFileUploadConnect={handleFileUploadConnect}
-                isUploading={isUploading}
                 onBack={onBack}
+                userId={userId?.toString() || ''}
+                sessionId={localStorage.getItem('DAgent_session_id') || ''}
+                onSuccess={() => onTestSuccess?.(connector?.name || 'File Upload', false)}
               />
             ) : (
               <DatabaseForm 
