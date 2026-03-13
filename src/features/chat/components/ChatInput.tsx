@@ -39,7 +39,7 @@ export const ChatInput = ({ onSend, disabled, onOpenDataSource, value, onChange 
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
-          className="border-none bg-transparent shadow-none focus-visible:ring-0 text-sm py-4 px-3"
+          className="border-none bg-transparent shadow-none focus-visible:ring-0 text-sm py-3 px-3"
         />
       </div>
 
@@ -78,9 +78,9 @@ export const ChatInput = ({ onSend, disabled, onOpenDataSource, value, onChange 
       <Button
         type="submit"
         disabled={!value.trim() || disabled}
-        className="h-12 w-12 rounded-lg p-0 shrink-0 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white shadow-lg shadow-[var(--accent)]/20 transition-transform active:scale-95"
+        className="h-10 w-10 rounded-lg shrink-0 !p-0 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white shadow-lg shadow-[var(--accent)]/20 transition-transform active:scale-95"
       >
-        <SendHorizontal className="w-9 h-9" />
+        <SendHorizontal className="w-4 h-4" />
       </Button>
     </form>
   );

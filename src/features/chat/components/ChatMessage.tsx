@@ -18,13 +18,13 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
     >
       <div
         className={`
-          max-w-[90%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm
+          max-w-[90%] px-2 py-1.5 rounded-2xl text-sm leading-relaxed shadow-sm
           ${isAssistant 
             ? 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-tl-none' 
             : 'bg-[var(--accent)] text-white rounded-tr-none shadow-lg shadow-[var(--accent)]/10'}
         `}
       >
-        <div className="mb-1">{message.content}</div>
+        <div >{message.content}</div>
         
         {isAssistant && message.visualizations && message.visualizations.length > 0 && (
           <div className="mt-4 space-y-4 w-full min-w-[300px] md:min-w-[500px]">
@@ -36,7 +36,7 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
 
         <div 
           className={`
-            text-[9px] mt-2 font-mono uppercase tracking-widest opacity-40
+            text-[9px] font-mono uppercase tracking-widest opacity-40
             ${isAssistant ? 'text-[var(--text-secondary)]' : 'text-white/80'}
           `}
         >

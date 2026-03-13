@@ -40,9 +40,9 @@ export const ChatWindow = ({
 
   return (
     <Card className="flex flex-col h-full shadow-2xl shadow-black/20 border-[var(--border)] overflow-hidden bg-[var(--surface)]/30 backdrop-blur-xl">
-      <CardHeader className="flex flex-row items-center justify-between py-3 px-6 bg-[var(--surface)]/80 backdrop-blur-md border-b border-[var(--border)] relative z-30">
+      <CardHeader className="flex flex-row items-center justify-between py-2 px-3 bg-[var(--surface)]/80 backdrop-blur-md border-b border-[var(--border)] relative z-30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20 shadow-inner">
+          <div className="w-9 h-9 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20 shadow-inner">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
@@ -57,7 +57,7 @@ export const ChatWindow = ({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="px-3 py-1 font-mono text-[10px] border-[var(--accent)]/30 text-[var(--accent)]">AGENT_V2.4</Badge>
+          <Badge variant="outline" className="px-3 py-1.5 font-mono text-[10px] border-[var(--accent)]/30 text-[var(--accent)]">AGENT_V2.4</Badge>
           <button className="p-2.5 rounded-xl hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] transition-all hover:text-[var(--text-primary)]">
             <MoreVertical className="w-5 h-5" />
           </button>
@@ -66,7 +66,7 @@ export const ChatWindow = ({
 
       <CardContent
         ref={scrollRef}
-        className="flex-1 h-full overflow-y-auto p-1 scroll-smooth space-y-1 bg-[var(--bg)]/10 relative"
+        className="flex-1 h-full overflow-y-auto px-3 py-1 scroll-smooth space-y-1 bg-[var(--bg)]/10 relative"
       >
         <AnimatePresence mode="wait">
           {mode === 'landing' ? (
@@ -184,7 +184,7 @@ export const ChatWindow = ({
       </CardContent>
 
       <CardFooter className="bg-[var(--surface)]/80 backdrop-blur-md border-t border-[var(--border)] relative z-30">
-        <div className="w-full">
+        <div className="w-full px-3">
           {/* Show loader while fetching suggested questions */}
           {isFetchingSuggestions && !isLoading && (
             <div className="flex items-center justify-center gap-2 mb-4 text-base text-[var(--text-secondary)]">
