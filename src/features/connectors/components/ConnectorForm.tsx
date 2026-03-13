@@ -12,7 +12,6 @@ import { FileUploadForm } from './connector_form/FileUploadForm';
 import { DatabaseForm } from './connector_form/DatabaseForm';
 import { DAgentAssistant } from './connector_form/DAgentAssistant';
 import { FieldGuide } from '@/src/types/connector';
-import { uploadCsvFile  } from '@/src/services/fileUpload/chunkUploadService';
 
 const GUIDES: Record<string, FieldGuide> = {
   name: {
@@ -79,12 +78,16 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   const [viewResults, setViewResults] = useState(false);
   const [selectedResultIds, setSelectedResultIds] = useState<Set<string>>(new Set());
 
-  // File upload state
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  // File upload state from Context
+  const { 
+    uploadedFiles, setUploadedFiles, 
+    isUploading, setIsUploading, 
+    uploadProgress, setUploadProgress,
+    handleFileUploadConnect: handleContextUpload,
+    resetConnectorState
+  } = useConnectorContext();
 
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [isDragging, setIsDragging] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -223,46 +226,31 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
   const removeFile = (idx: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
   };
-const handleFileUploadConnect = async () => {
-  if (!userId || !localStorage.getItem("DAgent_session_id")) {
-    setErrorMsg('Authentication error. Please log in again.');
-    return;
-  }
 
-  setIsUploading(true);
-
-  const sessionId = localStorage.getItem("DAgent_session_id") || "";
-
-  for (const file of uploadedFiles) {
-
-   await uploadCsvFile(
-  file,
-  userId as number,
-  sessionId,
-  (progress) => {
-
-    setUploadProgress((prev) => ({
-      ...prev,
-      [file.name]: progress
-    }));
-
-  }
-);
-
-  }
-
-  setIsUploading(false);
-};
-
-useEffect(() => {
-
-  const storedProgress = localStorage.getItem("uploadProgress");
-
-  if (storedProgress) {
-    setUploadProgress(JSON.parse(storedProgress));
-  }
-
-}, []);
+  const handleFileUploadConnect = async () => {
+    if (!userId || !localStorage.getItem("DAgent_session_id")) {
+      setErrorMsg('Authentication error. Please log in again.');
+      return;
+    }
+    setErrorMsg('');
+    try {
+      await handleContextUpload(userId as number);
+      const connName = connector?.name || 'File Upload';
+      // Wait a moment so user can see completion
+      setTimeout(() => {
+        resetConnectorState();
+        onTestSuccess?.(connName, false);
+      }, 1000);
+    } catch (err: any) {
+      console.error('Upload Error:', err);
+      setErrorMsg(err.message || 'An error occurred during upload.');
+      // After a short delay, go back even on failure as requested
+      setTimeout(() => {
+        resetConnectorState();
+        onBack();
+      }, 2000);
+    }
+  };
 
 
   const guide = activeField ? GUIDES[activeField] : null;

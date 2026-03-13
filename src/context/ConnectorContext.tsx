@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Connector } from '../features/connectors/types';
+import { uploadCsvFile } from '../services/fileUpload/chunkUploadService';
 
 interface ConnectorContextType {
   selectedConnector: Connector | null;
@@ -16,6 +17,15 @@ interface ConnectorContextType {
   setIsAnalyzing: (isAnalyzing: boolean) => void;
   resetConnectorState: () => void;
   clearAnalysisResults: () => void;
+  
+  // Upload States & Actions
+  uploadedFiles: File[];
+  setUploadedFiles: (files: File[] | ((prev: File[]) => File[])) => void;
+  isUploading: boolean;
+  setIsUploading: (isUploading: boolean) => void;
+  uploadProgress: Record<string, number>;
+  setUploadProgress: (progress: Record<string, number>) => void;
+  handleFileUploadConnect: (userId: number) => Promise<void>;
 }
 
 const ConnectorContext = createContext<ConnectorContextType | undefined>(undefined);
@@ -37,6 +47,19 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [searchTopic, setSearchTopic] = useState('');
+  
+  // Persistent Upload States
+  const [uploadedFiles, setUploadedFilesState] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgressState] = useState<Record<string, number>>(() => {
+    try {
+      const stored = localStorage.getItem('uploadProgress');
+      return stored ? JSON.parse(stored) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
   const [sessionSources, setSessionSourcesState] = useState<any | null>(() => {
     try {
       const sessionId = localStorage.getItem('DAgent_session_id');
@@ -107,6 +130,82 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsAnalyzing(false);
     setSearchTopic('');
     setSessionSourcesState(null);
+    
+    // Clear upload state
+    setUploadedFilesState([]);
+    setIsUploading(false);
+    setUploadProgressState({});
+    localStorage.removeItem('uploadProgress');
+    localStorage.removeItem('uploadedFilesMetadata');
+  };
+
+  // Load file metadata from localStorage on mount (for display only after refresh)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('uploadedFilesMetadata');
+      if (stored && uploadedFiles.length === 0) {
+        // We can't restore the actual File object, but we could show placeholders if needed.
+        // For now, we just sync the progress.
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleFileUploadConnect = async (userId: number) => {
+    const sessionId = localStorage.getItem("DAgent_session_id") || "";
+    if (!userId || !sessionId) return;
+
+    setIsUploading(true);
+
+    for (const file of uploadedFiles) {
+      if (uploadProgress[file.name] === 100) continue;
+
+      await uploadCsvFile(
+        file,
+        userId,
+        sessionId,
+        (progress) => {
+          setUploadProgressState(prev => {
+            const next = { ...prev, [file.name]: progress };
+            localStorage.setItem("uploadProgress", JSON.stringify(next));
+            return next;
+          });
+        }
+      );
+    }
+
+    setIsUploading(false);
+  };
+
+  const setUploadedFiles = (files: File[] | ((prev: File[]) => File[])) => {
+    if (typeof files === 'function') {
+      setUploadedFilesState(prev => {
+        const next = files(prev);
+        try {
+          const metadata = next.map(f => ({ name: f.name, size: f.size }));
+          localStorage.setItem('uploadedFilesMetadata', JSON.stringify(metadata));
+        } catch (e) {}
+        return next;
+      });
+    } else {
+      setUploadedFilesState(files);
+      try {
+        const metadata = files.map(f => ({ name: f.name, size: f.size }));
+        localStorage.setItem('uploadedFilesMetadata', JSON.stringify(metadata));
+      } catch (e) {}
+    }
+  };
+
+  const setUploadProgress = (progress: Record<string, number> | ((prev: Record<string, number>) => Record<string, number>)) => {
+    if (typeof progress === 'function') {
+      setUploadProgressState(prev => {
+        const next = progress(prev);
+        localStorage.setItem("uploadProgress", JSON.stringify(next));
+        return next;
+      });
+    } else {
+      setUploadProgressState(progress);
+      localStorage.setItem("uploadProgress", JSON.stringify(progress));
+    }
   };
 
   return (
@@ -124,7 +223,14 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       isAnalyzing,
       setIsAnalyzing,
       resetConnectorState,
-      clearAnalysisResults
+      clearAnalysisResults,
+      uploadedFiles,
+      setUploadedFiles,
+      isUploading,
+      setIsUploading,
+      uploadProgress,
+      setUploadProgress,
+      handleFileUploadConnect
     }}>
       {children}
     </ConnectorContext.Provider>
