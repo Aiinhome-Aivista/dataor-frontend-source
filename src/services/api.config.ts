@@ -7,7 +7,8 @@ export interface ApiConfig {
 }
 
 export const defaultConfig: ApiConfig = {
-  baseUrl: 'http://122.163.121.176:3004',
+  baseUrl: 'http://157.173.221.226:3004'
+  /* baseUrl: 'http://122.163.121.176:3004' */,
   timeout: 10000,
 };
 
