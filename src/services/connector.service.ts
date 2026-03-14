@@ -119,6 +119,7 @@ class ConnectorService implements IConnectorService {
   async csvImport(payload: { user_id: number; connection_id: number; session_id: string }): Promise<any> {
     return this.api.post(API_ENDPOINTS.IMPORT.CSV_IMPORT, payload);
   }
-}
+}    
+
 
 export const connectorService: IConnectorService = new ConnectorService(apiService);

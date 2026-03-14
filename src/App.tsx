@@ -13,6 +13,7 @@ import { agentService } from './services/agent.service';
 import { AgentHistoryItem } from './features/workflow/types';
 import { workspaceService, Workspace } from './services/workspace.service';
 import { connectorService } from './services/connector.service';
+import { chatHistoryService, QuerySession } from './services/chatHistory.service';
 
 import { Sidebar } from './layout/Sidebar';
 import { AppHeader } from './layout/AppHeader';
@@ -42,8 +43,8 @@ function AppContent() {
 
   // Per-workspace history state
   const [expandedWorkspaceId, setExpandedWorkspaceId] = useState<number | null>(null);
-  const [workspaceHistories, setWorkspaceHistories] = useState<Record<number, AgentHistoryItem[]>>({});
-  const [isHistoryLoading, setIsHistoryLoading] = useState<Record<number, boolean>>({});
+  const [queryHistories, setQueryHistories] = useState<Record<number, QuerySession[]>>({});
+  const [isQueryLoading, setIsQueryLoading] = useState<Record<number, boolean>>({});
 
   const fetchWorkspaces = async () => {
     try {
@@ -74,22 +75,23 @@ function AppContent() {
     // Toggle expansion state IMMEDIATELY for zero-delay UX
     setExpandedWorkspaceId(workspaceId);
 
-    // If we already have history, we might not need to fetch again (or can fetch in background)
-    if (workspaceHistories[workspaceId]) {
+    // If we already have query history, we might not need to fetch again
+    if (queryHistories[workspaceId]) {
       return;
     }
 
-    setIsHistoryLoading(prev => ({ ...prev, [workspaceId]: true }));
+    setIsQueryLoading(prev => ({ ...prev, [workspaceId]: true }));
     try {
-      const historyResponse = await (connectorService as any).getConnectionHistory(sessionId);
-      if (historyResponse && historyResponse.status === 'success' && historyResponse.history) {
-        const queryOnly = historyResponse.history.filter((h: any) => h.action.toLowerCase().includes('query') || h.details?.toLowerCase().includes('query') || !h.db_type);
-        setWorkspaceHistories(prev => ({ ...prev, [workspaceId]: queryOnly }));
+      // Fetch Query History only
+      const queryResponse = await chatHistoryService.getSessionChatHistory(sessionId, userId);
+
+      if (queryResponse && queryResponse.status === 'success' && queryResponse.querySessions) {
+        setQueryHistories(prev => ({ ...prev, [workspaceId]: queryResponse.querySessions }));
       }
     } catch (err) {
       console.error('Failed to fetch workspace history:', err);
     } finally {
-      setIsHistoryLoading(prev => ({ ...prev, [workspaceId]: false }));
+      setIsQueryLoading(prev => ({ ...prev, [workspaceId]: false }));
     }
   };
 
@@ -206,8 +208,8 @@ function AppContent() {
         setNewWorkspaceName={setNewWorkspaceName}
         expandedWorkspaceId={expandedWorkspaceId}
         setExpandedWorkspaceId={setExpandedWorkspaceId}
-        workspaceHistories={workspaceHistories}
-        isHistoryLoading={isHistoryLoading}
+        queryHistories={queryHistories}
+        isQueryLoading={isQueryLoading}
         historySearch={historySearch}
         setHistorySearch={setHistorySearch}
         activeTab={activeTab}

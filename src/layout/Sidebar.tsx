@@ -1,8 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, Layout, Plus, Check, X, Search, ChevronDown, Settings, LogOut } from 'lucide-react';
+import { Menu, Layout, Plus, Check, X, Search, ChevronDown, Settings, LogOut, MessageSquare } from 'lucide-react';
 import { Workspace, workspaceService } from '../services/workspace.service';
-import { AgentHistoryItem } from '../features/workflow/types';
 import { SidebarProps } from '../types/layout';
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -22,8 +21,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setNewWorkspaceName,
   expandedWorkspaceId,
   setExpandedWorkspaceId,
-  workspaceHistories,
-  isHistoryLoading,
+  queryHistories,
+  isQueryLoading,
   historySearch,
   setHistorySearch,
   activeTab,
@@ -307,12 +306,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     </div>
                                     {/* Query History Label */}
                                     <div className="px-2 mb-2 flex items-center justify-between">
-                                      <span className="text-[10px] font-bold tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                                      <span className="text-[10px] font-bold tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5 whitespace-nowrap">
                                         Query History
                                       </span>
+                                      {queryHistories[workspace.id]?.length > 0 && (
+                                        <div className="h-[1px] flex-1 bg-[var(--border)] ml-2 opacity-50" />
+                                      )}
                                     </div>
 
-                                    {/* Search - Replicating original design */}
+                                    {/* Search queries in history */}
                                     <div className="relative mb-2 shrink-0 px-1">
                                       <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-secondary)]" />
                                       <input
@@ -324,43 +326,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                       />
                                     </div>
 
-                                    <div className="space-y-1.5 overflow-y-auto max-h-[300px] custom-scrollbar px-1">
-                                      {isHistoryLoading[workspace.id] ? (
-                                        <div className="py-2 text-center">
-                                          <div className="w-4 h-4 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto opacity-50"></div>
+                                    <div className="space-y-1.5 overflow-y-auto max-h-[300px] custom-scrollbar px-1 mb-4">
+                                      {isQueryLoading[workspace.id] ? (
+                                        <div className="py-4 text-center">
+                                          <div className="w-4 h-4 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto"></div>
                                         </div>
                                       ) : (() => {
-                                        const filteredData = (workspaceHistories[workspace.id] || []).filter(item =>
+                                        const filteredSessions = (queryHistories[workspace.id] || []).filter(s =>
                                           !historySearch ||
-                                          item.action.toLowerCase().includes(historySearch.toLowerCase()) ||
-                                          item.details.toLowerCase().includes(historySearch.toLowerCase())
+                                          s.querySessionName.toLowerCase().includes(historySearch.toLowerCase())
                                         );
 
-                                        return filteredData.length === 0 ? (
-                                          <div className="text-center py-6 border border-dashed border-[var(--border)] rounded-xl">
-                                            <p className="text-[10px] text-[var(--text-secondary)]">No history</p>
+                                        return filteredSessions.length === 0 ? (
+                                          <div className="text-center py-6 border border-dashed border-[var(--border)] rounded-xl opacity-60">
+                                            <p className="text-[10px] text-[var(--text-secondary)]">No sessions found</p>
                                           </div>
                                         ) : (
-                                          filteredData.map((item) => (
+                                          filteredSessions.map((session, idx) => (
                                             <div
-                                              key={item.id}
-                                              className="w-full text-left p-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] transition-all cursor-pointer group"
+                                              key={session.querySessionId || idx}
+                                              /* onClick={() => {
+                                                const firstQuestion = session.querySessionHistory?.[0]?.question;
+                                                setInitialChatMessage(firstQuestion);
+                                                setActiveTab('chat');
+                                                setChatKey((prev: number) => prev + 1);
+                                              }} */
+                                              className="w-full text-left p-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)] transition-all cursor-pointer group flex items-center gap-3"
                                             >
-                                              <div className="flex items-center justify-between mb-0.5">
-                                                <span className="text-[9px] font-mono text-[var(--text-secondary)]">
-                                                  {new Date(item.date).toLocaleDateString()}
-                                                </span>
-                                                {item.connectionName && (
-                                                  <span className="text-[8px] text-[var(--text-secondary)] bg-[var(--surface-hover)] px-1.5 py-0.5 rounded-full font-bold truncate max-w-[80px] border border-[var(--border)]">
-                                                    {item.connectionName}
-                                                  </span>
-                                                )}
-                                              </div>
-                                              <div className="text-[11px] font-bold truncate text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
-                                                {item.action}
-                                              </div>
-                                              <div className="text-[10px] text-[var(--text-secondary)] truncate opacity-70">
-                                                {item.details}
+                                              <MessageSquare className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors shrink-0" />
+                                              <div className="text-[11px] font-semibold truncate text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
+                                                {session.querySessionName}
                                               </div>
                                             </div>
                                           ))

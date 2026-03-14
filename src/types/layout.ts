@@ -1,6 +1,6 @@
 import { Workspace } from '../services/workspace.service';
-import { AgentHistoryItem } from '../features/workflow/types';
 import { Connector } from '../features/connectors';
+import { QuerySession } from '../services/chatHistory.service';
 
 export type Tab = 'chat' | 'connectors' | 'new-connector' | 'collection' | 'analysis';
 export type ViewMode = 'landing' | 'login' | 'app';
@@ -22,8 +22,8 @@ export interface SidebarProps {
   setNewWorkspaceName: (name: string) => void;
   expandedWorkspaceId: number | null;
   setExpandedWorkspaceId: (id: number | null) => void;
-  workspaceHistories: Record<number, AgentHistoryItem[]>;
-  isHistoryLoading: Record<number, boolean>;
+  queryHistories: Record<number, QuerySession[]>;
+  isQueryLoading: Record<number, boolean>;
   historySearch: string;
   setHistorySearch: (search: string) => void;
   activeTab: Tab;

@@ -43,4 +43,7 @@ export const API_ENDPOINTS = {
     CSV_UPLOAD: '/upload_csv',
     CHUNK_UPLOAD: '/upload_chunk',
   },
+  COMMON: {
+    SESSION_CHAT_HISTORY: '/session-chat-history',
+  },
 };
