@@ -17,6 +17,7 @@ export interface IConnectorService {
   processSessionAnalysis(payload: { session_id: string; topics?: string[]; databases?: string[] }): Promise<any>;
   sendSessionChat(payload: { session_id: string; question: string }): Promise<any>;
   uploadCsv(payload: { user_id: string; session_id: string; files: File[] }): Promise<any>;
+  csvImport(payload: { user_id: number; connection_id: number; session_id: string }): Promise<any>;
 }
 
 class ConnectorService implements IConnectorService {
@@ -113,6 +114,10 @@ class ConnectorService implements IConnectorService {
     formData.append('session_id', payload.session_id);
     payload.files.forEach((file) => formData.append('files', file));
     return this.api.post(API_ENDPOINTS.FILE_UPLOAD.CSV_UPLOAD, formData);
+  }
+
+  async csvImport(payload: { user_id: number; connection_id: number; session_id: string }): Promise<any> {
+    return this.api.post(API_ENDPOINTS.IMPORT.CSV_IMPORT, payload);
   }
 }
 

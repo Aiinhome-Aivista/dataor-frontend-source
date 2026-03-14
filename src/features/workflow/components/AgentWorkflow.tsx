@@ -375,6 +375,12 @@ export const AgentWorkflow = ({
           let response;
           if (historyItem.db_type === 'saved_web_result') {
             response = await connectorService.getSavedResults(userId.toString(), historyItem.topic || '');
+          } else if (historyItem.db_type === 'csv_upload' || historyItem.db_type === 'csv_chunk_upload') {
+            response = await connectorService.csvImport({
+              user_id: Number(userId),
+              connection_id: Number(historyItem.id),
+              session_id: historyItem.session_id || ''
+            });
           } else {
             response = await connectorService.continueToImport({
               user_id: userId.toString(),

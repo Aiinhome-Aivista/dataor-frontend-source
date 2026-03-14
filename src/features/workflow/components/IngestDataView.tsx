@@ -65,7 +65,8 @@ export const IngestDataView = ({
           const isWebSource = activeConnector.type === 'Integration' ||
             activeConnector.name.toLowerCase().includes('web') ||
             activeConnector.name.toLowerCase().includes('search');
-          const isWebSearch = isWebSource; // Keep for backward compatibility in the child logic
+          const isWebSearch = isWebSource;
+          const isCsvSource = activeConnector.name.toLowerCase().includes('csv');
 
           if (isImporting) {
             return (
@@ -74,7 +75,9 @@ export const IngestDataView = ({
                 <div className="text-center">
                   <p className="text-sm font-bold text-[var(--text-primary)]">Importing your data...</p>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    {isWebSearch ? 'Processing web search results and extracting data' : 'Mapping schemas and fetching table structures'}
+                    {isWebSearch ? 'Processing web search results and extracting data' : 
+                     isCsvSource ? 'Reading CSV files and extracting data structures' : 
+                     'Mapping schemas and fetching table structures'}
                   </p>
                 </div>
               </div>
@@ -91,6 +94,38 @@ export const IngestDataView = ({
                 <Button variant="outline" size="sm" className="mt-2" onClick={onGoToDataSource}>
                   Try Different Source
                 </Button>
+              </div>
+            );
+          }
+
+          const importedFiles = connectorResults?.imported_files || [];
+
+          if (isCsvSource || importedFiles.length > 0) {
+            return (
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">Imported Files</h4>
+                    <Badge variant="outline" className="text-[10px]">{importedFiles.length} items</Badge>
+                  </div>
+
+                  <div className="grid gap-3">
+                    {importedFiles.length > 0 ? (
+                      importedFiles.map((file: string, idx: number) => (
+                        <div key={idx} className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors group">
+                          <div className="flex justify-between items-start mb-1">
+                            <h5 className="text-sm font-bold group-hover:text-[var(--accent)] transition-colors">{file}</h5>
+                          </div>
+                          <p className="text-xs text-[var(--text-secondary)]">Injected into session context</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center border-2 border-dashed border-[var(--border)] rounded-2xl">
+                        <p className="text-sm text-[var(--text-secondary)]">No files imported in this session.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             );
           }
@@ -224,7 +259,7 @@ export const IngestDataView = ({
       )}
 
       {/* Continue to Process button at the exact bottom */}
-      {!isImporting && activeConnector && (results.length > 0 || summary || tables.length > 0) && onContinue && (
+      {!isImporting && activeConnector && (results.length > 0 || summary || tables.length > 0 || (connectorResults?.imported_files?.length > 0)) && onContinue && (
         <div className="mt-12 pt-8 border-t border-[var(--border)] flex justify-end">
           <Button
             onClick={onContinue}

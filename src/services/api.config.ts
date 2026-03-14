@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
     SESSION_ANALYSIS: '/session-analysis',
     SAVE_RESULT_SEARCH: '/save-result',
     CONTINUE_TO_IMPORT: '/connect-external-db',
+    CSV_IMPORT: '/csv-import',
     GET_SAVED_RESULTS: '/saved-results',
     DELETE_SAVED_RESULT: '/saved-results',
     DESCRIBE_CONTENT: '/saved-content/describe',
