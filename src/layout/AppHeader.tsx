@@ -2,8 +2,10 @@ import React from 'react';
 import { User } from 'lucide-react';
 import { Button } from '../ui-kit';
 import { AppHeaderProps } from '../types/layout';
+import { useAuthContext } from '../context/AuthContext';
 
 export const AppHeader: React.FC<AppHeaderProps> = ({ activeTab, selectedConnector }) => {
+  const { userName } = useAuthContext();
   const getTabTitle = () => {
     switch (activeTab) {
       case 'chat': return 'Query';
@@ -44,7 +46,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ activeTab, selectedConnect
           <div className="w-6 h-6 rounded-full bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)]">
             <User className="w-4 h-4" />
           </div>
-          <span className="text-sm font-medium">Welcome aiinhome</span>
+          <span className="text-sm font-medium">Welcome {userName || 'aiinhome'}</span>
         </Button>
       </div>
     </header>

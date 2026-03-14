@@ -22,7 +22,7 @@ interface LoginPageProps {
 }
 
 export const LoginPage = ({ onBack, onLoginSuccess }: LoginPageProps) => {
-  const { setUserId } = useAuthContext();
+  const { setUserId, setUserName } = useAuthContext();
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [email, setEmail] = React.useState('');
@@ -39,6 +39,9 @@ export const LoginPage = ({ onBack, onLoginSuccess }: LoginPageProps) => {
       if (response.status === true && response.statuscode === 200) {
         if (response.data && response.data.user_id) {
           setUserId(response.data.user_id);
+          if (response.data.name) {
+            setUserName(response.data.name);
+          }
         }
         onLoginSuccess();
       } else {
