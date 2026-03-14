@@ -40,10 +40,10 @@ export const ChatWindow = ({
 
   return (
     <Card className="flex flex-col h-full shadow-2xl shadow-black/20 border-[var(--border)] overflow-hidden bg-[var(--surface)]/30 backdrop-blur-xl">
-      <CardHeader className="flex flex-row items-center justify-between py-3 px-6 bg-[var(--surface)]/80 backdrop-blur-md border-b border-[var(--border)] relative z-30">
+      <CardHeader className="flex flex-row items-center justify-between py-2 px-2 bg-[var(--surface)]/80 backdrop-blur-md border-b border-[var(--border)] relative z-30 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20 shadow-inner">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-8 h-8 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/20 shadow-inner">
+            <Sparkles className="w-4 h-4" />
           </div>
           <div>
             <h3 className="font-black text-base tracking-tight">DAgent AI Assistant</h3>
