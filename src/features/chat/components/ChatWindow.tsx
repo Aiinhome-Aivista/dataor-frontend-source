@@ -66,7 +66,7 @@ export const ChatWindow = ({
 
       <CardContent
         ref={scrollRef}
-        className="flex-1 h-full overflow-y-auto p-1 scroll-smooth space-y-1 bg-[var(--bg)]/10 relative"
+        className="flex-1 h-full overflow-y-auto px-3 scroll-smooth space-y-1 bg-[var(--bg)]/10 relative"
       >
         <AnimatePresence mode="wait">
           {mode === 'landing' ? (
@@ -184,7 +184,7 @@ export const ChatWindow = ({
       </CardContent>
 
       <CardFooter className="bg-[var(--surface)]/80 backdrop-blur-md border-t border-[var(--border)] relative z-30">
-        <div className="w-full">
+        <div className="w-full px-3">
           {/* Show loader while fetching suggested questions */}
           {isFetchingSuggestions && !isLoading && (
             <div className="flex items-center justify-center gap-2 mb-4 text-base text-[var(--text-secondary)]">
