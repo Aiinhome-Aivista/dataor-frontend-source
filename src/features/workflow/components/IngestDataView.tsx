@@ -10,6 +10,7 @@ interface IngestDataViewProps {
   onGoToDataSource: () => void;
   onContinue?: () => void;
   isAnalyzing?: boolean;
+  importError?: string | null;
 }
 
 export const IngestDataView = ({
@@ -19,7 +20,8 @@ export const IngestDataView = ({
   sessionSources,
   onGoToDataSource,
   onContinue,
-  isAnalyzing
+  isAnalyzing,
+  importError
 }: IngestDataViewProps) => {
   // Handle potential nested results array - be very defensive
   const results = connectorResults?.results || (Array.isArray(connectorResults) ? connectorResults : []);
@@ -30,12 +32,12 @@ export const IngestDataView = ({
   const tables = data?.tables || [];
   const dataSize = summary?.data_size_mb || summary?.['data size mb'] || 0;
 
-  const databases = sessionSources?.external_databases?.databases || 
-                    sessionSources?.databases || 
-                    (Array.isArray(sessionSources?.external_databases) ? sessionSources?.external_databases : []);
-  const topics = sessionSources?.web_topics?.topics || 
-                 sessionSources?.topics || 
-                 (Array.isArray(sessionSources?.web_topics) ? sessionSources?.web_topics : []);
+  const databases = sessionSources?.external_databases?.databases ||
+    sessionSources?.databases ||
+    (Array.isArray(sessionSources?.external_databases) ? sessionSources?.external_databases : []);
+  const topics = sessionSources?.web_topics?.topics ||
+    sessionSources?.topics ||
+    (Array.isArray(sessionSources?.web_topics) ? sessionSources?.web_topics : []);
 
   return (
     <div className="space-y-8">
@@ -60,14 +62,12 @@ export const IngestDataView = ({
             </Button>
           </div>
         ) : (() => {
-          const isWebSource = activeConnector.type === 'Integration' || 
-                             activeConnector.name.toLowerCase().includes('web') || 
-                             activeConnector.name.toLowerCase().includes('search');
+          const isWebSource = activeConnector.type === 'Integration' ||
+            activeConnector.name.toLowerCase().includes('web') ||
+            activeConnector.name.toLowerCase().includes('search');
           const isWebSearch = isWebSource; // Keep for backward compatibility in the child logic
 
-          if (isImporting ||
-            (isWebSearch && !results.length && !connectorResults?.status) ||
-            (!isWebSearch && !summary && tables.length === 0)) {
+          if (isImporting) {
             return (
               <div className="flex flex-col items-center justify-center py-12 gap-4">
                 <Loader2 className="w-10 h-10 animate-spin text-[var(--accent)]" />
@@ -77,6 +77,20 @@ export const IngestDataView = ({
                     {isWebSearch ? 'Processing web search results and extracting data' : 'Mapping schemas and fetching table structures'}
                   </p>
                 </div>
+              </div>
+            );
+          }
+
+          if (importError) {
+            return (
+              <div className="flex flex-col items-center justify-center py-12 gap-4">
+                <div className="text-center">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">Failed to import data</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">{importError}</p>
+                </div>
+                <Button variant="outline" size="sm" className="mt-2" onClick={onGoToDataSource}>
+                  Try Different Source
+                </Button>
               </div>
             );
           }
@@ -212,7 +226,7 @@ export const IngestDataView = ({
       {/* Continue to Process button at the exact bottom */}
       {!isImporting && activeConnector && (results.length > 0 || summary || tables.length > 0) && onContinue && (
         <div className="mt-12 pt-8 border-t border-[var(--border)] flex justify-end">
-          <Button 
+          <Button
             onClick={onContinue}
             disabled={isAnalyzing}
             variant="primary"

@@ -15,6 +15,8 @@ interface ConnectorContextType {
   setSessionSources: (sources: any | null) => void;
   isAnalyzing: boolean;
   setIsAnalyzing: (isAnalyzing: boolean) => void;
+  importError: string | null;
+  setImportError: (error: string | null) => void;
   resetConnectorState: () => void;
   clearAnalysisResults: () => void;
   
@@ -46,6 +48,7 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
   const [searchTopic, setSearchTopic] = useState('');
   
   // Persistent Upload States
@@ -142,6 +145,7 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setConnectorResultsState(null);
     setIsImporting(false);
     setIsAnalyzing(false);
+    setImportError(null);
     setSearchTopic('');
     setSessionSourcesState(null);
     
@@ -255,6 +259,8 @@ export const ConnectorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSessionSources,
       isAnalyzing,
       setIsAnalyzing,
+      importError,
+      setImportError,
       resetConnectorState,
       clearAnalysisResults,
       uploadedFiles,

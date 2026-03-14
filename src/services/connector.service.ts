@@ -65,7 +65,7 @@ class ConnectorService implements IConnectorService {
   }
 
   async continueToImport(payload: { user_id: string; connection_id: string; session_id?: string }): Promise<any> {
-    return this.api.post(API_ENDPOINTS.DATA_SOURCE.CONTINUE_TO_IMPORT, payload);
+    return this.api.post(API_ENDPOINTS.IMPORT.CONTINUE_TO_IMPORT, payload);
   }
 
   async searchWeb(query: string, sessionId: string | null): Promise<any> {

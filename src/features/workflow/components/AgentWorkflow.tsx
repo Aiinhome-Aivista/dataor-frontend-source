@@ -112,6 +112,8 @@ export const AgentWorkflow = ({
     setSessionSources,
     isAnalyzing,
     setIsAnalyzing,
+    importError,
+    setImportError,
     clearAnalysisResults
   } = useConnectorContext();
   const { userId } = useAuthContext();
@@ -156,6 +158,8 @@ export const AgentWorkflow = ({
     const activeUserId = userId?.toString() || '1';
     if (selectedAgentId === 'ingest' && activeConnector?.name === 'Web Search using LLM' && activeUserId && !connectorResults?.results) {
       const getResults = async () => {
+        setIsImporting(true);
+        setImportError(null);
         try {
           const savedResults = await connectorService.getSavedResults(activeUserId, searchTopic);
           if (savedResults) {
@@ -163,11 +167,14 @@ export const AgentWorkflow = ({
           }
         } catch (err) {
           console.error('Failed to fetch saved results:', err);
+          setImportError('Failed to fetch saved results. Please try again.');
+        } finally {
+          setIsImporting(false);
         }
       };
       getResults();
     }
-  }, [selectedAgentId, activeConnector, userId, setConnectorResults, connectorResults?.results]);
+  }, [selectedAgentId, activeConnector, userId, setConnectorResults, connectorResults?.results, setIsImporting]);
 
   // Poll for updates if there are any processing items to handle tab-switching state sync
   useEffect(() => {
@@ -346,6 +353,7 @@ export const AgentWorkflow = ({
       // 2. Set importing state and clear previous results
       setIsImporting(true);
       setConnectorResults(null);
+      setImportError(null);
 
       // 3. Update history to show processing (this will be picked up by polling)
       const newActivities = historyItem.activities
@@ -390,6 +398,7 @@ export const AgentWorkflow = ({
         } catch (error) {
           console.error("Import failed:", error);
           setConnectorResults(null); // Clear previous data on failure
+          setImportError('Failed to import data from your database. Please check your connection.');
           // The polling mechanism will eventually update the agent history
         } finally {
           setIsImporting(false);
@@ -576,6 +585,7 @@ export const AgentWorkflow = ({
                       sessionSources={sessionSources}
                       isImporting={isImporting}
                       isAnalyzing={isAnalyzing}
+                      importError={importError}
                       onGoToDataSource={() => handleStepperClick('connect')}
                       onContinue={handleContinueToProcess}
                     />

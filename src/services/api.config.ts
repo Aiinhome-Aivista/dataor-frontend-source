@@ -18,7 +18,6 @@ export const API_ENDPOINTS = {
   DATA_SOURCE: {
     CONNECTION_HISTORY: '/connection_history',
     CREATE_CONNECTORS: '/create_connectors',
-    CONTINUE_TO_IMPORT: '/connect-external-db',
     WEB_SEARCH: '/search',
   },
   IMPORT: {
@@ -26,6 +25,7 @@ export const API_ENDPOINTS = {
     SESSION_SOURCES: '/session-sources',
     SESSION_ANALYSIS: '/session-analysis',
     SAVE_RESULT_SEARCH: '/save-result',
+    CONTINUE_TO_IMPORT: '/connect-external-db',
     GET_SAVED_RESULTS: '/saved-results',
     DELETE_SAVED_RESULT: '/saved-results',
     DESCRIBE_CONTENT: '/saved-content/describe',
