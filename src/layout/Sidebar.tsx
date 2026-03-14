@@ -75,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex flex-col shrink-0">
             {/* Workspace nav item */}
             <div className="px-3 mb-1">
-              <button 
+              <button
                 onClick={() => isSidebarOpen && setIsWorkspaceOpen(o => !o)}
                 className={`
                   w-full flex items-center justify-between overflow-hidden p-1.5 px-3 rounded-xl border border-[var(--border)]/20 bg-[var(--bg)]/50
@@ -87,9 +87,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Layout className="w-4 h-4 shrink-0 transition-colors" />
                   {isSidebarOpen && (
-                    <motion.span 
-                      initial={{ opacity: 0 }} 
-                      animate={{ opacity: 1 }} 
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       className="text-sm flex-1 text-left truncate font-medium"
                     >
                       Workspace - {selectedWorkspace?.workspace_name || 'Select'}
@@ -197,13 +197,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                       ) : (
                         <div className="flex justify-start px-1 mb-1">
-                          <button
+                          {/* <button
                             onClick={() => setIsCreatingWorkspace(true)}
                             className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors text-xs font-semibold"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             Create workspace
-                          </button>
+                          </button> */}
                         </div>
                       )}
                     </div>
