@@ -15,7 +15,7 @@ export const adminService = {
     },
 
     getAllWorkspaces: async (userId: number): Promise<any> => {
-        return apiService.get(`${API_ENDPOINTS.WORKSPACE.GET_WORKSPACES}?user_id=${userId}`);
+        return apiService.get(`${API_ENDPOINTS.WORKSPACE.GET_ADMIN_WORKSPACES}?user_id=${userId}`);
     },
 
     assignWorkspace: async (userId: number, workspaceId: number): Promise<any> => {
@@ -43,6 +43,13 @@ export const adminService = {
     getWorkspaceUsers: async (workspaceId: number): Promise<any> => {
         return apiService.post(API_ENDPOINTS.WORKSPACE.WORKSPACE_USERS, {
             workspace_id: workspaceId
+        });
+    },
+
+    createUser: async (adminId: number, userData: any): Promise<any> => {
+        return apiService.post(API_ENDPOINTS.USERS.CREATE_USER, {
+            admin_id: adminId,
+            ...userData
         });
     }
 };

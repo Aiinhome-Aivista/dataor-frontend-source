@@ -25,6 +25,7 @@ export const AdminPanel: React.FC = () => {
     // UI State
     const [searchQuery, setSearchQuery] = useState('');
     const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
+    const [isCreatingUser, setIsCreatingUser] = useState(false);
     const [newWorkspaceName, setNewWorkspaceName] = useState('');
 
     // Assignment State
@@ -62,7 +63,7 @@ export const AdminPanel: React.FC = () => {
                         setWorkspaces(wsResponse.workspaces);
                     }
                 } catch (e) {
-                    // Fallback to current user's workspaces if admin endpoint fails
+              
                     console.log("Admin workspaces endpoint not found, fetching user workspaces", e);
                     const wsFallbackResponse = await workspaceService.getWorkspaces(userId || 6);
                     if (wsFallbackResponse?.workspaces) {
@@ -102,7 +103,7 @@ export const AdminPanel: React.FC = () => {
         setIsAssigning(true);
         setError(null);
         try {
-            // Await API Call with multiple user IDs
+          
             await adminService.assignWorkspaceUsers(
                 userId || 14, 
                 selectedWorkspaceForAssignment,
@@ -195,6 +196,16 @@ export const AdminPanel: React.FC = () => {
                         />
                     </div>
 
+                    {activeTab === 'users' && (
+                        <button
+                            onClick={() => setIsCreatingUser(true)}
+                            className="px-4 py-2 text-sm font-medium rounded-xl bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 transition-colors flex items-center gap-2"
+                        >
+                            <Users className="w-4 h-4" />
+                            Add User
+                        </button>
+                    )}
+
                     {activeTab === 'workspaces' && (
                         <button
                             onClick={() => setIsCreatingWorkspace(true)}
@@ -231,7 +242,14 @@ export const AdminPanel: React.FC = () => {
                                 className="w-full"
                             >
                                 {activeTab === 'users' && (
-                                    <MangeUser users={users} searchQuery={searchQuery} />
+                                    <MangeUser 
+                                        users={users} 
+                                        searchQuery={searchQuery} 
+                                        onRefresh={fetchData} 
+                                        adminId={userId || 14}
+                                        isModalOpen={isCreatingUser}
+                                        setIsModalOpen={setIsCreatingUser}
+                                    />
                                 )}
 
                                 {activeTab === 'workspaces' && (
