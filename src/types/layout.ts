@@ -2,7 +2,7 @@ import { Workspace } from '../services/workspace.service';
 import { Connector } from '../features/connectors';
 import { QuerySession } from '../services/chatHistory.service';
 
-export type Tab = 'chat' | 'connectors' | 'new-connector' | 'collection' | 'analysis';
+export type Tab = 'chat' | 'connectors' | 'new-connector' | 'collection' | 'analysis' | 'admin';
 export type ViewMode = 'landing' | 'login' | 'app';
 
 export interface SidebarProps {
@@ -32,7 +32,6 @@ export interface SidebarProps {
   setWorkflowKey: (key: number | ((prev: number) => number)) => void;
   chatKey: number;
   setChatKey: (key: number | ((prev: number) => number)) => void;
-  userId: number | null;
   fetchWorkspaces: () => Promise<void>;
   fetchWorkspaceHistory: (workspaceId: number, sessionId: string) => Promise<void>;
   handleLogout: () => void;
