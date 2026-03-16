@@ -95,12 +95,12 @@ export const AssignWorkspace: React.FC<AssignWorkspaceProps> = ({
                                                         : 'hover:bg-[var(--surface-hover)] text-[var(--text-primary)]'
                                                 }`}
                                             >
-                                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200 ${
                                                     selectedUserIds.includes(u.id) 
-                                                        ? 'bg-[var(--accent)] border-[var(--accent)]' 
-                                                        : 'border-[var(--border)] bg-[var(--bg)]'
+                                                        ? 'bg-[var(--accent)] border-[var(--accent)] scale-110' 
+                                                        : 'border-[var(--text-secondary)]/30 bg-[var(--surface-hover)] hover:border-[var(--accent)]'
                                                 }`}>
-                                                    {selectedUserIds.includes(u.id) && <Check className="w-3 h-3 text-white" />}
+                                                    {selectedUserIds.includes(u.id) && <Check className="w-2.5 h-2.5 text-white stroke-[3.5]" />}
                                                 </div>
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-medium">{u.name || 'No Name'}</span>
