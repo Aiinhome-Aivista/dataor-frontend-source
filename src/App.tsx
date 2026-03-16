@@ -22,10 +22,10 @@ import { Tab, ViewMode } from './types/layout';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
-  const { userId, logout } = useAuthContext();
+  const { userId, roleId, roleName, logout } = useAuthContext();
   const [viewMode, setViewMode] = useState<ViewMode>(userId ? 'app' : 'landing');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('chat');
+  const [activeTab, setActiveTab] = useState<Tab>(roleName === 'Admin' ? 'admin' : 'chat');
   const { selectedConnector, setSelectedConnector, resetConnectorState } = useConnectorContext();
   const [justFinishedWorkflow, setJustFinishedWorkflow] = useState(false);
   const [initialChatMessage, setInitialChatMessage] = useState<string | undefined>(undefined);
@@ -107,7 +107,8 @@ function AppContent() {
   const handleLoginSuccess = () => {
     setViewMode('app');
     setIsWorkspaceOpen(false);
-    setActiveTab('chat');
+    const storedRoleName = localStorage.getItem('DAgent_role_name');
+    setActiveTab(storedRoleName === 'Admin' ? 'admin' : 'chat');
   };
   const handleBackToLanding = () => setViewMode('landing');
 
@@ -218,7 +219,6 @@ function AppContent() {
         setWorkflowKey={setWorkflowKey}
         chatKey={chatKey}
         setChatKey={setChatKey}
-        userId={userId}
         fetchWorkspaces={fetchWorkspaces}
         fetchWorkspaceHistory={fetchWorkspaceHistory}
         handleLogout={handleLogout}
