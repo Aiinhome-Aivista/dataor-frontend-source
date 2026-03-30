@@ -12,6 +12,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ activeTab, selectedConnect
       case 'new-connector': return 'Add Connector';
       case 'collection': return 'Import';
       case 'analysis': return 'Process';
+      case 'admin': return 'Admin Panel';
       default: return 'Data source';
     }
   };
@@ -26,6 +27,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ activeTab, selectedConnect
         return 'Manage data ingestion and synchronization';
       case 'analysis':
         return 'Review statistical models and generated insights';
+      case 'admin':
+        return 'Manage user accounts and workspaces';
       default:
         return 'Connect your data directly to run instant analysis';
     }

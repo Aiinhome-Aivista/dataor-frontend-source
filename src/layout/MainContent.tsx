@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AgentWorkflow } from '../features/workflow';
 import { ConnectorForm } from '../features/connectors';
+import { AdminPanel } from '../features/admin';
 import { MainContentProps } from '../types/layout';
 
 export const MainContent: React.FC<MainContentProps> = ({
@@ -98,6 +99,17 @@ export const MainContent: React.FC<MainContentProps> = ({
               onChangeTab={changeTab}
               onNewConnector={() => changeTab('new-connector')}
             />
+          </motion.div>
+        ) : activeTab === 'admin' ? (
+          <motion.div
+            key="admin"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="h-[calc(100vh-8rem)]"
+          >
+            <AdminPanel />
           </motion.div>
         ) : null}
       </AnimatePresence>

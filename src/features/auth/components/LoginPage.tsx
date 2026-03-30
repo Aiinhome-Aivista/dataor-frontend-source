@@ -22,7 +22,7 @@ interface LoginPageProps {
 }
 
 export const LoginPage = ({ onBack, onLoginSuccess }: LoginPageProps) => {
-  const { setUserId, setUserName } = useAuthContext();
+  const { setUserId, setUserName, setRoleId, setRoleName } = useAuthContext();
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [email, setEmail] = React.useState('');
@@ -41,6 +41,12 @@ export const LoginPage = ({ onBack, onLoginSuccess }: LoginPageProps) => {
           setUserId(response.data.user_id);
           if (response.data.name) {
             setUserName(response.data.name);
+          }
+          if (response.data.role_id !== undefined) {
+            setRoleId(response.data.role_id);
+          }
+          if (response.data.role_name !== undefined) {
+            setRoleName(response.data.role_name);
           }
         }
         onLoginSuccess();
