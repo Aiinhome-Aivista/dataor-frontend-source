@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { Users, Layout, ShieldAlert, Check, X, Search, Loader2 } from 'lucide-react';
 import { adminService } from '../../services/admin.service';
@@ -46,7 +47,7 @@ export const AdminPanel: React.FC = () => {
                 if (usersResponse?.users) {
                     setUsers(usersResponse.users);
                 } else {
-                
+
                     setUsers([
                         { id: 1, name: 'Admin User', email: 'admin@d-agent.ai', role: 'admin' },
                         { id: 2, name: 'John Doe', email: 'john@example.com', role: 'user' },
@@ -63,7 +64,7 @@ export const AdminPanel: React.FC = () => {
                         setWorkspaces(wsResponse.workspaces);
                     }
                 } catch (e) {
-              
+
                     console.log("Admin workspaces endpoint not found, fetching user workspaces", e);
                     const wsFallbackResponse = await workspaceService.getWorkspaces(userId || 6);
                     if (wsFallbackResponse?.workspaces) {
@@ -83,9 +84,10 @@ export const AdminPanel: React.FC = () => {
         if (!newWorkspaceName.trim()) return;
         setIsLoading(true);
         try {
-     
+
             const response = await adminService.createWorkspace(userId || 6, newWorkspaceName.trim());
             if (response) {
+                toast.success('Workspace created successfully');
                 await fetchData(); // Refresh list
                 setNewWorkspaceName('');
                 setIsCreatingWorkspace(false);
@@ -103,21 +105,22 @@ export const AdminPanel: React.FC = () => {
         setIsAssigning(true);
         setError(null);
         try {
-          
+
             await adminService.assignWorkspaceUsers(
-                userId || 14, 
+                userId || 14,
                 selectedWorkspaceForAssignment,
                 selectedUserIdsForAssignment
             );
             
+            toast.success('Workspace assigned successfully');
             // clear selections
             setSelectedUserIdsForAssignment([]);
             setSelectedWorkspaceForAssignment(null);
-            
-         
+
+
         } catch (err: any) {
             console.error('Failed to assign workspace:', err);
-            
+
         } finally {
             setIsAssigning(false);
         }
@@ -242,10 +245,10 @@ export const AdminPanel: React.FC = () => {
                                 className="w-full"
                             >
                                 {activeTab === 'users' && (
-                                    <MangeUser 
-                                        users={users} 
-                                        searchQuery={searchQuery} 
-                                        onRefresh={fetchData} 
+                                    <MangeUser
+                                        users={users}
+                                        searchQuery={searchQuery}
+                                        onRefresh={fetchData}
                                         adminId={userId || 14}
                                         isModalOpen={isCreatingUser}
                                         setIsModalOpen={setIsCreatingUser}
@@ -279,8 +282,8 @@ export const AdminPanel: React.FC = () => {
                                 )}
 
                                 {activeTab === 'workspaceUsers' && (
-                                    <WorkspaceUsers 
-                                        workspaces={filteredWorkspaces} 
+                                    <WorkspaceUsers
+                                        workspaces={filteredWorkspaces}
                                         searchQuery={searchQuery}
                                     />
                                 )}

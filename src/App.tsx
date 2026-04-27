@@ -1,4 +1,5 @@
 import { ThemeProvider, useTheme, Button } from './ui-kit';
+import { Toaster } from 'react-hot-toast';
 import { ConnectorList, ConnectorForm, Connector } from './features/connectors';
 import { ConnectorProvider, useConnectorContext } from './context/ConnectorContext';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
@@ -259,6 +260,7 @@ export default function App() {
       <AuthProvider>
         <ConnectorProvider>
           <AppContent />
+          <Toaster position="top-right" />
         </ConnectorProvider>
       </AuthProvider>
     </ThemeProvider>

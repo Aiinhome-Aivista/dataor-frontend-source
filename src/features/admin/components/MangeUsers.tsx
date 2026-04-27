@@ -1,4 +1,5 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 import { AdminUser } from '../types';
 import { UserPlus, X, Loader2, Mail, Lock, User as UserIcon, Eye, EyeOff } from 'lucide-react';
 import { adminService } from '../../../services/admin.service';
@@ -12,10 +13,10 @@ interface MangeUsersProps {
     setIsModalOpen: (open: boolean) => void;
 }
 
-export const MangeUser: React.FC<MangeUsersProps> = ({ 
-    users, 
-    searchQuery, 
-    onRefresh, 
+export const MangeUser: React.FC<MangeUsersProps> = ({
+    users,
+    searchQuery,
+    onRefresh,
     adminId,
     isModalOpen,
     setIsModalOpen
@@ -40,6 +41,7 @@ export const MangeUser: React.FC<MangeUsersProps> = ({
                 email: formData.email,
                 password: formData.password
             });
+            toast.success('User created successfully');
             setIsModalOpen(false);
             setFormData({ name: '', email: '', password: '' });
             onRefresh();
@@ -95,7 +97,7 @@ export const MangeUser: React.FC<MangeUsersProps> = ({
                                 <UserPlus className="w-5 h-5 text-[var(--accent)]" />
                                 Create New User
                             </h3>
-                            <button 
+                            <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="p-2 hover:bg-[var(--surface-hover)] rounded-lg transition-colors text-[var(--text-secondary)]"
                             >

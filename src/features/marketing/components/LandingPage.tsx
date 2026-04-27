@@ -15,7 +15,8 @@ import {
   Play,
   Twitter,
   Github,
-  Linkedin
+  Linkedin,
+  TwitterIcon
 } from 'lucide-react';
 import { Button, Badge } from '@/src/ui-kit';
 import image1 from '@/src/assets/images/landing1.jpg';
@@ -362,6 +363,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
               <Twitter className="w-5 h-5 cursor-pointer hover:text-accent" />
               <Github className="w-5 h-5 cursor-pointer hover:text-accent" />
               <Linkedin className="w-5 h-5 cursor-pointer hover:text-accent" />
+              <TwitterIcon/>
             </div>
           </div>
           <div>
