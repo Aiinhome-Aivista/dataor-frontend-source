@@ -75,9 +75,9 @@ export const IngestDataView = ({
                 <div className="text-center">
                   <p className="text-sm font-bold text-[var(--text-primary)]">Importing your data...</p>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    {isWebSearch ? 'Processing web search results and extracting data' : 
-                     isCsvSource ? 'Reading CSV files and extracting data structures' : 
-                     'Mapping schemas and fetching table structures'}
+                    {isWebSearch ? 'Processing web search results and extracting data' :
+                      isCsvSource ? 'Reading CSV files and extracting data structures' :
+                        'Mapping schemas and fetching table structures'}
                   </p>
                 </div>
               </div>
@@ -89,7 +89,7 @@ export const IngestDataView = ({
               <div className="flex flex-col items-center justify-center py-12 gap-4">
                 <div className="text-center">
                   <p className="text-sm font-bold text-[var(--text-primary)]">Failed to import data</p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">{importError}</p>
+                  <p className="text-sm text-[var(--text-secondary)] mt-1">{importError}</p>
                 </div>
                 <Button variant="outline" size="sm" className="mt-2" onClick={onGoToDataSource}>
                   Try Different Source
@@ -259,7 +259,7 @@ export const IngestDataView = ({
       )}
 
       {/* Continue to Process button at the exact bottom */}
-      {!isImporting && activeConnector && (results.length > 0 || summary || tables.length > 0 || (connectorResults?.imported_files?.length > 0)) && onContinue && (
+      {!isImporting && activeConnector && (results.length > 0 || summary || tables.length > 0 || (connectorResults?.imported_files?.length > 0) || (topics.length > 0 || databases.length > 0)) && onContinue && (
         <div className="mt-12 pt-8 border-t border-[var(--border)] flex justify-end">
           <Button
             onClick={onContinue}

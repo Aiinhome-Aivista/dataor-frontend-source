@@ -41,6 +41,7 @@ function AppContent() {
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [workflowKey, setWorkflowKey] = useState(0);
+  const [isWorkspacesLoading, setIsWorkspacesLoading] = useState(false);
 
   // Per-workspace history state
   const [expandedWorkspaceId, setExpandedWorkspaceId] = useState<number | null>(null);
@@ -48,6 +49,7 @@ function AppContent() {
   const [isQueryLoading, setIsQueryLoading] = useState<Record<number, boolean>>({});
 
   const fetchWorkspaces = async () => {
+    setIsWorkspacesLoading(true);
     try {
       const response = await workspaceService.getWorkspaces(userId || 6);
       if (response && response.status === 'success' && response.workspaces) {
@@ -63,6 +65,8 @@ function AppContent() {
       }
     } catch (err) {
       console.error('Failed to fetch workspaces:', err);
+    } finally {
+      setIsWorkspacesLoading(false);
     }
   };
 
@@ -226,6 +230,7 @@ function AppContent() {
         resetConnectorState={resetConnectorState}
         agentService={agentService}
         setInitialChatMessage={setInitialChatMessage}
+        isWorkspacesLoading={isWorkspacesLoading}
       />
 
       <main

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, Layout, Plus, Check, X, Search, ChevronDown, Settings, LogOut, MessageSquare, ShieldAlert } from 'lucide-react';
+import { Menu, Layout, Plus, Check, X, Search, ChevronDown, Settings, LogOut, MessageSquare, ShieldAlert, RotateCcw } from 'lucide-react';
 import { Workspace, workspaceService } from '../services/workspace.service';
 import { SidebarProps } from '../types/layout';
 import { useAuthContext } from '../context/AuthContext';
@@ -37,7 +37,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   handleLogout,
   resetConnectorState,
   agentService,
-  setInitialChatMessage
+  setInitialChatMessage,
+  isWorkspacesLoading
 }) => {
   const { userId, roleId, roleName } = useAuthContext();
 
@@ -232,16 +233,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         )}
                       </div>
 
-                      {/* Search */}
-                      <div className="relative mb-2 shrink-0">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-secondary)]" />
-                        <input
-                          type="text"
-                          placeholder="Search workspace..."
-                          value={workspaceSearch}
-                          onChange={e => setWorkspaceSearch(e.target.value)}
-                          className="w-full pl-7 pr-3 py-1.5 text-[11px] rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/40"
-                        />
+                      {/* Search & Refresh */}
+                      <div className="flex items-center gap-2 mb-2 shrink-0">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-secondary)]" />
+                          <input
+                            type="text"
+                            placeholder="Search workspace..."
+                            value={workspaceSearch}
+                            onChange={e => setWorkspaceSearch(e.target.value)}
+                            className="w-full pl-7 pr-3 py-1.5 text-[11px] rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/40"
+                          />
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fetchWorkspaces();
+                          }}
+                          className="p-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all active:scale-95 shadow-sm cursor-pointer"
+                          title="Refresh workspaces"
+                        >
+                          <RotateCcw className={`w-3.5 h-3.5 ${isWorkspacesLoading ? 'animate-spin text-[var(--accent)]' : ''}`} />
+                        </button>
                       </div>
                       {/* Items */}
                       <div className="space-y-1.5 overflow-y-auto flex-1">

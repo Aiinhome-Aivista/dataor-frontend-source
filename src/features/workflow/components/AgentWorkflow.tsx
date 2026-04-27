@@ -190,11 +190,79 @@ export const AgentWorkflow = ({
       return () => clearInterval(interval);
     }
   }, [agents, selectedAgentId, userId]);
-
-
+  
   const selectedAgent = agents.find(a => a.id === selectedAgentId);
-
   const AGENT_SEQUENCE = ['connect', 'ingest', 'analyze', 'query'];
+
+  // Auto-trigger session analysis when entering 'analyze' tab if results are missing
+  useEffect(() => {
+    const triggerAutoAnalysis = async () => {
+      // Only run if we are on 'analyze' tab and no report exists and not already analyzing
+      if (selectedAgentId === 'analyze' && !connectorResults?.description && !isAnalyzing) {
+        
+        const sessionId = localStorage.getItem('DAgent_session_id') || (activeConnector as any)?.session_id;
+        if (!sessionId) return;
+
+        let currentSources = sessionSources;
+        if (!currentSources) {
+          try {
+            currentSources = await connectorService.getSessionSources(sessionId);
+            setSessionSources(currentSources);
+          } catch (err) {
+            console.error('Failed to fetch session sources for auto-analysis:', err);
+            return;
+          }
+        }
+
+        const topics = currentSources?.web_topics?.topics?.map((t: any) => t.topic) || [];
+        const databases = currentSources?.external_databases?.databases?.map((db: any) => db.external_database) || [];
+
+        // If we have data to analyze, trigger the API
+        if (topics.length > 0 || databases.length > 0) {
+          setIsAnalyzing(true);
+          
+          // Update history status if possible to show processing in UI
+          const historyItem = selectedAgent?.history[selectedAgent.history.length - 1];
+          if (historyItem && historyItem.status !== 'processing') {
+            try {
+              await agentService.updateHistoryItem(selectedAgent.id, historyItem.id, {
+                status: 'processing',
+                details: 'Data details verified. Initiating multi-source session analysis...',
+                activities: ['Gathering all session sources...', 'Extracting topics and database schemas...', 'Initializing analysis pipeline...']
+              });
+            } catch (e) {
+              console.warn('Failed to update history status, continuing analysis anyway');
+            }
+          }
+
+          try {
+            const response = await connectorService.processSessionAnalysis({
+              session_id: sessionId,
+              topics,
+              databases
+            });
+
+            if (response) {
+              const report = response.report || response.description || response.report_content || (typeof response === 'string' ? response : null);
+              if (report) {
+                setConnectorResults(prev => ({
+                  ...prev,
+                  description: report
+                }));
+              }
+            }
+          } catch (err) {
+            console.error('Auto session analysis failed:', err);
+          } finally {
+            setIsAnalyzing(false);
+          }
+        }
+      }
+    };
+
+    triggerAutoAnalysis();
+  }, [selectedAgentId, connectorResults?.description, isAnalyzing, sessionSources, activeConnector, selectedAgent]);
+
 
   const forwardToNextAgent = async (currentAgentId: string, contextData: string, connectionName?: string) => {
     const currentIndex = AGENT_SEQUENCE.indexOf(currentAgentId);
@@ -390,11 +458,19 @@ export const AgentWorkflow = ({
           }
 
           if (response) {
-            setConnectorResults(response);
-            // After successful ingestion, refresh session sources
-            if (historyItem.session_id) {
-              const sources = await connectorService.getSessionSources(historyItem.session_id);
-              setSessionSources(sources);
+            if (response.status === "error") {
+              // ✅ Show API error message in UI
+              setImportError(response.message || "Something went wrong");
+              setConnectorResults(null);
+            } else {
+              // ✅ Success case
+              setConnectorResults(response);
+              setImportError(null);
+
+              if (historyItem.session_id) {
+                const sources = await connectorService.getSessionSources(historyItem.session_id);
+                setSessionSources(sources);
+              }
             }
           } else {
             setConnectorResults(null);
