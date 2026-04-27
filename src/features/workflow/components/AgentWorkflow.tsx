@@ -244,10 +244,13 @@ export const AgentWorkflow = ({
 
             if (response) {
               const report = response.report || response.description || response.report_content || (typeof response === 'string' ? response : null);
-              if (report) {
+              const errorMessage = (response.status === 'partial' || response.status === 'error') ? response.message : null;
+              const displayContent = report || errorMessage;
+
+              if (displayContent) {
                 setConnectorResults(prev => ({
                   ...prev,
-                  description: report
+                  description: displayContent
                 }));
               }
             }
@@ -369,10 +372,13 @@ export const AgentWorkflow = ({
 
         if (response) {
           const report = response.report || response.description || response.report_content || (typeof response === 'string' ? response : null);
-          if (report) {
+          const errorMessage = (response.status === 'partial' || response.status === 'error') ? response.message : null;
+          const displayContent = report || errorMessage;
+
+          if (displayContent) {
             setConnectorResults(prev => ({
               ...prev,
-              description: report
+              description: displayContent
             }));
           }
         }
@@ -519,10 +525,13 @@ export const AgentWorkflow = ({
 
         if (response) {
           const report = response.report || response.description || response.report_content || (typeof response === 'string' ? response : null);
-          if (report) {
+          const errorMessage = (response.status === 'partial' || response.status === 'error') ? response.message : null;
+          const displayContent = report || errorMessage;
+
+          if (displayContent) {
             setConnectorResults(prev => ({
               ...prev,
-              description: report
+              description: displayContent
             }));
           }
         }
